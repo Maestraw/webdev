@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Deal Contractors</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- 3D Canvas -->
+    <canvas id="canvas"></canvas>
+
+    <!-- 2D Overlay for content -->
+    <div class="fixed inset-0 flex flex-col items-center justify-start pointer-events-none p-6 md:p-10 z-10">
+
+        <!-- Header and Logo -->
+        <div class="w-full text-center mb-8 pointer-events-auto">
+            <h1 class="text-6xl md:text-7xl font-extrabold text-[#2c3e50] tracking-tight leading-none drop-shadow-sm">
+                REAL DEAL
+            </h1>
+            <h2 class="text-3xl md:text-4xl font-light text-[#2c3e50] tracking-wide leading-tight">
+                CONTRACTORS
+            </h2>
+            <p class="mt-4 text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto font-light">
+                Your One Stop Partner in Construction Works
+            </p>
+        </div>
+
+        <!-- Content Card -->
+        <div class="bg-white bg-opacity-90 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-sm max-w-sm md:max-w-md pointer-events-auto">
+            
+            <div class="mb-6">
+                <h3 class="text-2xl font-bold text-[#f39c12] mb-3 text-center">SERVICES WE PROVIDE</h3>
+                <ul class="space-y-2 text-md text-center md:text-left">
+                    <li class="flex items-center justify-center md:justify-start">
+                        <span class="mr-2 text-[#f39c12]">•</span>
+                        BRICK LAYING
+                    </li>
+                    <li class="flex items-center justify-center md:justify-start">
+                        <span class="mr-2 text-[#f39c12]">•</span>
+                        SKIMMING
+                    </li>
+                    <li class="flex items-center justify-center md:justify-start">
+                        <span class="mr-2 text-[#f39c12]">•</span>
+                        TILING
+                    </li>
+                    <li class="flex items-center justify-center md:justify-start">
+                        <span class="mr-2 text-[#f39c12]">•</span>
+                        DRIVEWAYS
+                    </li>
+                    <li class="flex items-center justify-center md:justify-start">
+                        <span class="mr-2 text-[#f39c12]">•</span>
+                        CEILING DESIGN
+                    </li>
+                    <li class="flex items-center justify-center md:justify-start">
+                        <span class="mr-2 text-[#f39c12]">•</span>
+                        SUPERSTRUCTURE
+                    </li>
+                </ul>
+            </div>
+            
+            <div>
+                <h3 class="text-2xl font-bold text-[#f39c12] mb-3 text-center">CONTACT DETAILS</h3>
+                <div class="space-y-2 text-md text-center md:text-left">
+                    <p class="font-light">No 13163 Madokero Gardens</p>
+                    <p class="font-bold">+263 779 427 144</p>
+                    <p class="font-bold">+263 773 795 328</p>
+                    <p class="font-bold">+263 782 190 062</p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        window.onload = function() {
+            // Scene, camera, renderer setup
+            const canvas = document.getElementById('canvas');
+            let scene, camera, renderer;
+            let mouseX = 0, mouseY = 0;
+            let targetX = 0, targetY = 0;
+            const windowHalfX = window.innerWidth / 2;
+            const windowHalfY = window.innerHeight / 2;
+            const craneGroup = new THREE.Group();
+            let craneRotationSpeed = 0.005;
+            const craneBoomRotationLimit = Math.PI / 4;
+
+            function init() {
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0xf0f4f8);
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0xcccccc, 0.8);
+                scene.add(ambientLight);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+                directionalLight.position.set(5, 10, 7.5);
+                scene.add(directionalLight);
+
+                // Ground plane
+                const groundGeometry = new THREE.PlaneGeometry(100, 100);
+                const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x95a5a6, side: THREE.DoubleSide });
+                const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+                ground.rotation.x = -Math.PI / 2;
+                ground.position.y = -1;
+                scene.add(ground);
+
+                // Partially built building frame
+                const concreteMaterial = new THREE.MeshLambertMaterial({ color: 0xb4b4b4 });
+                const rebarMaterial = new THREE.MeshLambertMaterial({ color: 0x555555 });
+
+                // Foundation and main columns
+                for (let x = -15; x <= 15; x += 10) {
+                    for (let z = -15; z <= 15; z += 10) {
+                        const column = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 1), concreteMaterial);
+                        column.position.set(x, 4, z);
+                        scene.add(column);
+
+                        const rebar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 12, 0.5), rebarMaterial);
+                        rebar.position.set(x, 5, z);
+                        scene.add(rebar);
+                    }
+                }
+
+                // Horizontal beams
+                for (let x = -15; x <= 5; x += 10) {
+                    for (let z = -15; z <= 15; z += 10) {
+                        const beamZ = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 10), concreteMaterial);
+                        beamZ.position.set(x + 5, 9.5, z);
+                        scene.add(beamZ);
+                        const beamX = new THREE.Mesh(new THREE.BoxGeometry(10, 1, 1), concreteMaterial);
+                        beamX.position.set(x, 9.5, z + 5);
+                        scene.add(beamX);
+                    }
+                }
+
+                // Tower Crane
+                const base = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 3), new THREE.MeshLambertMaterial({ color: 0x2c3e50 }));
+                const tower = new THREE.Mesh(new THREE.BoxGeometry(1.5, 30, 1.5), new THREE.MeshLambertMaterial({ color: 0x34495e }));
+                tower.position.y = 15;
+                
+                const boom = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 20), new THREE.MeshLambertMaterial({ color: 0xf39c12 }));
+                boom.position.y = 30;
+                boom.position.z = 10;
+                
+                const counterBoom = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 8), new THREE.MeshLambertMaterial({ color: 0xe67e22 }));
+                counterBoom.position.y = 30;
+                counterBoom.position.z = -4;
+
+                craneGroup.add(base);
+                craneGroup.add(tower);
+                craneGroup.add(boom);
+                craneGroup.add(counterBoom);
+                craneGroup.position.set(10, -0.5, -25);
+                scene.add(craneGroup);
+                
+                camera.position.set(0, 15, 40);
+                camera.lookAt(0, 5, 0);
+
+                document.addEventListener('mousemove', onDocumentMouseMove, false);
+                window.addEventListener('resize', onWindowResize, false);
+            }
+
+            function onDocumentMouseMove(event) {
+                mouseX = (event.clientX - windowHalfX);
+                mouseY = (event.clientY - windowHalfY);
+            }
+
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // Crane animation
+                craneGroup.rotation.y += craneRotationSpeed;
+                if (craneGroup.rotation.y > craneBoomRotationLimit || craneGroup.rotation.y < -craneBoomRotationLimit) {
+                    craneRotationSpeed *= -1; // Reverse rotation
+                }
+
+                // Camera movement with mouse
+                targetX = mouseX * 0.001;
+                targetY = mouseY * 0.001;
+
+                camera.position.x += (targetX - camera.position.x) * 0.05;
+                camera.position.y += (-targetY - camera.position.y) * 0.05;
+                camera.lookAt(0, 5, 0);
+
+                renderer.render(scene, camera);
+            }
+
+            init();
+            animate();
+        };
+    </script>
+</body>
+</html>

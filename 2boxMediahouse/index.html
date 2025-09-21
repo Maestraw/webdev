@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2boxmediahouse // Dead Space Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #0d0d10;
+            color: #d1d1d1;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Roboto Mono', monospace;
+        }
+        
+        #hero-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.15;
+        }
+
+        .ds-panel {
+            background-color: rgba(10, 20, 30, 0.4);
+            border: 1px solid rgba(40, 60, 80, 0.7);
+            backdrop-filter: blur(6px);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .ds-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 1px solid transparent;
+            box-shadow: 0 0 10px rgba(0, 255, 128, 0.1);
+            pointer-events: none;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .ds-panel:hover::before {
+            box-shadow: 0 0 15px rgba(0, 255, 128, 0.5);
+        }
+
+        .ds-highlight {
+            color: #00ff80;
+            text-shadow: 0 0 5px #00ff80, 0 0 10px rgba(0, 255, 128, 0.5);
+        }
+
+        .ds-glow-button {
+            background-color: transparent;
+            border: 1px solid #00ff80;
+            color: #00ff80;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 5px rgba(0, 255, 128, 0.3);
+        }
+
+        .ds-glow-button:hover {
+            background-color: rgba(0, 255, 128, 0.1);
+            box-shadow: 0 0 15px rgba(0, 255, 128, 0.7);
+        }
+
+        .scanline-glitch {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                rgba(0, 0, 0, 0) 50%,
+                rgba(0, 255, 128, 0.05) 50%
+            );
+            background-size: 100% 4px;
+            animation: scanline-flicker 10s infinite;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes scanline-flicker {
+            0%, 100% { background-position: 0 0; }
+            50% { background-position: 0 50%; }
+        }
+
+        /* Carousel Styles */
+        .carousel-container {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .carousel-track {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+        }
+
+        .carousel-item {
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        .carousel-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(10, 20, 30, 0.8);
+            color: #00ff80;
+            border: 1px solid #00ff80;
+            padding: 8px;
+            cursor: pointer;
+            z-index: 10;
+            transition: background-color 0.3s;
+        }
+
+        .carousel-button:hover {
+            background-color: rgba(0, 255, 128, 0.1);
+        }
+
+        .carousel-button.prev {
+            left: 10px;
+        }
+
+        .carousel-button.next {
+            right: 10px;
+        }
+
+        /* New Glitch Effect CSS */
+        @keyframes full-screen-glitch {
+            0% { transform: translate3d(0, 0, 0); clip-path: inset(0 0 0 0); }
+            5% { transform: translate3d(5px, -3px, 0); clip-path: inset(0 0 10% 0); }
+            10% { transform: translate3d(-5px, 3px, 0); clip-path: inset(5% 0 0 0); }
+            15% { transform: translate3d(3px, -5px, 0); clip-path: inset(0 0 5% 0); }
+            20% { transform: translate3d(-3px, 5px, 0); clip-path: inset(10% 0 0 0); }
+            100% { transform: translate3d(0, 0, 0); clip-path: inset(0 0 0 0); }
+        }
+
+        .glitch-active .glitch-item {
+            animation: full-screen-glitch 0.2s linear infinite;
+        }
+
+        .flicker {
+            animation: flicker-animation 0.5s infinite alternate;
+        }
+
+        @keyframes flicker-animation {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                opacity: 1;
+            }
+            20%, 24%, 55% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Intruder Overlay CSS */
+        .intruder-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(20, 5, 5, 0.9);
+            color: #ff0040;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            text-align: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.1s ease-in-out;
+            z-index: 100;
+        }
+
+        .intruder-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .intruder-overlay h3 {
+            animation: intruder-flicker 0.1s infinite alternate;
+        }
+        
+        .intruder-overlay p {
+            animation: intruder-text-glitch 0.2s linear infinite;
+        }
+
+        @keyframes intruder-flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        @keyframes intruder-text-glitch {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(2px); }
+            50% { transform: translateX(-2px); }
+            75% { transform: translateX(1px); }
+            100% { transform: translateX(0); }
+        }
+
+    </style>
+</head>
+<body class="flex flex-col min-h-screen antialiased">
+    <!-- Intruder Overlay -->
+    <div id="intruder-overlay" class="intruder-overlay">
+        <h3 class="text-4xl md:text-6xl font-extrabold uppercase mb-4">UNAUTHORIZED ACCESS ATTEMPT</h3>
+        <p class="text-lg md:text-2xl uppercase">INJECTING CORRUPTED DATA STREAM...</p>
+    </div>
+
+    <!-- Full-screen glitch effect overlay -->
+    <div class="scanline-glitch fixed w-full h-full top-0 left-0 z-50 pointer-events-none"></div>
+
+    <!-- Main Content Container with glitch effect hook -->
+    <div class="relative w-full min-h-screen glitch-item">
+        <!-- 3D Background Canvas -->
+        <canvas id="hero-canvas" class="z-0"></canvas>
+        
+        <div class="container mx-auto p-4 md:p-8 relative z-10">
+            <!-- Header Section -->
+            <header class="flex justify-between items-center py-4 px-4 md:px-8 ds-panel rounded-sm shadow-lg mb-8">
+                <div class="flex items-center space-x-2">
+                    <span class="text-3xl font-extrabold text-white flicker">2BOX</span>
+                    <span class="text-3xl font-extrabold ds-highlight flicker">MEDIAHOUSE</span>
+                </div>
+                <nav class="hidden md:flex items-center space-x-6">
+                    <a href="#" class="text-white hover:text-[#00ff80] transition-colors duration-200 uppercase font-bold text-sm flicker">System Status</a>
+                    <a href="#" class="text-white hover:text-[#00ff80] transition-colors duration-200 uppercase font-bold text-sm flicker">Modules</a>
+                    <a href="#" class="text-white hover:text-[#00ff80] transition-colors duration-200 uppercase font-bold text-sm flicker">Logs</a>
+                    <a href="#" class="text-white hover:text-[#00ff80] transition-colors duration-200 uppercase font-bold text-sm flicker">Contact</a>
+                </nav>
+                <button class="md:hidden p-2 rounded-lg text-white hover:bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#00ff80]">
+                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+            </header>
+
+            <!-- Hero Section -->
+            <main class="text-center py-20 min-h-[calc(100vh-16rem)] flex flex-col justify-center items-center">
+                <h1 class="text-4xl md:text-6xl font-extrabold leading-tight text-white uppercase drop-shadow-lg">
+                    <span class="ds-highlight">PRIMARY OBJECTIVE:</span><br>
+                    INITIATE SOFTWARE PROTOCOL
+                </h1>
+                <p class="text-base text-[#a0a0a0] max-w-2xl mx-auto mt-4 leading-relaxed">
+                    ACCESSING REMOTE DATA STREAMS FOR DIGITAL DEPLOYMENT. STANDBY FOR SIGNAL.
+                </p>
+                <button class="w-fit font-bold py-3 px-8 rounded-sm shadow-md transition-transform duration-300 transform hover:scale-105 mt-8 uppercase ds-glow-button">
+                    ACCESS LOG
+                </button>
+            </main>
+
+            <!-- Services Section with Carousel -->
+            <section class="py-16">
+                <div class="w-full max-w-6xl mx-auto">
+                    <h2 class="text-3xl md:text-4xl font-extrabold mb-12 text-center text-white uppercase">
+                        MODULE FUNCTIONALITY
+                    </h2>
+                </div>
+
+                <div class="w-full max-w-4xl mx-auto relative carousel-container">
+                    <div class="carousel-track grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="carousel-track">
+                        <!-- Carousel Item 1 -->
+                        <div class="carousel-item">
+                            <div class="ds-panel rounded-sm shadow-md cursor-pointer overflow-hidden p-6">
+                                <div class="p-4">
+                                    <h3 class="text-2xl font-bold text-white mb-2">WEB APPS</h3>
+                                    <p class="text-[#a0a0a0] text-sm">DATA INTERFACE. INTEGRATED USER EXPERIENCE.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Carousel Item 2 -->
+                        <div class="carousel-item">
+                            <div class="ds-panel rounded-sm shadow-md cursor-pointer overflow-hidden p-6">
+                                <div class="p-4">
+                                    <h3 class="text-2xl font-bold text-white mb-2">WEBSITES</h3>
+                                    <p class="text-[#a0a0a0] text-sm">DIGITAL PROJECTION. REAL-TIME INFORMATION.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Carousel Item 3 -->
+                        <div class="carousel-item">
+                            <div class="ds-panel rounded-sm shadow-md cursor-pointer overflow-hidden p-6">
+                                <div class="p-4">
+                                    <h3 class="text-2xl font-bold text-white mb-2">ANDROID APPS</h3>
+                                    <p class="text-[#a0a0a0] text-sm">MOBILE PROTOCOL. DEPLOYMENT ON PORTABLE HARDWARE.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Carousel Item 4 -->
+                        <div class="carousel-item">
+                             <div class="ds-panel rounded-sm shadow-md cursor-pointer overflow-hidden p-6">
+                                <div class="p-4">
+                                    <h3 class="text-2xl font-bold text-white mb-2">APPLE APPS</h3>
+                                    <p class="text-[#a0a0a0] text-sm">SYSTEM INTEGRATION. CLOSED-CIRCUIT FUNCTIONALITY.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Carousel Item 5 -->
+                        <div class="carousel-item">
+                            <div class="ds-panel rounded-sm shadow-md cursor-pointer overflow-hidden p-6">
+                                <div class="p-4">
+                                    <h3 class="text-2xl font-bold text-white mb-2">WINDOWS SOFTWARE</h3>
+                                    <p class="text-[#a0a0a0] text-sm">MAIN SYSTEMS. CORE FUNCTIONALITY DEPLOYED.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Carousel Item 6 -->
+                        <div class="carousel-item">
+                            <div class="ds-panel rounded-sm shadow-md cursor-pointer overflow-hidden p-6">
+                                <div class="p-4">
+                                    <h3 class="text-2xl font-bold text-white mb-2">MAC SOFTWARE</h3>
+                                    <p class="text-[#a0a0a0] text-sm">ADVANCED SYSTEMS. CREATIVE LOGIC INITIATED.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="carousel-button prev" onclick="moveCarousel(-1)">&#x25C0;</button>
+                    <button class="carousel-button next" onclick="moveCarousel(1)">&#x25B6;</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer Section -->
+        <footer class="w-full py-8 text-center bg-[#0d0d10] mt-16 border-t border-b border-[#2e2e2e]">
+            <h3 class="text-xl font-bold text-white mb-4 uppercase">CONNECTING...</h3>
+            <div class="flex justify-center space-x-8">
+                <!-- WhatsApp Icon -->
+                <div class="w-10 h-10 relative flex items-center justify-center">
+                    <a href="https://wa.me/" target="_blank">
+                        <div class="relative w-8 h-8 rounded-full shadow-lg transition-transform duration-300 transform hover:scale-110 ds-glow-button">
+                            <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-xl font-bold">
+                                &#x260E;
+                            </span>
+                        </div>
+                    </a>
+                </div>
+                <!-- Facebook Icon -->
+                <div class="w-10 h-10 relative flex items-center justify-center">
+                    <a href="https://facebook.com" target="_blank">
+                        <div class="relative w-8 h-8 rounded-full shadow-lg transition-transform duration-300 transform hover:scale-110 ds-glow-button">
+                            <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-xl font-bold">
+                                f
+                            </span>
+                        </div>
+                    </a>
+                </div>
+                <!-- TikTok Icon -->
+                <div class="w-10 h-10 relative flex items-center justify-center">
+                    <a href="https://tiktok.com" target="_blank">
+                        <div class="relative w-8 h-8 rounded-full shadow-lg transition-transform duration-300 transform hover:scale-110 ds-glow-button">
+                            <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-xl font-bold">
+                                &#x261E;
+                            </span>
+                        </div>
+                    </a>
+                </div>
+                <!-- Instagram Icon -->
+                <div class="w-10 h-10 relative flex items-center justify-center">
+                    <a href="https://instagram.com" target="_blank">
+                        <div class="relative w-8 h-8 rounded-full shadow-lg transition-transform duration-300 transform hover:scale-110 ds-glow-button">
+                            <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-lg font-bold">
+                                &#x1F3F3;
+                            </span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 3D Scene and Carousel Script -->
+    <script>
+        let currentSlide = 0;
+        let slideWidth = 0;
+        const track = document.getElementById('carousel-track');
+        const items = document.querySelectorAll('.carousel-item');
+        const totalItems = items.length;
+
+        function updateCarouselPosition() {
+            track.style.transform = `translateX(-${currentSlide * slideWidth}px)`;
+        }
+
+        function getItemsPerSlide() {
+            if (window.innerWidth >= 1024) return 3;
+            if (window.innerWidth >= 640) return 2;
+            return 1;
+        }
+
+        function updateSlideWidth() {
+            const itemsPerSlide = getItemsPerSlide();
+            const trackWidth = track.offsetWidth;
+            slideWidth = trackWidth / itemsPerSlide;
+            updateCarouselPosition();
+        }
+
+        function moveCarousel(direction) {
+            const itemsPerSlide = getItemsPerSlide();
+            currentSlide = (currentSlide + direction + (totalItems / itemsPerSlide)) % (totalItems / itemsPerSlide);
+            updateCarouselPosition();
+        }
+
+        window.onload = function() {
+            // Glitch effect function
+            const body = document.body;
+            const intruderOverlay = document.getElementById('intruder-overlay');
+            function triggerRandomGlitch() {
+                const randomTime = Math.random() * 5000 + 2000; // between 2 and 7 seconds
+                setTimeout(() => {
+                    if (Math.random() < 0.2) { // 20% chance to trigger an intruder event
+                        body.classList.add('glitch-active');
+                        intruderOverlay.classList.add('visible');
+                        setTimeout(() => {
+                            body.classList.remove('glitch-active');
+                            intruderOverlay.classList.remove('visible');
+                            triggerRandomGlitch();
+                        }, 500); // Intruder duration is 500ms
+                    } else {
+                        body.classList.add('glitch-active');
+                        setTimeout(() => {
+                            body.classList.remove('glitch-active');
+                            triggerRandomGlitch();
+                        }, 200); // Regular glitch duration is short, 200ms
+                    }
+                }, randomTime);
+            }
+
+            // THREE.js Scene Setup
+            const canvas = document.getElementById('hero-canvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            camera.position.set(0, 0, 10);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+            const pointLight = new THREE.PointLight(0x00ff80, 2, 100);
+            pointLight.position.set(0, 0, 10);
+            scene.add(pointLight);
+
+            // Create a geometric particle field for a sense of space and dread
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const segments = 2000;
+
+            for (let i = 0; i < segments; i++) {
+                const x = (Math.random() - 0.5) * 200;
+                const y = (Math.random() - 0.5) * 200;
+                const z = (Math.random() - 0.5) * 200;
+                positions.push(x, y, z);
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0x00ff80,
+                size: 0.2,
+                transparent: true,
+                opacity: 0.6
+            });
+
+            const points = new THREE.Points(geometry, material);
+            scene.add(points);
+
+            // Animation Loop
+            function animate() {
+                requestAnimationFrame(animate);
+
+                points.rotation.x += 0.0002;
+                points.rotation.y += 0.0004;
+                
+                renderer.render(scene, camera);
+            }
+
+            // Handle Window Resize
+            window.addEventListener('resize', () => {
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                updateSlideWidth();
+            });
+
+            // Initial setup for the carousel and glitch
+            updateSlideWidth();
+            triggerRandomGlitch();
+            animate();
+        };
+    </script>
+</body>
+</html>

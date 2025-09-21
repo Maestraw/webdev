@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CG Consultancy - Your Compliance Partner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a2e; /* Dark, futuristic background */
+        }
+        .text-gradient {
+            background-image: linear-gradient(to right, #2af598, #009efd); /* Vibrant, modern gradient */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .text-gradient-2 {
+            background-image: linear-gradient(to right, #8a2be2, #00bcd4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* Animation classes */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeInUp {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+        .animate-delay-1 { animation-delay: 0.2s; }
+        .animate-delay-2 { animation-delay: 0.4s; }
+        .animate-delay-3 { animation-delay: 0.6s; }
+        
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.2; /* Subtle background effect */
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen antialiased text-gray-100">
+
+    <!-- Main Content Container -->
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Header Section -->
+        <header class="flex flex-col md:flex-row justify-between items-center py-6 px-4 md:px-8 bg-[#2a2a44] rounded-2xl shadow-lg border border-[#3b3b55] mb-8 animate-fadeInUp">
+            <div class="flex items-center space-x-4 mb-4 md:mb-0">
+                <div class="w-12 h-12 flex items-center justify-center rounded-full bg-blue-500 bg-opacity-20 backdrop-filter backdrop-blur-sm">
+                    <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.94a11.955 11.955 0 01-8.618 5.044A12.042 12.042 0 005.94 12c.797 3.326 2.477 6.31 4.707 8.657a.75.75 0 001.076 0c2.23-2.347 3.91-5.331 4.707-8.657a12.042 12.042 0 002.322-3.016z"></path>
+                    </svg>
+                </div>
+                <span class="text-3xl font-extrabold text-white">CG Consultancy</span>
+            </div>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="#" class="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium">Home</a>
+                <a href="#" class="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium">About</a>
+                <a href="#" class="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium">Services</a>
+                <a href="#" class="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium">Contact</a>
+            </nav>
+            <button class="md:hidden p-2 rounded-lg text-gray-300 hover:bg-[#3b3b55] focus:outline-none focus:ring-2 focus:ring-blue-500">
+                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                </svg>
+            </button>
+        </header>
+
+        <!-- Hero Section with Canvas for 3D FX -->
+        <main class="relative grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-[#2a2a44] rounded-2xl shadow-lg border border-[#3b3b55] p-8 md:p-12 overflow-hidden">
+            <canvas id="hero-canvas"></canvas>
+            
+            <!-- Text Content -->
+            <div class="flex flex-col space-y-6 z-10 animate-fadeInUp animate-delay-1">
+                <h1 class="text-5xl md:text-6xl font-extrabold leading-tight text-white">
+                    <span class="text-gradient">Data-Driven</span> <br>Compliance Solutions
+                </h1>
+                <p class="text-lg text-gray-300 max-w-lg">
+                    We provide expert, technology-driven compliance solutions to help businesses navigate complex regulations with confidence and ease.
+                </p>
+                <div class="flex flex-col space-y-4">
+                    <div class="bg-gray-800 bg-opacity-30 backdrop-filter backdrop-blur-sm rounded-lg p-6 shadow-sm border border-[#3b3b55] animate-fadeInUp animate-delay-2">
+                        <h2 class="text-xl font-bold text-blue-400 flex items-center mb-2">
+                            <span class="mr-2">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </span>
+                            Our Core Expertise
+                        </h2>
+                        <ul class="list-disc list-inside space-y-2 text-gray-200">
+                            <li><span class="font-semibold text-white">NSSA Compliance:</span> Monthly/Quarterly Returns & Clearance Certificates.</li>
+                            <li><span class="font-semibold text-white">ZIMRA Compliance:</span> Tax Returns (VAT, PAYE, Income Tax) & Tax Clearance Certificates.</li>
+                            <li><span class="font-semibold text-white">PRAZ Submissions:</span> Supplier Registration, Renewals & Bid Submission Assistance.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image and Contact Section -->
+            <div class="relative w-full aspect-square lg:aspect-auto flex items-center justify-center p-4 lg:p-0 z-10 animate-fadeInUp animate-delay-3">
+                <img src="https://placehold.co/600x600/1e293b/d1d5db?text=Digital+Professional" alt="A professional interacting with a futuristic digital interface, representing modern compliance solutions." class="w-full h-full object-cover rounded-full shadow-2xl transform hover:scale-105 transition-transform duration-500">
+                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 w-4/5 p-4 bg-gray-900 bg-opacity-90 rounded-xl shadow-xl text-center border border-gray-700">
+                    <p class="text-white text-sm md:text-base font-semibold">Ready to get started?</p>
+                    <div class="flex flex-wrap justify-center mt-2 space-x-2 text-blue-300">
+                        <a href="tel:+263782511908" class="flex items-center space-x-1 hover:text-blue-100 transition-colors duration-200">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M14.243 5.757a6 6 0 10-.97 10.99A8 8 0 1118 10a7.962 7.962 0 01-1.758 4.095 1.5 1.5 0 00-.319.467 1.5 1.5 0 00-.146.545c.017.06.035.116.054.168.033.092.067.182.102.269.043.109.088.214.135.313a.75.75 0 00.916 1.139 12.002 12.002 0 002.324-1.618 1.5 1.5 0 00.287-.417 1.5 1.5 0 00.126-.452c.005-.015.01-.03.014-.045.003-.01.006-.02.01-.03s.005-.02.008-.03a.75.75 0 00-.036-.78l-.34-1.298a.75.75 0 00-1.121-.29l-1.928 1.487-1.458-1.458 1.487-1.928a.75.75 0 00-.29-1.121l-1.298-.34a.75.75 0 00-.78-.036c-.01.003-.02.006-.03.01-.015.005-.03.01-.045.014a1.5 1.5 0 00-.452.126 1.5 1.5 0 00-.417.287A12.002 12.002 0 0010 18a12 12 0 006.313-1.642.75.75 0 00.187-.225 1.5 1.5 0 00.126-.452c.005-.015.01-.03.014-.045.003-.01.006-.02.01-.03s.005-.02.008-.03a.75.75 0 00-.036-.78l-.34-1.298a.75.75 0 00-1.121-.29l-1.928 1.487-1.458-1.458 1.487-1.928a.75.75 0 00-.29-1.121z" clip-rule="evenodd"></path></svg>
+                            <span>+263 782 511 908</span>
+                        </a>
+                        <a href="tel:+263716237504" class="flex items-center space-x-1 hover:text-blue-100 transition-colors duration-200">
+                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M14.243 5.757a6 6 0 10-.97 10.99A8 8 0 1118 10a7.962 7.962 0 01-1.758 4.095 1.5 1.5 0 00-.319.467 1.5 1.5 0 00-.146.545c.017.06.035.116.054.168.033.092.067.182.102.269.043.109.088.214.135.313a.75.75 0 00.916 1.139 12.002 12.002 0 002.324-1.618 1.5 1.5 0 00.287-.417 1.5 1.5 0 00.126-.452c.005-.015.01-.03.014-.045.003-.01.006-.02.01-.03s.005-.02.008-.03a.75.75 0 00-.036-.78l-.34-1.298a.75.75 0 00-1.121-.29l-1.928 1.487-1.458-1.458 1.487-1.928a.75.75 0 00-.29-1.121l-1.298-.34a.75.75 0 00-.78-.036c-.01.003-.02.006-.03.01-.015.005-.03.01-.045.014a1.5 1.5 0 00-.452.126 1.5 1.5 0 00-.417.287A12.002 12.002 0 0010 18a12 12 0 006.313-1.642.75.75 0 00.187-.225 1.5 1.5 0 00.126-.452c.005-.015.01-.03.014-.045.003-.01.006-.02.01-.03s.005-.02.008-.03a.75.75 0 00-.036-.78l-.34-1.298a.75.75 0 00-1.121-.29l-1.928 1.487-1.458-1.458 1.487-1.928a.75.75 0 00-.29-1.121z" clip-rule="evenodd"></path></svg>
+                            <span>+263 716 237 504</span>
+                        </a>
+                        <a href="mailto:ogainvestments@gmail.com" class="flex items-center space-x-1 hover:text-blue-100 transition-colors duration-200">
+                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg>
+                            <span>ogainvestments@gmail.com</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // Get the canvas element to get its size
+            const canvas = document.getElementById('hero-canvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+
+            // Set the renderer size based on the canvas element's dimensions
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            // Position the camera
+            camera.position.z = 2.5;
+
+            // Create a group to hold the main cube and orbiting spheres
+            const objectGroup = new THREE.Group();
+            
+            // Main data cube geometry and material
+            const cubeGeometry = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+            const cubeMaterial = new THREE.MeshBasicMaterial({
+                color: 0x2af598, // Bright green wireframe
+                wireframe: true,
+                transparent: true,
+                opacity: 0.8
+            });
+            const mainCube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            objectGroup.add(mainCube);
+
+            // Add floating data points
+            const sphereGeometry = new THREE.SphereGeometry(0.04, 8, 8);
+            const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0x009efd }); // Blue spheres
+            
+            const numSpheres = 15;
+            const radius = 1.0;
+            const spheres = [];
+            for (let i = 0; i < numSpheres; i++) {
+                const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                const angle = (i / numSpheres) * Math.PI * 2;
+                sphere.position.x = radius * Math.cos(angle) + (Math.random() - 0.5) * 0.5;
+                sphere.position.y = radius * Math.sin(angle) + (Math.random() - 0.5) * 0.5;
+                sphere.position.z = (Math.random() - 0.5) * 0.5;
+                objectGroup.add(sphere);
+                spheres.push(sphere);
+            }
+            
+            // Add lines between spheres
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x009efd, transparent: true, opacity: 0.3 });
+            const lineGeometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const threshold = 1.5;
+
+            for (let i = 0; i < numSpheres; i++) {
+                for (let j = i + 1; j < numSpheres; j++) {
+                    const dist = spheres[i].position.distanceTo(spheres[j].position);
+                    if (dist < threshold) {
+                        vertices.push(spheres[i].position.x, spheres[i].position.y, spheres[i].position.z);
+                        vertices.push(spheres[j].position.x, spheres[j].position.y, spheres[j].position.z);
+                    }
+                }
+            }
+            lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
+            objectGroup.add(lines);
+
+            scene.add(objectGroup);
+            
+            // Add Ambient Light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+            scene.add(ambientLight);
+
+            // Add Directional Light
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            // Animation Loop
+            function animate() {
+                requestAnimationFrame(animate);
+                objectGroup.rotation.y += 0.002;
+                objectGroup.rotation.x += 0.001;
+
+                // Animate sphere positions
+                spheres.forEach(sphere => {
+                    sphere.position.x += (Math.random() - 0.5) * 0.005;
+                    sphere.position.y += (Math.random() - 0.5) * 0.005;
+                    sphere.position.z += (Math.random() - 0.5) * 0.005;
+                });
+
+                renderer.render(scene, camera);
+            }
+
+            // Handle Window Resize
+            window.addEventListener('resize', () => {
+                const width = canvas.clientWidth;
+                const height = canvas.clientHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            });
+
+            // Start the animation on window load.
+            animate();
+        };
+    </script>
+</body>
+</html>

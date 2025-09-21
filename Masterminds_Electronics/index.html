@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masterminds Electronics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #0d0d12;
+            color: #e0e0e5;
+            overflow-x: hidden;
+        }
+        .text-gradient {
+            background-image: linear-gradient(to right, #00c6ff, #0072ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* Animation classes */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 1s ease-in forwards;
+        }
+        @keyframes slideInFromLeft {
+            from { transform: translateX(-50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slideInFromLeft {
+            animation: slideInFromLeft 0.8s ease-out forwards;
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(0, 198, 255, 0.4), 0 0 10px rgba(0, 198, 255, 0.2); }
+            50% { box-shadow: 0 0 15px rgba(0, 198, 255, 0.8), 0 0 30px rgba(0, 198, 255, 0.4); }
+            100% { box-shadow: 0 0 5px rgba(0, 198, 255, 0.4), 0 0 10px rgba(0, 198, 255, 0.2); }
+        }
+        .pulse-glow {
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.2;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen antialiased">
+
+    <!-- Main Content Container -->
+    <div class="relative w-full min-h-screen overflow-hidden">
+        <!-- 3D Background Canvas -->
+        <canvas id="hero-canvas" class="z-0"></canvas>
+        
+        <div class="container mx-auto p-4 md:p-8 relative z-10">
+            <!-- Header Section -->
+            <header class="flex flex-col md:flex-row justify-between items-center py-6 px-4 md:px-8 glass-effect rounded-2xl shadow-lg mb-8 animate-fadeIn">
+                <div class="flex items-center space-x-4 mb-4 md:mb-0">
+                    <div class="w-12 h-12 flex items-center justify-center rounded-full bg-[#00c6ff] bg-opacity-20 backdrop-filter backdrop-blur-sm pulse-glow">
+                        <svg class="w-8 h-8 text-[#00c6ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-3xl font-extrabold text-white">Masterminds Electronics</span>
+                </div>
+                <nav class="hidden md:flex items-center space-x-6">
+                    <a href="#" class="text-[#e0e0e5] hover:text-[#00c6ff] transition-colors duration-300 font-medium">Home</a>
+                    <a href="#" class="text-[#e0e0e5] hover:text-[#00c6ff] transition-colors duration-300 font-medium">Products</a>
+                    <a href="#" class="text-[#e0e0e5] hover:text-[#00c6ff] transition-colors duration-300 font-medium">Services</a>
+                    <a href="#" class="text-[#e0e0e5] hover:text-[#00c6ff] transition-colors duration-300 font-medium">Contact</a>
+                </nav>
+                <button class="md:hidden p-2 rounded-lg text-[#e0e0e5] hover:bg-[#1f2833] focus:outline-none focus:ring-2 focus:ring-[#00c6ff]">
+                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+            </header>
+
+            <!-- Hero Section -->
+            <main class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center pt-16 min-h-[calc(100vh-16rem)]">
+                <!-- Text Content -->
+                <div class="flex flex-col space-y-6 animate-slideInFromLeft">
+                    <h1 class="text-5xl md:text-7xl font-extrabold leading-tight text-white">
+                        <span class="text-gradient">Powering Your Future</span><br>with Next-Gen Tech.
+                    </h1>
+                    <p class="text-lg text-[#b0b0bb] max-w-lg">
+                        Explore our selection of top-tier pre-owned electronics and professional repair services. We're your gateway to cutting-edge technology.
+                    </p>
+                    <button id="exploreBtn" class="w-fit bg-gradient-to-r from-[#00c6ff] to-[#0072ff] text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform duration-300 transform hover:scale-105 mt-4">
+                        Explore Devices
+                    </button>
+                </div>
+            </main>
+
+            <!-- Phones Section -->
+            <section id="devices-section" class="pt-24 pb-16">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-center mb-10 text-gradient animate-fadeIn">Our Device Collection</h2>
+                
+                <div class="w-full max-w-5xl mx-auto">
+                    <!-- iPhones Grid -->
+                    <h3 class="text-3xl font-bold mb-6 text-white text-center">iPhones</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                        <!-- iPhone 15 Pro Max -->
+                        <div class="glass-effect rounded-lg p-6 shadow-sm border border-[#00c6ff] animate-fadeIn">
+                            <h3 class="text-xl font-bold text-white mb-2">iPhone 15 Pro Max</h3>
+                            <ul class="list-disc list-inside space-y-1 text-[#b0b0bb]">
+                                <li>256GB - <span class="text-[#00c6ff]">$950</span></li>
+                                <li>512GB - <span class="text-[#00c6ff]">$1050</span></li>
+                                <li>1TB - <span class="text-[#00c6ff]">$1200</span></li>
+                            </ul>
+                        </div>
+                        <!-- iPhone 15 Pro -->
+                        <div class="glass-effect rounded-lg p-6 shadow-sm border border-[#00c6ff] animate-fadeIn">
+                            <h3 class="text-xl font-bold text-white mb-2">iPhone 15 Pro</h3>
+                            <ul class="list-disc list-inside space-y-1 text-[#b0b0bb]">
+                                <li>128GB - <span class="text-[#00c6ff]">$750</span></li>
+                                <li>256GB - <span class="text-[#00c6ff]">$850</span></li>
+                                <li>512GB - <span class="text-[#00c6ff]">$950</span></li>
+                            </ul>
+                        </div>
+                        <!-- iPhone 15 -->
+                        <div class="glass-effect rounded-lg p-6 shadow-sm border border-[#00c6ff] animate-fadeIn">
+                            <h3 class="text-xl font-bold text-white mb-2">iPhone 15</h3>
+                            <ul class="list-disc list-inside space-y-1 text-[#b0b0bb]">
+                                <li>128GB - <span class="text-[#00c6ff]">$570</span></li>
+                                <li>256GB - <span class="text-[#00c6ff]">$650</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Samsungs Grid -->
+                    <h3 class="text-3xl font-bold mb-6 text-white text-center">Samsungs</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                        <!-- Samsung S24 Ultra -->
+                        <div class="glass-effect rounded-lg p-6 shadow-sm border border-[#00c6ff] animate-fadeIn">
+                            <h3 class="text-xl font-bold text-white mb-2">Samsung S24 Ultra</h3>
+                            <ul class="list-disc list-inside space-y-1 text-[#b0b0bb]">
+                                <li>256GB - <span class="text-[#00c6ff]">$900</span></li>
+                                <li>512GB - <span class="text-[#00c6ff]">$1000</span></li>
+                            </ul>
+                        </div>
+                        <!-- Samsung S23 -->
+                        <div class="glass-effect rounded-lg p-6 shadow-sm border border-[#00c6ff] animate-fadeIn">
+                            <h3 class="text-xl font-bold text-white mb-2">Samsung S23</h3>
+                            <ul class="list-disc list-inside space-y-1 text-[#b0b0bb]">
+                                <li>128GB - <span class="text-[#00c6ff]">$650</span></li>
+                                <li>256GB - <span class="text-[#00c6ff]">$700</span></li>
+                            </ul>
+                        </div>
+                        <!-- Samsung Galaxy Fold -->
+                        <div class="glass-effect rounded-lg p-6 shadow-sm border border-[#00c6ff] animate-fadeIn">
+                            <h3 class="text-xl font-bold text-white mb-2">Galaxy Z Fold 5</h3>
+                            <ul class="list-disc list-inside space-y-1 text-[#b0b0bb]">
+                                <li>256GB - <span class="text-[#00c6ff]">$1200</span></li>
+                                <li>512GB - <span class="text-[#00c6ff]">$1300</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const exploreBtn = document.getElementById('exploreBtn');
+            const devicesSection = document.getElementById('devices-section');
+
+            // Smooth scroll to the devices section when the button is clicked
+            exploreBtn.addEventListener('click', () => {
+                devicesSection.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        window.onload = function() {
+            // THREE.js Scene Setup
+            const canvas = document.getElementById('hero-canvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            camera.position.z = 5;
+
+            // Group for iPhone model
+            const iphoneGroup = new THREE.Group();
+            
+            // iPhone Body
+            const iphoneGeometry = new THREE.BoxGeometry(1.5, 3.2, 0.15);
+            const iphoneMaterial = new THREE.MeshBasicMaterial({
+                color: 0x1f2833,
+                transparent: true,
+                opacity: 0.9
+            });
+            const iphoneBody = new THREE.Mesh(iphoneGeometry, iphoneMaterial);
+            iphoneGroup.add(iphoneBody);
+
+            // iPhone Screen
+            const iphoneScreenGeometry = new THREE.PlaneGeometry(1.4, 3.0);
+            const iphoneScreenMaterial = new THREE.MeshBasicMaterial({ color: 0x0a0a0d, side: THREE.DoubleSide });
+            const iphoneScreen = new THREE.Mesh(iphoneScreenGeometry, iphoneScreenMaterial);
+            iphoneScreen.position.z = 0.08;
+            iphoneGroup.add(iphoneScreen);
+
+            // iPhone Edges
+            const iphoneEdgesGeometry = new THREE.EdgesGeometry(iphoneGeometry);
+            const iphoneEdgesMaterial = new THREE.LineBasicMaterial({ color: 0x66fcf1, linewidth: 2 });
+            const iphoneEdges = new THREE.LineSegments(iphoneEdgesGeometry, iphoneEdgesMaterial);
+            iphoneGroup.add(iphoneEdges);
+            
+            // Position the iPhone model
+            iphoneGroup.position.x = -2.5;
+            iphoneGroup.position.y = 1;
+            scene.add(iphoneGroup);
+
+            // Group for Samsung model
+            const samsungGroup = new THREE.Group();
+            
+            // Samsung Body
+            const samsungGeometry = new THREE.BoxGeometry(1.6, 3.0, 0.18);
+            const samsungMaterial = new THREE.MeshBasicMaterial({
+                color: 0x1f2833,
+                transparent: true,
+                opacity: 0.9
+            });
+            const samsungBody = new THREE.Mesh(samsungGeometry, samsungMaterial);
+            samsungGroup.add(samsungBody);
+
+            // Samsung Screen
+            const samsungScreenGeometry = new THREE.PlaneGeometry(1.5, 2.8);
+            const samsungScreenMaterial = new THREE.MeshBasicMaterial({ color: 0x0a0a0d, side: THREE.DoubleSide });
+            const samsungScreen = new THREE.Mesh(samsungScreenGeometry, samsungScreenMaterial);
+            samsungScreen.position.z = 0.09;
+            samsungGroup.add(samsungScreen);
+
+            // Samsung Edges
+            const samsungEdgesGeometry = new THREE.EdgesGeometry(samsungGeometry);
+            const samsungEdgesMaterial = new THREE.LineBasicMaterial({ color: 0x00c6ff, linewidth: 2 });
+            const samsungEdges = new THREE.LineSegments(samsungEdgesGeometry, samsungEdgesMaterial);
+            samsungGroup.add(samsungEdges);
+            
+            // Position the Samsung model
+            samsungGroup.position.x = 2.5;
+            samsungGroup.position.y = -1;
+            scene.add(samsungGroup);
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0x00c6ff, 1, 100);
+            pointLight.position.set(2, 3, 4);
+            scene.add(pointLight);
+
+            // Animation Loop
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // Rotate the models
+                iphoneGroup.rotation.y += 0.005;
+                samsungGroup.rotation.y -= 0.005;
+
+                // Move the models in a subtle floating motion
+                const time = Date.now() * 0.0005;
+                iphoneGroup.position.y = Math.sin(time * 0.7) * 0.5 + 1;
+                samsungGroup.position.y = Math.cos(time * 0.5) * 0.5 - 1;
+
+                renderer.render(scene, camera);
+            }
+
+            // Handle Window Resize
+            window.addEventListener('resize', () => {
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            });
+
+            animate();
+        };
+    </script>
+</body>
+</html>
