@@ -123,6 +123,28 @@
             text-align: right;
             margin-top: 10px;
         }
+
+        .stats-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #010409;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .stat-item {
+            color: #c9d1d9;
+            font-size: 0.9rem;
+        }
+
+        .stat-value {
+            color: #4cd137;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -148,6 +170,12 @@
                 <button id="copy-button">COPY</button>
             </div>
         </div>
+
+        <div id="stats-container" class="stats-container hidden">
+            <div class="stat-item">Original Characters: <span id="original-chars" class="stat-value">0</span></div>
+            <div class="stat-item">Minified Characters: <span id="minified-chars" class="stat-value">0</span></div>
+            <div class="stat-item">Difference: <span id="char-difference" class="stat-value">0</span></div>
+        </div>
     </div>
 
     <script>
@@ -155,12 +183,16 @@
         const copyButton = document.getElementById('copy-button');
         const codeInput = document.getElementById('code-input');
         const outputText = document.getElementById('output-text');
-        const outputBox = document.getElementById('output-box');
+        const statsContainer = document.getElementById('stats-container');
+        const originalCharsSpan = document.getElementById('original-chars');
+        const minifiedCharsSpan = document.getElementById('minified-chars');
+        const charDifferenceSpan = document.getElementById('char-difference');
 
         refactorButton.addEventListener('click', () => {
             const originalCode = codeInput.value;
             if (originalCode.trim() === "") {
                 outputText.textContent = "// Paste code into the input box to begin minification.";
+                statsContainer.classList.add('hidden');
                 return;
             }
 
@@ -172,6 +204,17 @@
             minifiedCode = minifiedCode.replace(/; /g, ';').replace(/: /g, ':').replace(/, /g, ','); // Remove spaces after semicolons, colons, and commas
 
             outputText.textContent = minifiedCode.trim();
+
+            // Update stats
+            const originalLength = originalCode.length;
+            const minifiedLength = minifiedCode.trim().length;
+            const difference = originalLength - minifiedLength;
+
+            originalCharsSpan.textContent = originalLength;
+            minifiedCharsSpan.textContent = minifiedLength;
+            charDifferenceSpan.textContent = difference;
+
+            statsContainer.classList.remove('hidden');
         });
 
         copyButton.addEventListener('click', () => {
