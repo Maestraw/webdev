@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productivity Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #0d1117;
+            color: #00ff41; /* Neon green for text */
+            filter: grayscale(10%) contrast(1.1);
+        }
+        .text-neon {
+            color: #00ff41;
+        }
+        .bg-terminal {
+            background-color: #161b22;
+            box-shadow: 0 0 15px #00ff41;
+            border: 2px solid #00ff41;
+        }
+        .btn-terminal {
+            background-color: #00ff41;
+            color: #161b22;
+            border: 2px solid #00ff41;
+            box-shadow: 0 0 10px #00ff41;
+            transition: all 0.2s ease;
+        }
+        .btn-terminal:hover {
+            box-shadow: 0 0 20px #00ff41, inset 0 0 10px #00ff41;
+            transform: translateY(-2px);
+        }
+        .input-terminal {
+            background-color: #0d1117;
+            color: #00ff41;
+            border: 2px solid #00ff41;
+            box-shadow: inset 0 0 5px #00ff41;
+        }
+        .input-terminal::placeholder {
+            color: #4c4e51;
+        }
+        .completed-task {
+            text-decoration: line-through;
+            color: #8b8b8b;
+            text-shadow: none;
+            box-shadow: none;
+            background-color: #161b22;
+        }
+        .completed-task .text-neon {
+            color: #8b8b8b;
+        }
+        .glow-shadow {
+            text-shadow: 0 0 5px #00ff41, 0 0 10px #00ff41;
+        }
+        .tab-btn.active {
+            background-color: #00ff41;
+            color: #0d1117;
+            box-shadow: 0 0 15px #00ff41;
+        }
+        .tab-btn:not(.active) {
+            background-color: transparent;
+            color: #00ff41;
+            border: 2px solid #00ff41;
+        }
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(0, 0, 0, 0.2) 1px,
+                transparent 2px
+            );
+            animation: scanlineAnimation 5s infinite linear;
+        }
+        @keyframes scanlineAnimation {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(100%);
+            }
+        }
+
+        #live-chat-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+            background-color: rgba(0, 0, 0, 0.2);
+            color: rgba(0, 255, 65, 0.3);
+            font-size: 10px;
+            display: flex;
+            flex-direction: column-reverse;
+            padding: 1rem;
+        }
+
+        #live-chat-background p {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: clip;
+            opacity: 0;
+            transition: opacity 1s ease-in;
+            margin: 0;
+            padding: 0;
+            line-height: 1.2;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <div class="scanlines"></div>
+    <div id="live-chat-background"></div>
+
+    <!-- Main Application Container -->
+    <div id="app" class="w-full max-w-4xl bg-terminal rounded-2xl p-6 md:p-8">
+        <div class="flex justify-between items-center mb-6 pb-4 border-b-2 border-neon">
+            <h1 class="text-4xl font-bold text-neon glow-shadow">Productivity.log</h1>
+            <div id="user-info" class="text-sm text-neon"></div>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="flex space-x-2 md:space-x-4 mb-6">
+            <button id="day-btn" class="tab-btn active font-semibold py-2 px-4 rounded-xl transition-all">DAY</button>
+            <button id="week-btn" class="tab-btn font-semibold py-2 px-4 rounded-xl transition-all">WEEK</button>
+            <button id="month-btn" class="tab-btn font-semibold py-2 px-4 rounded-xl transition-all">MONTH</button>
+            <button id="analytics-btn" class="tab-btn font-semibold py-2 px-4 rounded-xl transition-all">ANALYTICS</button>
+        </div>
+
+        <!-- Task Input -->
+        <div id="task-input-section" class="mb-8">
+            <div class="flex items-center space-x-4">
+                <input type="text" id="new-task-input" placeholder="> ADD TASK..." class="flex-grow p-3 input-terminal rounded-xl focus:outline-none transition-all">
+                <button id="add-task-btn" class="btn-terminal font-semibold py-3 px-6 rounded-xl">EXECUTE</button>
+            </div>
+        </div>
+
+        <!-- Main Content (Task Lists) -->
+        <div id="content-view">
+            <div id="task-lists-view" class="space-y-8">
+                <!-- Active Tasks Section -->
+                <div>
+                    <h2 class="text-2xl font-bold text-neon mb-4">ACTIVE_TASKS</h2>
+                    <ul id="active-tasks" class="space-y-4 task-list p-4 bg-terminal rounded-xl border border-neon">
+                        <li class="text-gray-400">LOADING...</li>
+                    </ul>
+                </div>
+
+                <!-- Completed Tasks Section -->
+                <div>
+                    <h2 class="text-2xl font-bold text-neon mb-4">COMPLETED_TASKS</h2>
+                    <ul id="completed-tasks" class="space-y-4 task-list p-4 bg-terminal rounded-xl border border-neon">
+                        <li class="text-gray-400">LOADING...</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Analytics View -->
+            <div id="analytics-view" class="hidden">
+                <h2 class="text-2xl font-bold text-neon mb-4">ANALYTICS_DATA</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-terminal p-4 rounded-xl border border-neon">
+                        <h3 class="font-semibold text-neon mb-2">DAILY</h3>
+                        <canvas id="daily-chart"></canvas>
+                    </div>
+                    <div class="bg-terminal p-4 rounded-xl border border-neon">
+                        <h3 class="font-semibold text-neon mb-2">WEEKLY</h3>
+                        <canvas id="weekly-chart"></canvas>
+                    </div>
+                    <div class="bg-terminal p-4 rounded-xl border border-neon">
+                        <h3 class="font-semibold text-neon mb-2">MONTHLY</h3>
+                        <canvas id="monthly-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables for local data
+        let currentView = 'day';
+        let data = {
+            day: [],
+            week: [],
+            month: []
+        };
+        let lastTaskId = 0;
+
+        // Constants and UI elements
+        const userDisplay = document.getElementById('user-info');
+        const dayBtn = document.getElementById('day-btn');
+        const weekBtn = document.getElementById('week-btn');
+        const monthBtn = document.getElementById('month-btn');
+        const analyticsBtn = document.getElementById('analytics-btn');
+        const taskInputSection = document.getElementById('task-input-section');
+        const taskListsView = document.getElementById('task-lists-view');
+        const analyticsView = document.getElementById('analytics-view');
+        const newTaskInput = document.getElementById('new-task-input');
+        const addTaskBtn = document.getElementById('add-task-btn');
+        const activeTasksList = document.getElementById('active-tasks');
+        const completedTasksList = document.getElementById('completed-tasks');
+        const liveChatBg = document.getElementById('live-chat-background');
+        
+        // --- Data Handling with a Local JSON-like Object ---
+
+        const addTask = (title, type) => {
+            if (!title) return;
+            const newTask = {
+                id: `task_${++lastTaskId}`,
+                title: title,
+                type: type,
+                completed: false,
+                createdAt: new Date(),
+                completedAt: null
+            };
+            data[type].push(newTask);
+            newTaskInput.value = '';
+            renderAllTasks();
+        };
+
+        const toggleTaskCompletion = (taskId) => {
+            for (const type in data) {
+                const task = data[type].find(t => t.id === taskId);
+                if (task) {
+                    task.completed = !task.completed;
+                    task.completedAt = task.completed ? new Date() : null;
+                    break;
+                }
+            }
+            renderAllTasks();
+        };
+
+        const renderTasks = (tasks, listElement) => {
+            listElement.innerHTML = '';
+            if (tasks.length === 0) {
+                const emptyLi = document.createElement('li');
+                emptyLi.textContent = `> NO ${listElement.id.split('-')[0].toUpperCase()} TASKS FOUND.`;
+                emptyLi.className = 'text-gray-400';
+                listElement.appendChild(emptyLi);
+                return;
+            }
+
+            tasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = `p-3 rounded-xl transition-all border-l-4 ${task.completed ? 'completed-task border-gray-500' : 'bg-transparent border-neon'}`;
+                li.dataset.taskId = task.id;
+
+                const taskTitle = document.createElement('span');
+                taskTitle.textContent = `> ${task.title}`;
+                taskTitle.className = `font-medium text-neon ${task.completed ? 'completed-task' : 'glow-shadow'}`;
+
+                const taskTime = document.createElement('p');
+                taskTime.className = 'text-xs text-gray-500 mt-1';
+                taskTime.textContent = 'ADDED: ' + new Date(task.createdAt).toLocaleString();
+
+                if (task.completed) {
+                    const timeTaken = (task.completedAt - task.createdAt) / 1000;
+                    taskTime.textContent += ` | COMPLETED IN: ${formatTime(timeTaken)}`;
+                }
+
+                const completeBtn = document.createElement('button');
+                completeBtn.textContent = task.completed ? 'RESTORE' : 'PURGE';
+                completeBtn.className = `mt-2 py-1 px-3 text-xs rounded-lg font-semibold btn-terminal`;
+                completeBtn.onclick = () => toggleTaskCompletion(task.id);
+                
+                li.appendChild(taskTitle);
+                li.appendChild(taskTime);
+                li.appendChild(completeBtn);
+
+                listElement.appendChild(li);
+            });
+        };
+        
+        const renderAllTasks = () => {
+            const activeTasks = data[currentView].filter(task => !task.completed);
+            const completedTasks = data[currentView].filter(task => task.completed);
+            renderTasks(activeTasks, activeTasksList);
+            renderTasks(completedTasks, completedTasksList);
+        };
+
+
+        // --- UI and Analytics Logic ---
+
+        const updateCharts = () => {
+            const allCompletedTasks = Object.values(data).flat().filter(task => task.completed);
+            
+            const dailyData = {};
+            const weeklyData = {};
+            const monthlyData = {};
+            
+            allCompletedTasks.forEach(task => {
+                const completionDate = task.completedAt;
+                if (completionDate) {
+                    const dateStr = completionDate.toISOString().slice(0, 10);
+                    dailyData[dateStr] = (dailyData[dateStr] || 0) + 1;
+                    
+                    const week = Math.floor((completionDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24 * 7));
+                    weeklyData[week] = (weeklyData[week] || 0) + 1;
+                    
+                    const month = `${completionDate.getFullYear()}-${completionDate.getMonth() + 1}`;
+                    monthlyData[month] = (monthlyData[month] || 0) + 1;
+                }
+            });
+
+            createChart('daily-chart', Object.keys(dailyData).reverse().slice(0, 7), Object.values(dailyData).reverse().slice(0, 7));
+            createChart('weekly-chart', Object.keys(weeklyData).reverse().slice(0, 4), Object.values(weeklyData).reverse().slice(0, 4));
+            createChart('monthly-chart', Object.keys(monthlyData).reverse().slice(0, 6), Object.values(monthlyData).reverse().slice(0, 6));
+        };
+
+        let dailyChart, weeklyChart, monthlyChart;
+
+        const createChart = (canvasId, labels, data) => {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            let chartInstance;
+            switch(canvasId) {
+                case 'daily-chart': chartInstance = dailyChart; break;
+                case 'weekly-chart': chartInstance = weeklyChart; break;
+                case 'monthly-chart': chartInstance = monthlyChart; break;
+            }
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            const newChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Tasks Completed',
+                        data: data,
+                        backgroundColor: '#00ff41',
+                        borderColor: '#00ff41',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#2b303b' },
+                            ticks: { color: '#00ff41' }
+                        },
+                        x: {
+                            grid: { color: '#2b303b' },
+                            ticks: { color: '#00ff41' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#00ff41' }
+                        }
+                    }
+                }
+            });
+
+            switch(canvasId) {
+                case 'daily-chart': dailyChart = newChart; break;
+                case 'weekly-chart': weeklyChart = newChart; break;
+                case 'monthly-chart': monthlyChart = newChart; break;
+            }
+        };
+
+        const formatTime = (seconds) => {
+            if (seconds < 60) {
+                return `${Math.floor(seconds)}S`;
+            } else if (seconds < 3600) {
+                return `${Math.floor(seconds / 60)}M ${Math.floor(seconds % 60)}S`;
+            } else {
+                return `${Math.floor(seconds / 3600)}H ${Math.floor((seconds % 3600) / 60)}M`;
+            }
+        };
+
+        // --- Event Listeners and Main Control ---
+        const handleTabClick = (view) => {
+            currentView = view;
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                if (btn.id === `${view}-btn`) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            if (view === 'analytics') {
+                taskInputSection.classList.add('hidden');
+                taskListsView.classList.add('hidden');
+                analyticsView.classList.remove('hidden');
+                updateCharts();
+            } else {
+                taskInputSection.classList.remove('hidden');
+                taskListsView.classList.remove('hidden');
+                analyticsView.classList.add('hidden');
+                renderAllTasks();
+            }
+        };
+        
+        dayBtn.addEventListener('click', () => handleTabClick('day'));
+        weekBtn.addEventListener('click', () => handleTabClick('week'));
+        monthBtn.addEventListener('click', () => handleTabClick('month'));
+        analyticsBtn.addEventListener('click', () => handleTabClick('analytics'));
+
+        addTaskBtn.addEventListener('click', () => {
+            const taskTitle = newTaskInput.value.trim();
+            if (taskTitle) {
+                addTask(taskTitle, currentView);
+            }
+        });
+        
+        newTaskInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const taskTitle = newTaskInput.value.trim();
+                if (taskTitle) {
+                    addTask(taskTitle, currentView);
+                }
+            }
+        });
+        
+        // --- Live Chat Background Animation ---
+        const liveChatMessages = [
+            'Initializing core processes...',
+            'Establishing secure connection...',
+            'Scanning for vulnerabilities...',
+            'Access Granted: Project_Log_v2.0',
+            'Data stream verified...',
+            'Checking system integrity...',
+            'FIREWALL STATUS: ONLINE',
+            'Authenticating user...',
+            'SYNACK packet received...',
+            'Connection to remote server established.',
+            'Waiting for user input...'
+        ];
+        
+        const generateRandomMessage = () => {
+            const randomMessage = liveChatMessages[Math.floor(Math.random() * liveChatMessages.length)];
+            const randomId = Math.random().toString(16).substr(2, 8);
+            return `> ${randomMessage} // ID:${randomId}`;
+        };
+
+        const addMessage = () => {
+            const p = document.createElement('p');
+            p.textContent = generateRandomMessage();
+            liveChatBg.prepend(p);
+            
+            // Limit the number of messages to avoid performance issues
+            const maxMessages = 50;
+            if (liveChatBg.children.length > maxMessages) {
+                liveChatBg.removeChild(liveChatBg.lastChild);
+            }
+
+            // Animate the new message in
+            setTimeout(() => {
+                p.style.opacity = '1';
+            }, 10);
+        };
+        
+        setInterval(addMessage, 500); // Add a new message every half-second
+
+        // Initial view setup
+        handleTabClick('day');
+    </script>
+</body>
+</html>
