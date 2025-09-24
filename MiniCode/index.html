@@ -196,18 +196,31 @@
                 return;
             }
 
-            // Simple minification: remove comments and extra whitespace
-            let minifiedCode = originalCode.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ''); // Remove CSS/JS comments
-            minifiedCode = minifiedCode.replace(/[\r\n\t]/g, ''); // Remove newlines and tabs
-            minifiedCode = minifiedCode.replace(/\s{2,}/g, ' '); // Replace multiple spaces with a single space
-            minifiedCode = minifiedCode.replace(/ {/g, '{').replace(/ }/g, '}'); // Remove spaces around braces
-            minifiedCode = minifiedCode.replace(/; /g, ';').replace(/: /g, ':').replace(/, /g, ','); // Remove spaces after semicolons, colons, and commas
+            // Strictest minification logic
+            let minifiedCode = originalCode;
 
-            outputText.textContent = minifiedCode.trim();
+            // Step 1: Remove all single-line and multi-line comments
+            minifiedCode = minifiedCode.replace(/\/\*[\s\S]*?\*\/|(?<=[^:])\/\/.*|<!--[\s\S]*?-->/g, '');
+
+            // Step 2: Remove all newlines, tabs, and carriage returns
+            minifiedCode = minifiedCode.replace(/[\r\n\t]+/g, '');
+
+            // Step 3: Aggressively remove spaces around specific syntactic elements
+            minifiedCode = minifiedCode.replace(/\s*([,;{}()\[\]])\s*/g, '$1');
+            minifiedCode = minifiedCode.replace(/\s*:\s*/g, ':'); // Specifically for JavaScript objects
+            minifiedCode = minifiedCode.replace(/\s*([=+-<>!~?:*&|%\/^])\s*/g, '$1');
+            
+            // Step 4: Consolidate any remaining multiple spaces into a single space
+            minifiedCode = minifiedCode.replace(/\s{2,}/g, ' ');
+
+            // Step 5: Trim leading/trailing whitespace
+            minifiedCode = minifiedCode.trim();
+
+            outputText.textContent = minifiedCode;
 
             // Update stats
             const originalLength = originalCode.length;
-            const minifiedLength = minifiedCode.trim().length;
+            const minifiedLength = minifiedCode.length;
             const difference = originalLength - minifiedLength;
 
             originalCharsSpan.textContent = originalLength;
