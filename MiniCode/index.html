@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Refactor Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+        
+        body {
+            background-color: #0d1117;
+            color: #2e7d32;
+            font-family: 'Roboto Mono', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .terminal-container {
+            width: 100%;
+            max-width: 900px;
+            background-color: #161b22;
+            border: 2px solid #238636;
+            box-shadow: 0 0 20px #238636;
+            border-radius: 12px;
+            padding: 20px;
+            box-sizing: border-box;
+            animation: glow-border 2s infinite alternate;
+        }
+
+        @keyframes glow-border {
+            from { box-shadow: 0 0 10px #238636; }
+            to { box-shadow: 0 0 25px #238636; }
+        }
+        
+        h1 {
+            color: #4cd137;
+            text-shadow: 0 0 5px #4cd137;
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            animation: text-flicker 1.5s infinite alternate;
+        }
+
+        @keyframes text-flicker {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        .input-group, .output-group {
+            margin-bottom: 20px;
+        }
+
+        .label-text {
+            color: #4cd137;
+            margin-bottom: 8px;
+            display: block;
+            font-size: 1rem;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            background-color: #010409;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            font-family: 'Roboto Mono', monospace;
+            resize: vertical;
+            border-radius: 6px;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 20px;
+        }
+
+        .action-buttons button {
+            background-color: #238636;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .action-buttons button:hover {
+            background-color: #2ea043;
+            transform: scale(1.05);
+        }
+
+        .action-buttons button:active {
+            transform: scale(0.95);
+        }
+        
+        .output-box {
+            background-color: #010409;
+            border: 1px solid #30363d;
+            padding: 10px;
+            color: #c9d1d9;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            border-radius: 6px;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .output-box span {
+            color: #4cd137;
+        }
+
+        .copy-button-container {
+            text-align: right;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="terminal-container">
+        <h1>Code Minifier // 2095</h1>
+
+        <div class="input-group">
+            <label for="code-input" class="label-text">INPUT.CODE</label>
+            <textarea id="code-input" rows="15" placeholder="Paste your code here..."></textarea>
+        </div>
+
+        <div class="action-buttons">
+            <button id="refactor-button">REFRACTOR &gt;</button>
+        </div>
+
+        <div class="output-group">
+            <label class="label-text">OUTPUT.MINIFIED</label>
+            <div id="output-box" class="output-box">
+                <span id="output-text">// Output will appear here...</span>
+            </div>
+            <div class="copy-button-container">
+                <button id="copy-button">COPY</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const refactorButton = document.getElementById('refactor-button');
+        const copyButton = document.getElementById('copy-button');
+        const codeInput = document.getElementById('code-input');
+        const outputText = document.getElementById('output-text');
+        const outputBox = document.getElementById('output-box');
+
+        refactorButton.addEventListener('click', () => {
+            const originalCode = codeInput.value;
+            if (originalCode.trim() === "") {
+                outputText.textContent = "// Paste code into the input box to begin minification.";
+                return;
+            }
+
+            // Simple minification: remove comments and extra whitespace
+            let minifiedCode = originalCode.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ''); // Remove CSS/JS comments
+            minifiedCode = minifiedCode.replace(/[\r\n\t]/g, ''); // Remove newlines and tabs
+            minifiedCode = minifiedCode.replace(/\s{2,}/g, ' '); // Replace multiple spaces with a single space
+            minifiedCode = minifiedCode.replace(/ {/g, '{').replace(/ }/g, '}'); // Remove spaces around braces
+            minifiedCode = minifiedCode.replace(/; /g, ';').replace(/: /g, ':').replace(/, /g, ','); // Remove spaces after semicolons, colons, and commas
+
+            outputText.textContent = minifiedCode.trim();
+        });
+
+        copyButton.addEventListener('click', () => {
+            const textToCopy = outputText.textContent;
+            if (textToCopy.trim() === "// Output will appear here..." || textToCopy.trim() === "// Paste code into the input box to begin minification.") {
+                return; 
+            }
+            
+            // Use a temporary textarea to copy text to clipboard
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = textToCopy;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextarea);
+
+            const originalButtonText = copyButton.textContent;
+            copyButton.textContent = "COPIED!";
+            setTimeout(() => {
+                copyButton.textContent = originalButtonText;
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
