@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stepped Data Entry</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font - Inter -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            color: #1a202c; /* Dark text */
+        }
+        .data-card {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="p-6 md:p-10 lg:p-16 flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-3xl">
+        <div class="data-card p-8 lg:p-12">
+
+            <!-- Header and General Information -->
+            <header class="mb-10 pb-6 border-b-2 border-gray-100">
+                <h1 class="text-4xl font-extrabold text-gray-900">Kundai Santa</h1>
+                <p class="text-gray-500 mt-2 text-base">Thursday 25/09/25 • Queensdale Branch</p>
+            </header>
+
+            <!-- "New Entry" button to open the dialog -->
+            <div class="mb-8 flex justify-end">
+                <button id="open-modal-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition duration-300 transform hover:scale-105">
+                    New Entry
+                </button>
+            </div>
+
+            <!-- Free Vitals Section -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Free Vitals</h2>
+                <div class="bg-gray-50 rounded-lg p-5">
+                    <p class="text-lg text-gray-700">
+                        <span class="font-semibold">Volume:</span> <span id="vital-volume">0</span>
+                    </p>
+                </div>
+            </section>
+
+            <!-- Services Overview -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Service Breakdown</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Dental Card -->
+                    <div class="bg-gray-50 rounded-lg p-5">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Dental</h3>
+                        <div class="space-y-2 text-gray-600">
+                            <p><span class="font-medium">Volume:</span> <span id="dental-volume">0</span></p>
+                            <p><span class="font-medium">Cash:</span> <span id="dental-cash">$0</span></p>
+                            <p><span class="font-medium">USD M/Aid:</span> <span id="dental-usd">$0</span></p>
+                            <p><span class="font-medium">ZiG M/Aid:</span> <span id="dental-zig">ZWG 0</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Medical Card -->
+                    <div class="bg-gray-50 rounded-lg p-5">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Medical</h3>
+                        <div class="space-y-2 text-gray-600">
+                            <p><span class="font-medium">Volume:</span> <span id="medical-volume">0</span></p>
+                            <p><span class="font-medium">Cash:</span> <span id="medical-cash">$0</span></p>
+                            <p><span class="font-medium">USD M/Aid:</span> <span id="medical-usd">$0</span></p>
+                            <p><span class="font-medium">ZiG M/Aid:</span> <span id="medical-zig">ZWG 0</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Psychologist Card -->
+                    <div class="bg-gray-50 rounded-lg p-5 col-span-1 md:col-span-2">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Psychologist</h3>
+                        <div class="space-y-2 text-gray-600">
+                            <p><span class="font-medium">Volume:</span> <span id="psych-volume">0</span></p>
+                            <p><span class="font-medium">Cash:</span> <span id="psych-cash">$0</span></p>
+                            <p><span class="font-medium">USD M/Aid:</span> <span id="psych-usd">$0</span></p>
+                            <p><span class="font-medium">ZiG M/Aid:</span> <span id="psych-zig">ZWG 0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Totals Section -->
+            <section>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Totals</h2>
+                <div class="bg-blue-50 rounded-lg p-5 border-l-4 border-blue-500 flex flex-col md:flex-row items-start md:items-center justify-between">
+                    <div class="space-y-2 text-gray-700 mb-4 md:mb-0">
+                        <p><span class="font-medium">Total USD Cash:</span> <span id="total-usd-cash">$0</span></p>
+                        <p><span class="font-medium">Total USD M/Aid:</span> <span id="total-usd-maid">$0</span></p>
+                        <p class="font-bold text-blue-800">
+                            <span class="font-medium">Total M/Aid ZiG:</span> <span id="total-zig-maid">ZWG 0</span>
+                        </p>
+                    </div>
+                    <div class="flex flex-col items-end gap-4 w-full md:w-auto">
+                        <div class="w-full">
+                            <label for="whatsapp-number" class="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number</label>
+                            <input type="tel" id="whatsapp-number" value="+263713900051" class="w-full p-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        </div>
+                        <button id="share-btn" class="bg-[#25D366] text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-[#128C7E] transition duration-300 transform hover:scale-105 flex items-center justify-center gap-2 w-full md:w-auto">
+                            <!-- Correct WhatsApp SVG Icon -->
+                            <svg viewBox="0 0 24 24" width="24" height="24" class="fill-current text-white">
+                                <path d="M16.75 13.99c-.1-.16-.27-.24-.55-.38s-1.5-.74-1.74-.82c-.24-.08-.42-.08-.6.08-.17.16-.65.82-.79.99-.14.17-.29.19-.53.07-.24-.12-1.01-.37-1.92-1.11-.71-.57-1.19-1.28-1.33-1.53-.14-.25-.01-.39.12-.52.11-.11.24-.29.36-.43s.16-.25.24-.41c.08-.16.04-.3-.02-.42s-.55-1.3-.76-1.74c-.2-.43-.4-.37-.55-.38-.16-.01-.34-.01-.52-.01s-.42.04-.6.23c-.17.16-.65.63-.65 1.54 0 .91.67 1.78.76 1.9c.09.12 1.3 2.11 3.12 2.9.45.2.7.32.94.41.38.15.72.13.99.08.3-.06.9-.37 1.02-.73s.12-.66.08-.73zm-4.75 3.36c-2.45 0-4.44-1.99-4.44-4.44s1.99-4.44 4.44-4.44 4.44 1.99 4.44 4.44-1.99 4.44-4.44 4.44zm4.44-1.18c0-.75-.24-1.57-.42-2.31-.2-.77-.42-1.52-.42-2.31 0-2.45-1.99-4.44-4.44-4.44s-4.44 1.99-4.44 4.44 1.99 4.44 4.44 4.44c1.11 0 2.12-.41 2.92-1.1zM12.04 2.89c-5.83 0-10.56 4.73-10.56 10.56 0 1.96.53 3.86 1.55 5.56L2.3 22.11l3.35-.91c1.69.96 3.63 1.46 5.56 1.46 5.83 0 10.56-4.73 10.56-10.56S17.87 2.89 12.04 2.89zm5.35 14.15l-.2-.11c-.55-.3-3.23-1.6-3.72-1.78-.49-.18-.84-.27-1.19.27-.36.54-1.38 1.74-1.69 2.09-.3.35-.61.4-.95.12s-1.42-.53-2.7-1.67c-.99-.86-1.65-1.92-1.85-2.26s-.02-.43.24-.65c.24-.22.54-.53.81-.8s.35-.55.53-.84c.18-.28.09-.53-.02-.75s-.99-2.38-1.36-3.25c-.37-.87-.73-.75-1.02-.77s-.53-.02-1.15-.02c-.62 0-1.64.23-2.11.72s-1.78 2.09-1.78 5.1c0 2.97 1.83 5.92 2.62 6.94s1.61 1.44 3.01 1.66c1.4.22 3.1.2 4.1.18s3.1-.96 3.5-1.92c.38-.96.38-1.77.27-1.96-.11-.2-.4-.28-.84-.44z"/>
+                            </svg>
+                            <span>Share via WhatsApp</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- The Stepper Modal Dialog -->
+    <div id="data-modal" class="modal">
+        <div class="modal-content p-8 w-full max-w-xl">
+            <!-- Stepper Indicator -->
+            <div class="flex justify-center mb-8">
+                <div id="step-1-indicator" class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">1</div>
+                <div class="w-16 h-1 bg-gray-300 self-center mx-2 rounded-full"></div>
+                <div id="step-2-indicator" class="w-8 h-8 rounded-full bg-gray-300 text-gray-500 flex items-center justify-center font-bold">2</div>
+                <div class="w-16 h-1 bg-gray-300 self-center mx-2 rounded-full"></div>
+                <div id="step-3-indicator" class="w-8 h-8 rounded-full bg-gray-300 text-gray-500 flex items-center justify-center font-bold">3</div>
+            </div>
+
+            <h3 class="text-2xl font-bold mb-6 text-gray-900 text-center" id="step-title">Free Vitals</h3>
+            
+            <form id="data-form">
+                <!-- Step 1: Free Vitals -->
+                <div id="step-1" class="step">
+                    <div class="mb-6">
+                        <label for="vitalVolume" class="block text-gray-700 font-medium mb-2">Free Vitals Volume</label>
+                        <input type="number" id="vitalVolume" name="vitalVolume" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- Step 2: Service Breakdown -->
+                <div id="step-2" class="step hidden">
+                    <!-- Dental -->
+                    <div class="mb-6 border-b pb-4">
+                        <h4 class="text-lg font-semibold mb-3">Dental</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="dentalVolume" class="block text-gray-700 font-medium mb-2">Volume</label>
+                                <input type="number" id="dentalVolume" name="dentalVolume" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="dentalCash" class="block text-gray-700 font-medium mb-2">Cash</label>
+                                <input type="number" id="dentalCash" name="dentalCash" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="dentalUsd" class="block text-gray-700 font-medium mb-2">USD M/Aid</label>
+                                <input type="number" id="dentalUsd" name="dentalUsd" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="dentalZig" class="block text-gray-700 font-medium mb-2">ZiG M/Aid</label>
+                                <input type="number" id="dentalZig" name="dentalZig" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Medical -->
+                    <div class="mb-6">
+                        <h4 class="text-lg font-semibold mb-3">Medical</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="medicalVolume" class="block text-gray-700 font-medium mb-2">Volume</label>
+                                <input type="number" id="medicalVolume" name="medicalVolume" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="medicalCash" class="block text-gray-700 font-medium mb-2">Cash</label>
+                                <input type="number" id="medicalCash" name="medicalCash" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="medicalUsd" class="block text-gray-700 font-medium mb-2">USD M/Aid</label>
+                                <input type="number" id="medicalUsd" name="medicalUsd" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="medicalZig" class="block text-gray-700 font-medium mb-2">ZiG M/Aid</label>
+                                <input type="number" id="medicalZig" name="medicalZig" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Psychologist -->
+                <div id="step-3" class="step hidden">
+                    <div class="mb-6">
+                        <h4 class="text-lg font-semibold mb-3">Psychologist</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="psychVolume" class="block text-gray-700 font-medium mb-2">Volume</label>
+                                <input type="number" id="psychVolume" name="psychVolume" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="psychCash" class="block text-gray-700 font-medium mb-2">Cash</label>
+                                <input type="number" id="psychCash" name="psychCash" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="psychUsd" class="block text-gray-700 font-medium mb-2">USD M/Aid</label>
+                                <input type="number" id="psychUsd" name="psychUsd" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="psychZig" class="block text-gray-700 font-medium mb-2">ZiG M/Aid</label>
+                                <input type="number" id="psychZig" name="psychZig" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stepper Buttons -->
+                <div class="flex justify-between mt-8">
+                    <button type="button" id="prev-btn" class="bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-xl hover:bg-gray-300 transition duration-300 hidden">
+                        Back
+                    </button>
+                    <button type="button" id="next-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition duration-300">
+                        Next
+                    </button>
+                    <button type="submit" id="save-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition duration-300 hidden">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const openModalBtn = document.getElementById('open-modal-btn');
+        const dataModal = document.getElementById('data-modal');
+        const dataForm = document.getElementById('data-form');
+        const steps = document.querySelectorAll('.step');
+        const stepIndicators = document.querySelectorAll('[id^="step-"][id$="-indicator"]');
+        const stepTitle = document.getElementById('step-title');
+        const shareBtn = document.getElementById('share-btn');
+        const whatsappNumberInput = document.getElementById('whatsapp-number');
+
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const saveBtn = document.getElementById('save-btn');
+
+        let currentStep = 0;
+        const stepTitles = ["Free Vitals", "Service Breakdown", "Psychologist"];
+
+        // Function to show the modal
+        openModalBtn.addEventListener('click', () => {
+            dataModal.style.display = 'flex';
+            currentStep = 0; // Reset to the first step
+            updateStepper();
+        });
+
+        // Function to update the stepper UI
+        function updateStepper() {
+            // Hide all steps and remove active classes from indicators
+            steps.forEach(step => step.classList.add('hidden'));
+            stepIndicators.forEach(indicator => {
+                indicator.classList.remove('bg-blue-600', 'text-white');
+                indicator.classList.add('bg-gray-300', 'text-gray-500');
+            });
+            
+            // Show the current step and set its indicator to active
+            steps[currentStep].classList.remove('hidden');
+            stepIndicators[currentStep].classList.remove('bg-gray-300', 'text-gray-500');
+            stepIndicators[currentStep].classList.add('bg-blue-600', 'text-white');
+
+            // Update button visibility based on the current step
+            prevBtn.classList.toggle('hidden', currentStep === 0);
+            nextBtn.classList.toggle('hidden', currentStep === steps.length - 1);
+            saveBtn.classList.toggle('hidden', currentStep !== steps.length - 1);
+            
+            // Update step title
+            stepTitle.textContent = stepTitles[currentStep];
+        }
+
+        // Event listeners for navigation buttons
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                updateStepper();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                updateStepper();
+            }
+        });
+
+        // Close the modal when clicking outside of it
+        window.addEventListener('click', (event) => {
+            if (event.target === dataModal) {
+                dataModal.style.display = 'none';
+            }
+        });
+        
+        // Handle form submission
+        dataForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            // Get all form data
+            const formData = new FormData(dataForm);
+            const data = Object.fromEntries(formData.entries());
+
+            // Update the display with new values
+            document.getElementById('vital-volume').textContent = data.vitalVolume;
+            
+            document.getElementById('dental-volume').textContent = data.dentalVolume;
+            document.getElementById('dental-cash').textContent = '$' + data.dentalCash;
+            document.getElementById('dental-usd').textContent = '$' + data.dentalUsd;
+            document.getElementById('dental-zig').textContent = 'ZWG ' + data.dentalZig;
+
+            document.getElementById('medical-volume').textContent = data.medicalVolume;
+            document.getElementById('medical-cash').textContent = '$' + data.medicalCash;
+            document.getElementById('medical-usd').textContent = '$' + data.medicalUsd;
+            document.getElementById('medical-zig').textContent = 'ZWG ' + data.medicalZig;
+            
+            document.getElementById('psych-volume').textContent = data.psychVolume;
+            document.getElementById('psych-cash').textContent = '$' + data.psychCash;
+            document.getElementById('psych-usd').textContent = '$' + data.psychUsd;
+            document.getElementById('psych-zig').textContent = 'ZWG ' + data.psychZig;
+
+            // Calculate and update totals
+            const totalUSDCash = parseFloat(data.dentalCash) + parseFloat(data.medicalCash) + parseFloat(data.psychCash);
+            const totalUSDMaid = parseFloat(data.dentalUsd) + parseFloat(data.medicalUsd) + parseFloat(data.psychUsd);
+            const totalZigMaid = parseFloat(data.dentalZig) + parseFloat(data.medicalZig) + parseFloat(data.psychZig);
+
+            document.getElementById('total-usd-cash').textContent = '$' + totalUSDCash.toFixed(2);
+            document.getElementById('total-usd-maid').textContent = '$' + totalUSDMaid.toFixed(2);
+            document.getElementById('total-zig-maid').textContent = 'ZWG ' + totalZigMaid.toFixed(2);
+
+            // Hide the modal after saving
+            dataModal.style.display = 'none';
+        });
+
+        // Handle WhatsApp sharing
+        shareBtn.addEventListener('click', () => {
+            const vitalVolume = document.getElementById('vital-volume').textContent;
+            const dentalVolume = document.getElementById('dental-volume').textContent;
+            const dentalCash = document.getElementById('dental-cash').textContent;
+            const dentalUsd = document.getElementById('dental-usd').textContent;
+            const dentalZig = document.getElementById('dental-zig').textContent;
+            const medicalVolume = document.getElementById('medical-volume').textContent;
+            const medicalCash = document.getElementById('medical-cash').textContent;
+            const medicalUsd = document.getElementById('medical-usd').textContent;
+            const medicalZig = document.getElementById('medical-zig').textContent;
+            const psychVolume = document.getElementById('psych-volume').textContent;
+            const psychCash = document.getElementById('psych-cash').textContent;
+            const psychUsd = document.getElementById('psych-usd').textContent;
+            const psychZig = document.getElementById('psych-zig').textContent;
+            const totalUSDCash = document.getElementById('total-usd-cash').textContent;
+            const totalUSDMaid = document.getElementById('total-usd-maid').textContent;
+            const totalZigMaid = document.getElementById('total-zig-maid').textContent;
+
+            const message = `Kundai Santa Report - 25/09/25\n\n` +
+                            `*Free Vitals*\nVolume: ${vitalVolume}\n\n` +
+                            `*Service Breakdown*\n` +
+                            `- *Dental*\nVolume: ${dentalVolume}\nCash: ${dentalCash}\nUSD M/Aid: ${dentalUsd}\nZiG M/Aid: ${dentalZig}\n\n` +
+                            `- *Medical*\nVolume: ${medicalVolume}\nCash: ${medicalCash}\nUSD M/Aid: ${medicalUsd}\nZiG M/Aid: ${medicalZig}\n\n` +
+                            `- *Psychologist*\nVolume: ${psychVolume}\nCash: ${psychCash}\nUSD M/Aid: ${psychUsd}\nZiG M/Aid: ${psychZig}\n\n` +
+                            `*Totals*\n` +
+                            `Total USD Cash: ${totalUSDCash}\n` +
+                            `Total USD M/Aid: ${totalUSDMaid}\n` +
+                            `Total M/Aid ZiG: ${totalZigMaid}`;
+            
+            const phoneNumber = whatsappNumberInput.value;
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+            window.open(whatsappUrl, '_blank');
+        });
+
+    </script>
+
+</body>
+</html>
