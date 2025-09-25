@@ -53,6 +53,47 @@
             transition: opacity 0.3s ease-in-out;
             z-index: 200;
         }
+        /* New styles for horizontal scrolling and snapping */
+        .horizontal-scroll {
+            display: flex;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch; /* for smooth scrolling on iOS */
+            gap: 1.5rem; /* Space between cards */
+            padding-bottom: 1rem; /* Padding to prevent scrollbar from hiding content */
+            scroll-snap-type: x mandatory; /* Enable mandatory snapping on the x-axis */
+            scroll-behavior: smooth; /* Enable smooth scrolling for programmatic and manual scrolls */
+        }
+        .horizontal-scroll > div {
+            min-width: 280px; /* Minimum width for each card */
+            flex-shrink: 0; /* Prevents cards from shrinking */
+            scroll-snap-align: start; /* Snap to the start of each card */
+        }
+        /* Active class to trigger the animation */
+        .horizontal-scroll > div.is-active {
+            animation: fall-in-card 0.6s ease-out forwards;
+        }
+        /* Custom scrollbar styles */
+        .horizontal-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+        .horizontal-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1; /* Gray-300 */
+            border-radius: 4px;
+        }
+        .horizontal-scroll::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+        /* The "falling in" keyframe animation */
+        @keyframes fall-in-card {
+            from {
+                opacity: 0.5;
+                transform: translateY(-20px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
     </style>
 </head>
 <body class="p-6 md:p-10 lg:p-16 flex items-center justify-center min-h-screen">
@@ -73,20 +114,18 @@
                 </button>
             </div>
 
-            <!-- Free Vitals Section -->
-            <section class="mb-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Free Vitals</h2>
-                <div class="bg-gray-50 rounded-lg p-5">
-                    <p class="text-lg text-gray-700">
-                        <span class="font-semibold">Volume:</span> <span id="vital-volume">0</span>
-                    </p>
-                </div>
-            </section>
-
-            <!-- Services Overview -->
+            <!-- Services Overview with Horizontal Scroll -->
             <section class="mb-8">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Service Breakdown</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div id="card-container" class="horizontal-scroll">
+                    <!-- Free Vitals Card -->
+                    <div class="bg-gray-50 rounded-lg p-5">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Free Vitals</h3>
+                        <p class="text-lg text-gray-700">
+                            <span class="font-semibold">Volume:</span> <span id="vital-volume">0</span>
+                        </p>
+                    </div>
+                    
                     <!-- Dental Card -->
                     <div class="bg-gray-50 rounded-lg p-5">
                         <h3 class="text-xl font-semibold text-gray-800 mb-3">Dental</h3>
@@ -110,7 +149,7 @@
                     </div>
 
                     <!-- Psychologist Card -->
-                    <div class="bg-gray-50 rounded-lg p-5 col-span-1 md:col-span-2">
+                    <div class="bg-gray-50 rounded-lg p-5">
                         <h3 class="text-xl font-semibold text-gray-800 mb-3">Psychologist</h3>
                         <div class="space-y-2 text-gray-600">
                             <p><span class="font-medium">Volume:</span> <span id="psych-volume">0</span></p>
@@ -291,12 +330,15 @@
         const whatsappPhoneNumberInput = document.getElementById('whatsapp-phone-number');
         const whatsappGroupLinkInput = document.getElementById('whatsapp-group-link');
         const notificationBar = document.getElementById('notification-bar');
+        const cardContainer = document.getElementById('card-container');
+        const cards = cardContainer.children;
 
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
         const saveBtn = document.getElementById('save-btn');
 
         let currentStep = 0;
+        let currentCardIndex = 0;
         const stepTitles = ["Free Vitals", "Service Breakdown", "Psychologist"];
 
         // Function to show the modal
@@ -451,6 +493,32 @@
             }
         });
 
+        // Add 'is-active' class to the first card on load
+        if (cards.length > 0) {
+            cards[0].classList.add('is-active');
+        }
+
+        // Automatic horizontal scrolling
+        setInterval(() => {
+            // Remove the active class from the current card
+            cards[currentCardIndex].classList.remove('is-active');
+
+            // Move to the next card index, or loop back to the start
+            currentCardIndex = (currentCardIndex + 1) % cards.length;
+            
+            // Add the active class to the new card
+            cards[currentCardIndex].classList.add('is-active');
+
+            // Get the width of a single card, including the gap (24px or 1.5rem)
+            const cardWidth = cards[currentCardIndex].offsetWidth + 24;
+            
+            // Calculate the target scroll position and scroll to the next card
+            cardContainer.scrollTo({
+                left: cardWidth * currentCardIndex,
+                behavior: 'smooth'
+            });
+            
+        }, 7000); // 7000 milliseconds = 7 seconds
     </script>
 
 </body>
