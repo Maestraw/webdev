@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <!-- Chart.js CDN for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text color */
+        }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #2d3748;
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Dashboard Container -->
+    <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 lg:p-10 w-full max-w-7xl">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8 pb-4 border-b border-gray-700">
+            <h1 class="text-3xl font-bold tracking-tight">System Performance Dashboard</h1>
+            <div class="text-sm text-gray-400">
+                Last updated: <span id="lastUpdated">N/A</span>
+            </div>
+        </div>
+
+        <!-- Main Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+
+            <!-- Successful Transactions Card -->
+            <div class="bg-gray-900 rounded-xl shadow-lg p-6 flex flex-col items-start">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-semibold">Successful</h2>
+                </div>
+                <p class="text-5xl font-extrabold text-green-400" id="successfulCount">0</p>
+            </div>
+
+            <!-- Failed Transactions Card -->
+            <div class="bg-gray-900 rounded-xl shadow-lg p-6 flex flex-col items-start">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-semibold">Failed</h2>
+                </div>
+                <p class="text-5xl font-extrabold text-red-400" id="failedCount">0</p>
+            </div>
+            
+            <!-- Overall Success Rate Card -->
+            <div class="bg-gray-900 rounded-xl shadow-lg p-6 flex flex-col items-start">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-semibold">Success Rate</h2>
+                </div>
+                <p class="text-5xl font-extrabold text-blue-400" id="successRate">0%</p>
+            </div>
+        </div>
+
+        <!-- --- NEW: Side-by-side layout for Analytics and Transaction Log --- -->
+        <div class="flex flex-col lg:flex-row gap-8 mt-8">
+            <!-- Analytics Section -->
+            <div class="w-full lg:w-1/2">
+                <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2">Analytics</h2>
+                <div class="bg-gray-900 rounded-xl shadow-lg p-6 flex flex-col gap-8">
+                    <div>
+                        <h3 class="text-xl font-medium mb-4 text-center">Success vs. Failure Ratio</h3>
+                        <canvas id="ratioChart"></canvas>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-medium mb-4 text-center">Transactions Over Time</h3>
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction Log Section -->
+            <div class="w-full lg:w-1/2">
+                <div class="flex items-center justify-between mb-4 border-b border-gray-700 pb-2">
+                    <h2 class="text-2xl font-semibold">Transaction Log</h2>
+                    <button id="refreshButton" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-full shadow-lg transition-colors duration-200">
+                        Refresh Data
+                    </button>
+                </div>
+                
+                <div class="bg-gray-900 rounded-xl shadow-lg p-4 overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="text-left text-sm text-gray-400 uppercase">
+                                <th class="py-2 px-4">ID</th>
+                                <th class="py-2 px-4">Status</th>
+                                <th class="py-2 px-4">Timestamp</th>
+                                <th class="py-2 px-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionTableBody">
+                            <!-- Transaction rows will be injected here by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div id="noTransactionsMessage" class="text-center py-8 text-gray-500 hidden">
+                        No transactions to display.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- --- END: Side-by-side layout --- -->
+    </div>
+
+    <!-- Modal for Transaction Details -->
+    <div id="logModal" class="fixed inset-0 flex items-center justify-center p-4 hidden modal-overlay">
+        <div class="modal-content w-full max-w-lg p-6 relative">
+            <button id="closeModalButton" class="absolute top-4 right-4 text-gray-400 hover:text-gray-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h3 class="text-2xl font-bold mb-4">Transaction Details</h3>
+            <pre id="modalLogContent" class="bg-gray-700 rounded-lg p-4 text-sm whitespace-pre-wrap break-words"></pre>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const successfulCountEl = document.getElementById('successfulCount');
+        const failedCountEl = document.getElementById('failedCount');
+        const successRateEl = document.getElementById('successRate');
+        const lastUpdatedEl = document.getElementById('lastUpdated');
+        const refreshButton = document.getElementById('refreshButton');
+        const transactionTableBody = document.getElementById('transactionTableBody');
+        const noTransactionsMessage = document.getElementById('noTransactionsMessage');
+        const logModal = document.getElementById('logModal');
+        const modalLogContent = document.getElementById('modalLogContent');
+        const closeModalButton = document.getElementById('closeModalButton');
+
+        let ratioChart, timelineChart;
+        let transactionLog = [];
+        const MAX_LOG_SIZE = 15;
+        const CHART_HISTORY_SIZE = 10;
+        let timelineLabels = [];
+        let successfulData = [];
+        let failedData = [];
+        
+        // Example log messages for simulation
+        const logMessages = {
+            success: [
+                "Transaction completed successfully. Payment processed.",
+                "Data synchronized with external service. All checks passed.",
+                "User profile updated. Database entry confirmed.",
+                "Service request fulfilled. Resource allocated.",
+                "Login successful. Session token generated."
+            ],
+            failed: [
+                "Connection timed out. Retrying in 10s...",
+                "Invalid credentials. Access denied.",
+                "Payment gateway error. Transaction rejected.",
+                "Resource not found. User ID does not exist.",
+                "Database write failed. Insufficient permissions."
+            ]
+        };
+
+        // --- Chart Initialization ---
+        function initializeCharts() {
+            const ctxRatio = document.getElementById('ratioChart').getContext('2d');
+            ratioChart = new Chart(ctxRatio, {
+                type: 'pie',
+                data: {
+                    labels: ['Successful', 'Failed'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#10b981', '#ef4444'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#e2e8f0' } },
+                        tooltip: { callbacks: { label: (tooltipItem) => `${tooltipItem.label}: ${tooltipItem.raw.toLocaleString()}` } }
+                    }
+                }
+            });
+
+            const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
+            timelineChart = new Chart(ctxTimeline, {
+                type: 'bar',
+                data: {
+                    labels: timelineLabels,
+                    datasets: [
+                        {
+                            label: 'Successful',
+                            data: successfulData,
+                            backgroundColor: '#10b981',
+                        },
+                        {
+                            label: 'Failed',
+                            data: failedData,
+                            backgroundColor: '#ef4444',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { stacked: true, ticks: { color: '#e2e8f0' }, grid: { color: '#4b5563' } },
+                        y: { stacked: true, ticks: { color: '#e2e8f0' }, grid: { color: '#4b5563' } }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { color: '#e2e8f0' } },
+                        tooltip: { mode: 'index', intersect: false }
+                    }
+                }
+            });
+        }
+
+        /**
+         * Simulates fetching performance data and updates the UI.
+         */
+        function fetchData() {
+            // Simulate a delay for a network request
+            setTimeout(() => {
+                // Generate a random number of new transactions
+                const newTransactions = Math.floor(Math.random() * 5) + 1;
+                let newSuccessful = 0;
+                let newFailed = 0;
+
+                for (let i = 0; i < newTransactions; i++) {
+                    const isSuccessful = Math.random() > 0.15; // 85% success rate
+                    const status = isSuccessful ? 'Successful' : 'Failed';
+                    const message = isSuccessful ? 
+                        logMessages.success[Math.floor(Math.random() * logMessages.success.length)] :
+                        logMessages.failed[Math.floor(Math.random() * logMessages.failed.length)];
+                    
+                    if (isSuccessful) {
+                        newSuccessful++;
+                    } else {
+                        newFailed++;
+                    }
+
+                    // Create a new transaction object
+                    const newTransaction = {
+                        id: `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                        status: status,
+                        timestamp: new Date().toLocaleTimeString(),
+                        log: `Transaction ID: ${new Date().toLocaleTimeString()}
+User: user_${Math.floor(Math.random() * 100) + 1}
+Operation: payment_processing
+Status: ${status}
+Details: ${message}
+Duration: ${Math.floor(Math.random() * 500) + 50}ms`
+                    };
+
+                    transactionLog.unshift(newTransaction);
+                }
+
+                // Trim the log to a maximum size
+                if (transactionLog.length > MAX_LOG_SIZE) {
+                    transactionLog = transactionLog.slice(0, MAX_LOG_SIZE);
+                }
+
+                // Update the main stats
+                let totalSuccessful = parseInt(successfulCountEl.textContent.replace(/,/g, '')) + newSuccessful;
+                let totalFailed = parseInt(failedCountEl.textContent.replace(/,/g, '')) + newFailed;
+                let total = totalSuccessful + totalFailed;
+                let successRate = total > 0 ? ((totalSuccessful / total) * 100).toFixed(1) : 0;
+                
+                successfulCountEl.textContent = totalSuccessful.toLocaleString();
+                failedCountEl.textContent = totalFailed.toLocaleString();
+                successRateEl.textContent = `${successRate}%`;
+
+                // Update the chart data
+                const now = new Date();
+                const timeLabel = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
+                timelineLabels.push(timeLabel);
+                successfulData.push(newSuccessful);
+                failedData.push(newFailed);
+
+                if (timelineLabels.length > CHART_HISTORY_SIZE) {
+                    timelineLabels.shift();
+                    successfulData.shift();
+                    failedData.shift();
+                }
+
+                ratioChart.data.datasets[0].data = [totalSuccessful, totalFailed];
+                ratioChart.update();
+
+                timelineChart.update();
+
+                // Update the transaction table
+                renderTransactionTable();
+
+                // Update the timestamp
+                const nowTime = new Date();
+                const timeString = nowTime.toLocaleTimeString();
+                lastUpdatedEl.textContent = timeString;
+
+            }, 500); // 500ms delay to simulate network latency
+        }
+
+        /**
+         * Renders the transaction table from the transactionLog array.
+         */
+        function renderTransactionTable() {
+            transactionTableBody.innerHTML = '';
+            if (transactionLog.length === 0) {
+                noTransactionsMessage.classList.remove('hidden');
+                return;
+            } else {
+                noTransactionsMessage.classList.add('hidden');
+            }
+
+            transactionLog.forEach(tx => {
+                const rowClass = tx.status === 'Successful' ? 'text-green-400' : 'text-red-400';
+                const row = document.createElement('tr');
+                row.classList.add('border-b', 'border-gray-700', 'hover:bg-gray-700', 'transition-colors', 'duration-200');
+                row.innerHTML = `
+                    <td class="py-3 px-4 text-sm font-mono">${tx.id}</td>
+                    <td class="py-3 px-4 text-sm ${rowClass}">${tx.status}</td>
+                    <td class="py-3 px-4 text-sm text-gray-400">${tx.timestamp}</td>
+                    <td class="py-3 px-4 text-sm">
+                        <button class="view-log-btn text-indigo-400 hover:text-indigo-300 transition-colors duration-200" data-log='${JSON.stringify(tx.log)}'>
+                            View Log
+                        </button>
+                    </td>
+                `;
+                transactionTableBody.appendChild(row);
+            });
+
+            // Add event listeners to the new "View Log" buttons
+            document.querySelectorAll('.view-log-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const logData = e.target.dataset.log;
+                    modalLogContent.textContent = JSON.parse(logData);
+                    logModal.classList.remove('hidden');
+                });
+            });
+        }
+
+        // --- Modal Event Listeners ---
+        closeModalButton.addEventListener('click', () => {
+            logModal.classList.add('hidden');
+        });
+
+        logModal.addEventListener('click', (e) => {
+            if (e.target === logModal) {
+                logModal.classList.add('hidden');
+            }
+        });
+
+        // Add event listener to the main refresh button
+        refreshButton.addEventListener('click', () => {
+             // Reset counts and clear old data before fetching new data
+             successfulCountEl.textContent = '0';
+             failedCountEl.textContent = '0';
+             successRateEl.textContent = '0%';
+             transactionLog = [];
+             timelineLabels = [];
+             successfulData = [];
+             failedData = [];
+             
+             // Initializing charts to an empty state
+             if(ratioChart) ratioChart.data.datasets[0].data = [0,0];
+             if(timelineChart) {
+                timelineChart.data.labels = [];
+                timelineChart.data.datasets[0].data = [];
+                timelineChart.data.datasets[1].data = [];
+             }
+             
+             fetchData();
+        });
+
+
+        // Initial setup on page load
+        window.onload = function() {
+            initializeCharts();
+            fetchData();
+            // Set up automatic refresh every 10 seconds
+            setInterval(fetchData, 10000);
+        }
+    </script>
+</body>
+</html>
