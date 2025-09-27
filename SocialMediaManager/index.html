@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media Dashboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Chart.js for professional graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .platform-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+            fill: currentColor;
+            margin-right: 0.5rem;
+        }
+        /* Style for the history item status */
+        .status-success {
+            background-color: #d1fae5; /* green-100 */
+            color: #065f46; /* green-800 */
+        }
+        .status-failure {
+            background-color: #fee2e2; /* red-100 */
+            color: #991b1b; /* red-800 */
+        }
+        /* Chart containers for responsiveness */
+        .chart-container {
+            position: relative;
+            height: 300px; 
+            width: 100%;
+            margin-bottom: 0.5rem; /* Reduced margin */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <div id="appContainer" class="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-indigo-700">Content Performance Dashboard</h1>
+        </header>
+
+        <!-- Main Dashboard Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Metrics and Composer (Left/Main Column) -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- Performance Metrics (Charts) Card -->
+                <div class="bg-white p-6 rounded-xl shadow-xl border border-gray-200">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 pb-2">Cumulative Channel Performance</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Views Chart -->
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-700 mb-2">Total Views Over Time</h3>
+                            <div class="chart-container">
+                                <canvas id="viewsChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Likes Chart -->
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-700 mb-2">Total Likes Over Time</h3>
+                            <div class="chart-container">
+                                <canvas id="likesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <p id="chartStatus" class="text-center text-sm text-gray-500 italic mt-2">Waiting for data...</p>
+                </div>
+
+                <!-- Composer Card -->
+                <div class="bg-white p-6 rounded-xl shadow-xl border border-gray-200">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 pb-2">New Post Composer</h2>
+                    
+                    <!-- Post Type Selection -->
+                    <div class="mb-5 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p class="text-sm font-medium text-gray-700 mb-2">Post Type:</p>
+                        <div class="flex space-x-6">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="postType" id="typeText" value="Text" checked class="post-type-radio form-radio h-4 w-4 text-indigo-600 focus:ring-indigo-500">
+                                <span class="ml-2 text-gray-700">Text Post</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="postType" id="typeMedia" value="Media" class="post-type-radio form-radio h-4 w-4 text-indigo-600 focus:ring-indigo-500">
+                                <span class="ml-2 text-gray-700">Media Post</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Media Upload Section (Conditionally Visible) -->
+                    <div id="mediaUploadSection" class="mb-5 hidden">
+                        <label for="mediaFile" class="block text-sm font-medium text-gray-700 mb-2">Upload Media File (Image/Video)</label>
+                        <input type="file" id="mediaFile" accept="image/*,video/*"
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
+                        <p id="mediaFileName" class="mt-2 text-sm text-gray-500 italic">No file selected.</p>
+                    </div>
+
+                    <!-- Content Input -->
+                    <div class="mb-5">
+                        <label for="postContent" class="block text-sm font-medium text-gray-700 mb-2">Post Content (Caption)</label>
+                        <textarea id="postContent" rows="4" 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 shadow-sm"
+                                placeholder="Write your compelling post here..."></textarea>
+                    </div>
+
+                    <!-- Platform Selection -->
+                    <div class="mb-6 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                        <p class="text-lg font-semibold text-indigo-800 mb-3">Select Channels:</p>
+                        <div class="flex flex-wrap gap-x-8 gap-y-4">
+                            <!-- Facebook Checkbox -->
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="checkFacebook" checked class="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="ml-3 text-gray-800 font-medium flex items-center">
+                                    <svg class="platform-icon text-blue-600" viewBox="0 0 24 24"><path d="M22.675 0H1.325C.593 0 0 .593 0 1.325v21.351C0 23.407.593 24 1.325 24h11.496v-9.294H9.688V10.37h3.133V7.72c0-3.1 1.894-4.785 4.654-4.785 1.325 0 2.466.099 2.8.143v3.235h-1.923c-1.503 0-1.8.715-1.8 1.765v2.372h3.583l-.467 3.636h-3.116V24h6.124c.732 0 1.325-.593 1.325-1.325V1.325C24 .593 23.407 0 22.675 0z"/></svg>
+                                    Facebook
+                                </span>
+                            </label>
+                            
+                            <!-- Instagram Checkbox -->
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="checkInstagram" checked class="form-checkbox h-5 w-5 text-pink-600 rounded border-gray-300 focus:ring-pink-500">
+                                <span class="ml-3 text-gray-800 font-medium flex items-center">
+                                    <svg class="platform-icon text-pink-600" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.25.148 4.773 1.815 4.908 4.908.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.148 3.25-1.815 4.773-4.908 4.908-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-3.25-.148-4.773-1.815-4.908-4.908-.058-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.148-3.25 1.815-4.773 4.908-4.908 1.266-.058 1.646-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.209-6.78 2.62-6.99 6.983-.058 1.28-.072 1.688-.072 4.947s.014 3.667.072 4.947c.209 4.358 2.62 6.78 6.983 6.99 1.28.058 1.688.072 4.947.072s3.667-.014 4.947-.072c4.354-.209 6.78-2.614 6.99-6.983.058-1.28.072-1.688.072-4.947s-.014-3.667-.072-4.947c-.209-4.359-2.614-6.78-6.983-6.99-1.28-.058-1.688-.072-4.947-.072zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zm0 10.162a4 4 0 110-8 4 4 0 010 8zm6.54-10.162a1.44 1.44 0 100 2.88 1.44 1.44 0 000-2.88z"/></svg>
+                                    Instagram
+                                </span>
+                            </label>
+
+                             <!-- TikTok Checkbox -->
+                             <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="checkTikTok" checked class="form-checkbox h-5 w-5 text-black rounded border-gray-300 focus:ring-black">
+                                <span class="ml-3 text-gray-800 font-medium flex items-center">
+                                    <!-- TikTok Icon SVG -->
+                                    <svg class="platform-icon text-black" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12.396 1.834a.75.75 0 01.782-.015c.676.32 1.936.953 3.655 1.571a.75.75 0 01.554.721v4.455a.75.75 0 01-.64.743c-1.396.11-2.903.268-4.373.472V21.4a.75.75 0 01-.75.75H8.75a.75.75 0 01-.75-.75V2.946a.75.75 0 01.528-.718c1.396-.48 2.628-.887 3.868-1.425zM15.42 4.492c-1.557-.552-2.73-.91-3.882-1.31a.75.75 0 00-.594.135c-.868.498-1.74.98-2.673 1.448V21.4a.75.75 0 00.75.75h2.952a.75.75 0 00.75-.75V9.456a.75.75 0 01.693-.75c1.19-.07 2.454-.15 3.655-.164a.75.75 0 00.749-.748V4.87a.75.75 0 00-.55-.764z" clip-rule="evenodd"/></svg>
+                                    TikTok
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button id="submitButton" onclick="attemptPost()"
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-xl transition duration-300 ease-in-out transform hover:scale-[1.005] focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Simulate Posting to Selected Channels
+                    </button>
+                    
+                    <!-- Loading/Error Indicator -->
+                    <div id="loadingIndicator" class="hidden mt-6 text-center"></div>
+                </div>
+            </div>
+
+            <!-- Analytics & History (Right Column) -->
+            <div class="space-y-6">
+                <!-- Analytics Card -->
+                <div class="bg-white p-6 rounded-xl shadow-xl border border-gray-200">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 pb-2">Posting Analytics</h2>
+                    <p class="text-xs text-gray-400 mb-4">User ID: <span id="userIdDisplay" class="font-mono text-gray-600">Loading...</span></p>
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <!-- Total Posts -->
+                        <div class="p-3 bg-indigo-100 rounded-lg">
+                            <p id="statTotal" class="text-2xl font-bold text-indigo-700">0</p>
+                            <p class="text-xs text-indigo-600">Total Posts</p>
+                        </div>
+                        <!-- Monthly Posts -->
+                        <div class="p-3 bg-indigo-100 rounded-lg">
+                            <p id="statMonthly" class="text-2xl font-bold text-indigo-700">0</p>
+                            <p class="text-xs text-indigo-600">Monthly</p>
+                        </div>
+                        <!-- Daily Posts -->
+                        <div class="p-3 bg-indigo-100 rounded-lg">
+                            <p id="statDaily" class="text-2xl font-bold text-indigo-700">0</p>
+                            <p class="text-xs text-indigo-600">Daily</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Platform History Cards -->
+                <div id="historyCardsContainer" class="space-y-6">
+                    <!-- History Title -->
+                    <h2 class="text-2xl font-semibold text-gray-800 pt-2 pb-0">Recent Post History</h2>
+
+                    <div class="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+                        <h3 class="font-semibold text-lg text-gray-800 mb-2 border-b pb-1">Facebook</h3>
+                        <ul id="historyFacebook" class="space-y-2 text-sm max-h-48 overflow-y-auto">
+                            <li class="text-gray-400 italic">No posts yet.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+                        <h3 class="font-semibold text-lg text-gray-800 mb-2 border-b pb-1">Instagram</h3>
+                        <ul id="historyInstagram" class="space-y-2 text-sm max-h-48 overflow-y-auto">
+                            <li class="text-gray-400 italic">No posts yet.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+                        <h3 class="font-semibold text-lg text-gray-800 mb-2 border-b pb-1">TikTok</h3>
+                        <ul id="historyTikTok" class="space-y-2 text-sm max-h-48 overflow-y-auto">
+                            <li class="text-gray-400 italic">No posts yet.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs and Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth, userId = null;
+        let viewsChartInstance = null;
+        let likesChartInstance = null;
+        let selectedFile = null; 
+        
+        // Define colors for charts
+        const PLATFORM_COLORS = {
+            'Facebook': '#1877F2', // Blue
+            'Instagram': '#E4405F', // Pink/Red
+            'TikTok': '#000000' // Black
+        };
+
+        // Firestore Path Helper (Private Data)
+        const getCollectionRef = (db, userId) => {
+            return collection(db, `artifacts/${appId}/users/${userId}/posts_history`);
+        };
+
+        // --- Utility Functions ---
+
+        function generateFakePostId(platform) {
+            const prefix = platform === 'Facebook' ? 'FB' : platform === 'Instagram' ? 'IG' : 'TK';
+            return `${prefix}${Math.floor(Math.random() * 90000000 + 10000000)}`;
+        }
+
+        /**
+         * Generates a fake API response object and simulated metrics.
+         */
+        function generateFakeApiResponse(platform, postType, success) {
+            const id = generateFakePostId(platform);
+            const response = {};
+            let postLink = null;
+            let viewsRange = [500, 5000];
+            let likesRange = [50, 500];
+
+            // Adjust ranges based on post type for simulation realism
+            if (postType === 'Media') {
+                viewsRange = [1500, 12000]; 
+                likesRange = [150, 1200];
+            }
+
+            if (success) {
+                const baseViews = Math.floor(Math.random() * (viewsRange[1] - viewsRange[0]) + viewsRange[0]);
+                const baseLikes = Math.floor(Math.random() * (likesRange[1] - likesRange[0]) + likesRange[0]);
+
+                response.metrics = {
+                    views: baseViews,
+                    likes: baseLikes,
+                    postType: postType,
+                    mediaFile: selectedFile 
+                };
+                
+                if (platform === 'Facebook') {
+                    postLink = `https://facebook.com/posts/${id}`;
+                    Object.assign(response, {
+                        success: true, platform: 'Facebook', message: 'Post successfully published.',
+                        data: { id: id, post_url: postLink }, http_status: 200
+                    });
+                } else if (platform === 'Instagram') { 
+                    postLink = `https://instagram.com/p/${id.substring(3)}/`;
+                    Object.assign(response, {
+                        success: true, platform: 'Instagram', message: 'Media object created and published.',
+                        data: { id: id, permalink: postLink }, http_status: 201
+                    });
+                } else { // TikTok
+                    postLink = `https://tiktok.com/@user/video/${id}`;
+                    Object.assign(response, {
+                        success: true, platform: 'TikTok', message: 'Video upload session started, check status for final publish.',
+                        data: { id: id, share_id: `share-${id}` }, http_status: 202
+                    });
+                }
+            } else { // Failure
+                const errorData = {
+                    'Facebook': { codes: [100, 200], msgs: ["Permissions denied (pages_manage_posts).", "Invalid media parameter."] },
+                    'Instagram': { codes: [10, 3200], msgs: ["Access token expired or invalid.", "Rate limit exceeded."] },
+                    'TikTok': { codes: [4001, 4003], msgs: ["Video file too large or unsupported format.", "Unauthorized to post on behalf of user."] }
+                };
+                
+                const errors = errorData[platform];
+                const errorIndex = Math.floor(Math.random() * errors.codes.length);
+
+                Object.assign(response, {
+                    success: false, platform: platform, message: errors.msgs[errorIndex],
+                    error_details: { code: errors.codes[errorIndex], type: 'API_ERROR' },
+                    http_status: 400, metrics: null, postLink: null
+                });
+            }
+            response.postLink = postLink; 
+            return response;
+        }
+
+        // --- Rendering Functions ---
+        
+        /**
+         * Renders the line charts for Views and Likes, split by platform.
+         * @param {Array} posts - Array of post documents (including metrics).
+         */
+        function renderAnalyticsCharts(posts) {
+            const successfulPosts = posts.filter(p => p.success && p.metrics);
+            
+            if (successfulPosts.length === 0) {
+                document.getElementById('chartStatus').textContent = "No successful posts with metrics yet. Post something!";
+                if (viewsChartInstance) viewsChartInstance.destroy();
+                if (likesChartInstance) likesChartInstance.destroy();
+                return;
+            }
+
+            document.getElementById('chartStatus').textContent = "";
+            
+            const sortedPosts = successfulPosts.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
+
+            // Initialize cumulative data trackers
+            const chartData = {
+                labels: [],
+                facebookViews: [], instagramViews: [], tiktokViews: [],
+                facebookLikes: [], instagramLikes: [], tiktokLikes: [],
+            };
+
+            let cumulative = {
+                'Facebook': { views: 0, likes: 0 },
+                'Instagram': { views: 0, likes: 0 },
+                'TikTok': { views: 0, likes: 0 },
+            };
+
+            sortedPosts.forEach((post, index) => {
+                const platform = post.platform;
+                
+                cumulative[platform].views += post.metrics.views;
+                cumulative[platform].likes += post.metrics.likes;
+                
+                chartData.labels.push(`Post ${index + 1}`);
+
+                // Fill array with current cumulative total for all platforms
+                chartData.facebookViews.push(cumulative['Facebook'].views);
+                chartData.instagramViews.push(cumulative['Instagram'].views);
+                chartData.tiktokViews.push(cumulative['TikTok'].views);
+
+                chartData.facebookLikes.push(cumulative['Facebook'].likes);
+                chartData.instagramLikes.push(cumulative['Instagram'].likes);
+                chartData.tiktokLikes.push(cumulative['TikTok'].likes);
+            });
+
+            // --- Chart Datasets ---
+
+            const viewDatasets = [
+                { label: 'Facebook', data: chartData.facebookViews, borderColor: PLATFORM_COLORS['Facebook'], backgroundColor: 'rgba(24, 119, 242, 0.2)', borderWidth: 3, tension: 0.4, fill: 'origin', pointRadius: 4, pointHoverRadius: 6 },
+                { label: 'Instagram', data: chartData.instagramViews, borderColor: PLATFORM_COLORS['Instagram'], backgroundColor: 'rgba(228, 64, 95, 0.2)', borderWidth: 3, tension: 0.4, fill: 'origin', pointRadius: 4, pointHoverRadius: 6 },
+                { label: 'TikTok', data: chartData.tiktokViews, borderColor: PLATFORM_COLORS['TikTok'], backgroundColor: 'rgba(0, 0, 0, 0.2)', borderWidth: 3, tension: 0.4, fill: 'origin', pointRadius: 4, pointHoverRadius: 6 }
+            ];
+
+            const likeDatasets = [
+                { label: 'Facebook', data: chartData.facebookLikes, borderColor: PLATFORM_COLORS['Facebook'], backgroundColor: 'rgba(24, 119, 242, 0.2)', borderWidth: 3, tension: 0.4, fill: 'origin', pointRadius: 4, pointHoverRadius: 6 },
+                { label: 'Instagram', data: chartData.instagramLikes, borderColor: PLATFORM_COLORS['Instagram'], backgroundColor: 'rgba(228, 64, 95, 0.2)', borderWidth: 3, tension: 0.4, fill: 'origin', pointRadius: 4, pointHoverRadius: 6 },
+                { label: 'TikTok', data: chartData.tiktokLikes, borderColor: PLATFORM_COLORS['TikTok'], backgroundColor: 'rgba(0, 0, 0, 0.2)', borderWidth: 3, tension: 0.4, fill: 'origin', pointRadius: 4, pointHoverRadius: 6 }
+            ];
+
+            // --- Chart Configuration for Modern Look ---
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: false },
+                        grid: { drawBorder: false, color: 'rgba(0, 0, 0, 0.05)' },
+                        ticks: { padding: 10 }
+                    },
+                    x: {
+                        title: { display: true, text: 'Total Posts' },
+                        grid: { display: false, drawBorder: false },
+                        ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { boxWidth: 10, padding: 20 } },
+                    tooltip: { mode: 'index', intersect: false, position: 'nearest', padding: 12, caretPadding: 10 }
+                }
+            };
+
+            // 1. Views Chart
+            if (viewsChartInstance) viewsChartInstance.destroy();
+            const viewsCtx = document.getElementById('viewsChart').getContext('2d');
+            viewsChartInstance = new Chart(viewsCtx, {
+                type: 'line',
+                data: { labels: chartData.labels, datasets: viewDatasets },
+                options: chartOptions
+            });
+
+            // 2. Likes Chart
+            if (likesChartInstance) likesChartInstance.destroy();
+            const likesCtx = document.getElementById('likesChart').getContext('2d');
+            likesChartInstance = new Chart(likesCtx, {
+                type: 'line',
+                data: { labels: chartData.labels, datasets: likeDatasets },
+                options: chartOptions
+            });
+        }
+
+
+        /**
+         * Updates the analytics card (Total/Daily/Monthly).
+         */
+        function updateAnalytics(posts) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+
+            let dailyCount = 0;
+            let monthlyCount = 0;
+
+            posts.forEach(post => {
+                const postDate = post.timestamp ? post.timestamp.toDate() : new Date(0); 
+
+                if (postDate >= today) {
+                    dailyCount++;
+                }
+                
+                if (postDate >= thirtyDaysAgo) {
+                    monthlyCount++;
+                }
+            });
+
+            document.getElementById('statTotal').textContent = posts.length;
+            document.getElementById('statMonthly').textContent = monthlyCount;
+            document.getElementById('statDaily').textContent = dailyCount;
+        }
+
+        /**
+         * Renders the post history for all platforms, using links.
+         */
+        function renderHistory(posts) {
+            const historyMap = {
+                'Facebook': [], 'Instagram': [], 'TikTok': []
+            };
+
+            posts.forEach(post => {
+                if (post.platform && historyMap[post.platform]) {
+                    historyMap[post.platform].push(post);
+                }
+            });
+
+            Object.keys(historyMap).forEach(platform => {
+                const listElement = document.getElementById(`history${platform}`);
+                listElement.innerHTML = ''; 
+
+                const platformPosts = historyMap[platform].sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+                
+                if (platformPosts.length === 0) {
+                    listElement.innerHTML = '<li class="text-gray-400 italic">No posts yet.</li>';
+                    return;
+                }
+
+                platformPosts.slice(0, 5).forEach(post => { 
+                    const statusClass = post.success ? 'status-success' : 'status-failure';
+                    const time = post.timestamp ? post.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+                    
+                    let content;
+                    if (post.success && post.postLink) {
+                        const views = post.metrics?.views?.toLocaleString() || 'N/A';
+                        const likes = post.metrics?.likes?.toLocaleString() || 'N/A';
+                        const type = post.metrics?.postType || 'Text';
+                        content = `
+                            <div class="flex-grow min-w-0 pr-2">
+                                <a href="${post.postLink}" target="_blank" class="text-indigo-600 hover:text-indigo-800 font-semibold underline truncate">
+                                    [${type}] View Post
+                                </a> 
+                                <span class="text-gray-600 ml-2 text-[10px]">(V: ${views} L: ${likes})</span>
+                            </div>
+                        `;
+                    } else {
+                        content = `<span class="font-bold text-red-700">Failed:</span> ${post.message.substring(0, 40)}...`;
+                    }
+                    
+                    listElement.innerHTML += `
+                        <li class="p-2 rounded-lg ${statusClass} flex justify-between items-center text-xs">
+                            ${content}
+                            <span class="font-mono text-[10px] opacity-70">${time}</span>
+                        </li>
+                    `;
+                });
+
+                if (platformPosts.length > 5) {
+                    listElement.innerHTML += `<li class="text-center pt-2 text-gray-500 text-xs italic">...${platformPosts.length - 5} more posts hidden.</li>`;
+                }
+            });
+        }
+
+        // --- Firestore Interaction ---
+
+        /**
+         * Saves a post result to Firestore.
+         */
+        async function savePostResult(postData) {
+            if (!db || !userId) {
+                console.error("Firestore not initialized or user not logged in.");
+                return;
+            }
+            try {
+                const collectionRef = getCollectionRef(db, userId);
+                await addDoc(collectionRef, {
+                    platform: postData.platform,
+                    success: postData.success,
+                    postId: postData.data?.id || 'N/A',
+                    postLink: postData.postLink || null,
+                    message: postData.message,
+                    metrics: postData.metrics || null,
+                    timestamp: serverTimestamp(),
+                });
+            } catch (error) {
+                console.error("Error saving post result to Firestore:", error);
+            }
+        }
+
+        /**
+         * Sets up the real-time listener for post history and analytics.
+         */
+        function setupRealtimeListener() {
+            if (!db || !userId) {
+                console.error("Firestore not initialized or user not logged in for listener setup.");
+                return;
+            }
+            
+            const collectionRef = getCollectionRef(db, userId);
+            const q = query(collectionRef); 
+
+            onSnapshot(q, (snapshot) => {
+                const posts = [];
+                snapshot.forEach((doc) => {
+                    posts.push(doc.data());
+                });
+                
+                updateAnalytics(posts);
+                renderHistory(posts);
+                renderAnalyticsCharts(posts);
+
+            }, (error) => {
+                console.error("Firestore real-time listener failed:", error);
+            });
+        }
+
+        // --- Auth and Init ---
+
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                setLogLevel('Debug');
+
+                if (initialAuthToken) {
+                    const userCredential = await signInWithCustomToken(auth, initialAuthToken);
+                    userId = userCredential.user.uid;
+                } else {
+                    const userCredential = await signInAnonymously(auth);
+                    userId = userCredential.user.uid;
+                }
+                
+                document.getElementById('userIdDisplay').textContent = userId;
+                console.log("Firebase initialized. User ID:", userId);
+                setupRealtimeListener();
+
+                // Setup DOM event listeners after Firebase init
+                setupDomListeners();
+
+            } catch (error) {
+                console.error("Firebase initialization or authentication failed:", error);
+                document.getElementById('userIdDisplay').textContent = 'ERROR';
+            }
+        }
+        
+        /**
+         * Sets up listeners for the radio buttons and file input to control UI state.
+         */
+        function setupDomListeners() {
+            const mediaUploadSection = document.getElementById('mediaUploadSection');
+            const mediaFileInput = document.getElementById('mediaFile');
+            const mediaFileNameDisplay = document.getElementById('mediaFileName');
+            const postTypeRadios = document.querySelectorAll('.post-type-radio');
+
+            // 1. Radio Button Listener: Toggle Media Upload Section
+            postTypeRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    if (radio.value === 'Media' && radio.checked) {
+                        mediaUploadSection.classList.remove('hidden');
+                    } else {
+                        mediaUploadSection.classList.add('hidden');
+                        // Reset file state when switching back to Text Post
+                        mediaFileInput.value = '';
+                        selectedFile = null;
+                        mediaFileNameDisplay.textContent = 'No file selected.';
+                    }
+                });
+            });
+
+            // 2. File Input Listener: Capture the simulated file selection
+            mediaFileInput.addEventListener('change', (event) => {
+                if (event.target.files.length > 0) {
+                    // Simulate file upload success by storing the name
+                    selectedFile = event.target.files[0].name;
+                    mediaFileNameDisplay.textContent = `Selected: ${selectedFile}`;
+                } else {
+                    selectedFile = null;
+                    mediaFileNameDisplay.textContent = 'No file selected.';
+                }
+            });
+        }
+
+        // Expose function globally for HTML button click
+        window.attemptPost = async function() {
+            const content = document.getElementById('postContent').value.trim();
+            const postType = document.querySelector('input[name="postType"]:checked').value;
+            const postToFacebook = document.getElementById('checkFacebook').checked;
+            const postToInstagram = document.getElementById('checkInstagram').checked;
+            const postToTikTok = document.getElementById('checkTikTok').checked;
+            
+            // --- Validation ---
+            if (!content || (!postToFacebook && !postToInstagram && !postToTikTok)) {
+                document.getElementById('loadingIndicator').classList.remove('hidden');
+                document.getElementById('loadingIndicator').innerHTML = '<div class="text-red-600 font-semibold mt-2">Error: Please enter content and select at least one channel.</div>';
+                setTimeout(() => document.getElementById('loadingIndicator').classList.add('hidden'), 4000);
+                return;
+            }
+
+            if (postType === 'Media' && !selectedFile) {
+                document.getElementById('loadingIndicator').classList.remove('hidden');
+                document.getElementById('loadingIndicator').innerHTML = '<div class="text-red-600 font-semibold mt-2">Error: Please select a media file for a Media Post.</div>';
+                setTimeout(() => document.getElementById('loadingIndicator').classList.add('hidden'), 4000);
+                return;
+            }
+            if (!userId) {
+                document.getElementById('loadingIndicator').classList.remove('hidden');
+                document.getElementById('loadingIndicator').innerHTML = '<div class="text-yellow-600 font-semibold mt-2">System initialization in progress. Please wait a moment.</div>';
+                setTimeout(() => document.getElementById('loadingIndicator').classList.add('hidden'), 4000);
+                return;
+            }
+            // --- End Validation ---
+
+            // Set loading state
+            const loadingHtml = `
+                <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-full text-indigo-600 bg-indigo-100 transition ease-in-out duration-150">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Posting ${postType} in progress...
+                </div>`;
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+            document.getElementById('loadingIndicator').innerHTML = loadingHtml;
+            document.getElementById('submitButton').disabled = true;
+
+            const platformsToPost = [];
+            if (postToFacebook) platformsToPost.push('Facebook');
+            if (postToInstagram) platformsToPost.push('Instagram');
+            if (postToTikTok) platformsToPost.push('TikTok');
+
+            const postPromises = platformsToPost.map(platform => {
+                return new Promise(resolve => {
+                    const delay = Math.random() * 800 + 700; 
+                    
+                    setTimeout(() => {
+                        // Simulate a lower success rate for TikTok and Media posts
+                        let successRate = 0.65; 
+                        if (platform === 'TikTok' && postType === 'Media') {
+                            successRate = 0.85; // Better engagement for media on TikTok
+                        } else if (platform === 'TikTok' && postType === 'Text') {
+                            successRate = 0.45; // Worse engagement for text on TikTok
+                        }
+                        
+                        const success = Math.random() < successRate; 
+                        const response = generateFakeApiResponse(platform, postType, success);
+                        resolve(response);
+                    }, delay);
+                });
+            });
+
+            // Process results
+            const responses = await Promise.all(postPromises);
+
+            // Hide loading indicator and re-enable button
+            document.getElementById('submitButton').disabled = false;
+
+            let successfulPostsCount = 0;
+            for (const response of responses) {
+                await savePostResult(response);
+                if (response.success) {
+                    successfulPostsCount++;
+                }
+            }
+            
+            document.getElementById('postContent').value = ''; 
+            
+            // Show result message
+            const message = successfulPostsCount > 0 
+                ? `<div class="text-green-600 font-semibold mt-2">Success: Posted ${successfulPostsCount} ${postType} item(s)!</div>`
+                : `<div class="text-red-600 font-semibold mt-2">Failure: Check platform history for details on failed attempts.</div>`;
+            
+            document.getElementById('loadingIndicator').innerHTML = message;
+            
+            // Reset file input state if media post was successful/attempted
+            if (postType === 'Media') {
+                document.getElementById('mediaFile').value = '';
+                selectedFile = null;
+                document.getElementById('mediaFileName').textContent = 'No file selected.';
+            }
+
+            setTimeout(() => document.getElementById('loadingIndicator').classList.add('hidden'), 4000);
+        };
+
+
+        // Initialize on load
+        initializeFirebase();
+
+    </script>
+</body>
+</html>
