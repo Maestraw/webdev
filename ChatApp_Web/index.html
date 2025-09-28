@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuraChat (Glassmorphism Replica)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* --- 1. CORE GLASSMORPHISM CSS --- */
+        
+        /* Background Gradient for Depth */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #a7b6ff 0%, #d4e0ff 100%); /* Soft blue/purple background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        /* Glass Container Effect (The main screen) */
+        .phone-container {
+            width: 100%;
+            max-width: 420px;
+            /* Core Glass Effect: Translucent background + Blur */
+            background: rgba(255, 255, 255, 0.15); 
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            
+            border-radius: 30px; 
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.3); /* Subtle light border */
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* Soft shadow */
+            position: relative;
+        }
+        
+        /* Floating elements (FAB, Modals, Headers) also use glass */
+        .glass-element {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        /* --- 2. THEME & UTILITY COLORS --- */
+        .text-aura-accent { color: #8B5CF6; } /* Vibrant Violet Accent */
+        .bg-aura-accent { background-color: #8B5CF6; }
+        .text-dark-slate { color: #1F2937; } /* Primary text color */
+        
+        /* Custom scrollbar for better visibility on glass background */
+        .scroll-container::-webkit-scrollbar { width: 6px; }
+        .scroll-container::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.6); /* Translucent accent */
+            border-radius: 10px;
+        }
+        .scroll-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* Message bubble styling */
+        .received-bubble {
+            background: rgba(255, 255, 255, 0.7); /* Light, frosted white */
+            border-radius: 18px 18px 18px 5px;
+            color: #1F2937;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .sent-bubble {
+            background-color: #8B5CF6; /* Solid accent color for user messages */
+            border-radius: 18px 18px 5px 18px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+
+        // --- GLOBAL STATE & DATA ---
+        let currentView = 'list'; // 'list' or 'conversation'
+        let currentChatId = null;
+
+        // Note: I've updated the mock data names and themes to feel more 'sleek'
+        const mockChats = [
+            { id: 1, name: "Project Zenith", lastMessage: "Q3 metrics look stable. Meeting at 10:00.", time: "11:04 AM", unread: 3, avatar: 'https://placehold.co/50x50/8B5CF6/ffffff?text=PZ', status: 'Active (4)' },
+            { id: 2, name: "Mom (Hologram)", lastMessage: "The delivery drone arrived safely.", time: "Yesterday", unread: 0, avatar: 'https://placehold.co/50x50/3B82F6/ffffff?text=M', status: 'Online' },
+            { id: 3, name: "Design Team", lastMessage: "Final mockups sent for review.", time: "9/25/75", unread: 1, avatar: 'https://placehold.co/50x50/FBBF24/1F2937?text=DT', status: 'Offline' },
+            { id: 4, name: "Elias Vance", lastMessage: "See you at the orbital station.", time: "9/24/75", unread: 0, avatar: 'https://placehold.co/50x50/D1D5DB/1F2937?text=EV', status: 'Online' },
+        ];
+
+        const mockMessages = {
+            1: [
+                { type: 'received', text: 'I need the Q3 projections ASAP.', time: '10:55' },
+                { type: 'sent', text: 'Uploading financial data stream now.', time: '10:56' },
+                { type: 'received', text: 'Received. Q3 metrics look stable. Meeting at 10:00.', time: '11:04 AM' }
+            ],
+            2: [
+                { type: 'sent', text: 'Did the package arrive?', time: '09:00' },
+                { type: 'received', text: 'Yes, thank you! The delivery drone arrived safely.', time: '09:15' }
+            ],
+            3: [
+                { type: 'sent', text: 'When will the final vector files be ready?', time: '9/25/75' },
+                { type: 'received', text: 'Final mockups sent for review.', time: '9/25/75' }
+            ],
+        };
+        
+        // --- UTILITY FUNCTIONS ---
+
+        /**
+         * Safely shows a custom modal instead of using alert().
+         * @param {string} message The message to display.
+         */
+        function showCustomAlert(message) {
+            const modal = document.getElementById('custom-alert');
+            const messageElement = document.getElementById('alert-message');
+            
+            messageElement.textContent = message;
+            modal.classList.remove('hidden');
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('custom-alert').classList.add('hidden');
+        }
+
+        // --- NEW UTILITY FUNCTIONS (Emoji/Attachments) ---
+        
+        function toggleEmojiMenu() {
+            const emojiMenu = document.getElementById('emoji-menu');
+            // Close attachment menu if open
+            document.getElementById('attachment-menu').classList.add('hidden');
+            
+            emojiMenu.classList.toggle('hidden');
+        }
+
+        function insertEmoji(emoji) {
+            const input = document.getElementById('text-input');
+            input.value += emoji;
+            input.focus();
+            toggleEmojiMenu(); // Close after selection
+        }
+
+        function toggleAttachmentMenu() {
+            const attachmentMenu = document.getElementById('attachment-menu');
+            // Close emoji menu if open
+            document.getElementById('emoji-menu').classList.add('hidden');
+
+            attachmentMenu.classList.toggle('hidden');
+        }
+
+        function handleMediaUpload() {
+            showCustomAlert('Media Upload Initiated: Accessing camera roll and spatial storage. (Simulation complete.)');
+            toggleAttachmentMenu();
+        }
+
+        function handleDocumentUpload() {
+            showCustomAlert('Document Upload Initiated: Fetching files from cloud archive. (Simulation complete.)');
+            toggleAttachmentMenu();
+        }
+
+        function handleSendMessage() {
+            const input = document.getElementById('text-input');
+            const text = input.value.trim();
+            input.value = ''; // Clear input
+            
+            // Hide any open menus
+            document.getElementById('emoji-menu').classList.add('hidden');
+            document.getElementById('attachment-menu').classList.add('hidden');
+            
+            if (text === '') {
+                showCustomAlert('Cannot send empty message.');
+                return;
+            }
+
+            // Simulate adding the message to the current chat
+            if (currentChatId && mockMessages[currentChatId]) {
+                const now = new Date();
+                const hours = now.getHours().toString().padStart(2, '0');
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const timeString = `${hours}:${minutes}`;
+                
+                mockMessages[currentChatId].push({
+                    type: 'sent',
+                    text: text,
+                    time: timeString
+                });
+                
+                // Update the last message in the mockChats array and re-render the list later for accuracy (simulated)
+                const chat = mockChats.find(c => c.id === currentChatId);
+                if (chat) {
+                    chat.lastMessage = text; 
+                    renderConversation(chat);
+                }
+            } else {
+                 showCustomAlert(`Message sent: "${text}" (Note: Conversation view is not active or data missing)`);
+            }
+        }
+
+        // --- RENDERING FUNCTIONS ---
+
+        function createChatElement(chat) {
+            const unreadBadge = chat.unread > 0 
+                ? `<div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-md">${chat.unread}</div>`
+                : '';
+            
+            // Subtle indicator for unread chats
+            const pulseClass = chat.unread > 0 ? 'border-l-4 border-red-500' : '';
+
+            return `
+                <div class="flex items-center p-3 cursor-pointer hover:bg-white/30 transition duration-150 ${pulseClass}" onclick="openChat(${chat.id})">
+                    <!-- Avatar -->
+                    <div class="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden mr-4 border border-white/50 shadow-lg">
+                        <img class="w-full h-full object-cover" src="${chat.avatar}" alt="${chat.name}" onerror="this.onerror=null;this.src='https://placehold.co/50x50/333/FFFFFF?text=${chat.name.substring(0, 1)}'">
+                    </div>
+                    
+                    <!-- Chat Info -->
+                    <div class="flex-1 min-w-0 py-2 text-dark-slate border-b border-white/20">
+                        <div class="flex justify-between items-center">
+                            <p class="text-base font-semibold truncate text-dark-slate">${chat.name}</p>
+                            <p class="text-xs ${chat.unread > 0 ? 'text-red-500 font-medium' : 'text-gray-500'}">${chat.time}</p>
+                        </div>
+                        <div class="flex justify-between items-center mt-1">
+                            <p class="text-sm text-gray-700 truncate pr-4">${chat.lastMessage}</p>
+                            ${unreadBadge}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderChatList() {
+            const chatListElement = document.getElementById('chat-list-container');
+            if (chatListElement) {
+                chatListElement.innerHTML = mockChats.map(createChatElement).join('');
+            }
+        }
+
+        function renderConversation(chat) {
+            const messagesContainer = document.getElementById('messages-container');
+            const chatHeaderName = document.getElementById('chat-header-name');
+            const chatHeaderStatus = document.getElementById('chat-header-status');
+            
+            // Update header
+            chatHeaderName.textContent = chat.name;
+            chatHeaderStatus.textContent = chat.status;
+            
+            // Render messages
+            const messages = mockMessages[chat.id] || [];
+            let messagesHtml = messages.map(msg => {
+                const isSent = msg.type === 'sent';
+                return `
+                    <div class="flex mb-4 ${isSent ? 'justify-end' : 'justify-start'}">
+                        <div class="max-w-[70%] px-4 py-2 text-sm shadow-lg ${isSent ? 'sent-bubble ml-auto' : 'received-bubble mr-auto'}">
+                            ${msg.text}
+                            <span class="block text-right text-xs mt-1 ${isSent ? 'text-white/70' : 'text-gray-500'}">${msg.time}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            messagesContainer.innerHTML = messagesHtml;
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // --- NAVIGATION LOGIC ---
+
+        function updateView() {
+            const chatListView = document.getElementById('chat-list-view');
+            const conversationView = document.getElementById('conversation-view');
+            
+            if (currentView === 'list') {
+                chatListView.classList.remove('hidden');
+                conversationView.classList.add('hidden');
+            } else if (currentView === 'conversation') {
+                chatListView.classList.add('hidden');
+                conversationView.classList.remove('hidden');
+                
+                // Find the selected chat data
+                const chat = mockChats.find(c => c.id === currentChatId);
+                if (chat) {
+                    renderConversation(chat);
+                }
+            }
+        }
+
+        function openChat(chatId) {
+            currentChatId = chatId;
+            currentView = 'conversation';
+            updateView();
+        }
+
+        function goBackToChatList() {
+            currentChatId = null;
+            currentView = 'list';
+            updateView();
+        }
+
+        function handleNewChatClick() {
+            showCustomAlert('Initiating Secure Connection Protocol. This feature would normally open the contact list for a new conversation.');
+        }
+
+        // --- INITIALIZATION ---
+
+        window.onload = function() {
+            renderChatList();
+            document.getElementById('new-chat-fab').addEventListener('click', handleNewChatClick);
+            document.getElementById('back-button').addEventListener('click', goBackToChatList);
+            document.getElementById('close-alert-button').addEventListener('click', closeCustomAlert);
+            
+            // NEW EVENT LISTENERS for input features
+            document.getElementById('send-button').addEventListener('click', handleSendMessage);
+            document.getElementById('text-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleSendMessage();
+                }
+            });
+            document.getElementById('emoji-button').addEventListener('click', toggleEmojiMenu);
+            document.getElementById('attachment-button').addEventListener('click', toggleAttachmentMenu);
+            document.getElementById('media-upload-button').addEventListener('click', handleMediaUpload);
+            document.getElementById('document-upload-button').addEventListener('click', handleDocumentUpload);
+
+            updateView(); // Ensure the list view is shown first
+        };
+    </script>
+</head>
+<body>
+
+    <div class="phone-container">
+
+        <!-- Custom Alert Modal (Glassy style) -->
+        <div id="custom-alert" class="hidden fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div class="glass-element p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-white/50">
+                <h3 class="text-2xl font-bold text-aura-accent mb-4">AuraChat System</h3>
+                <p id="alert-message" class="text-dark-slate mb-6"></p>
+                <button id="close-alert-button" class="w-full bg-aura-accent text-white font-bold py-3 rounded-xl hover:opacity-90 transition duration-200 shadow-md">
+                    Dismiss
+                </button>
+            </div>
+        </div>
+        
+        <!-- ======================================================= -->
+        <!-- 1. CHAT LIST VIEW -->
+        <!-- ======================================================= -->
+        <div id="chat-list-view">
+            <!-- HEADER BAR (Glassy) -->
+            <header class="glass-element text-dark-slate shadow-md p-4 sticky top-0 z-10 rounded-t-[28px] border-b border-white/30">
+                <div class="flex justify-between items-center mb-4">
+                    <h1 class="text-2xl font-bold text-dark-slate">AuraChat</h1>
+                    <div class="flex space-x-4 text-dark-slate">
+                        <!-- Search Icon -->
+                        <button class="focus:outline-none hover:text-aura-accent transition duration-150">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </button>
+                        <!-- Menu Icon -->
+                        <button class="focus:outline-none hover:text-aura-accent transition duration-150">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- NAVIGATION TABS -->
+                <nav class="flex text-center text-sm font-semibold">
+                    <a href="#" class="w-1/6 py-2 flex items-center justify-center text-gray-600 hover:text-aura-accent">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.402 4h3.196a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </a>
+                    <a href="#" class="w-2/6 py-2 border-b-2 border-aura-accent text-aura-accent">
+                        CHANNELS 
+                        <span class="ml-1 px-1 text-xs bg-aura-accent rounded-full text-white font-bold">4</span>
+                    </a>
+                    <a href="#" class="w-2/6 py-2 border-b-2 border-transparent transition text-gray-700 hover:border-aura-accent/50">
+                        STATUS FEEDS
+                    </a>
+                    <a href="#" class="w-1/6 py-2 border-b-2 border-transparent transition text-gray-700 hover:border-aura-accent/50">
+                        CALL LOG
+                    </a>
+                </nav>
+            </header>
+
+            <!-- CHAT LIST -->
+            <main class="scroll-container h-[600px] overflow-y-auto relative bg-white/20">
+                <div id="chat-list-container">
+                    <!-- Chat items will be injected here by JavaScript -->
+                </div>
+            </main>
+
+            <!-- FLOATING ACTION BUTTON (FAB - Glassy) -->
+            <button id="new-chat-fab" class="bg-aura-accent text-white rounded-full w-14 h-14 flex items-center justify-center shadow-xl hover:bg-violet-600 transition duration-300 absolute bottom-6 right-6 z-20 focus:outline-none focus:ring-4 focus:ring-aura-accent/50">
+                <!-- New Message Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M16 12H8m4 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </button>
+        </div>
+        
+        <!-- ======================================================= -->
+        <!-- 2. CONVERSATION VIEW -->
+        <!-- ======================================================= -->
+        <div id="conversation-view" class="hidden h-full">
+            <!-- CONVERSATION HEADER (Glassy) -->
+            <header class="glass-element text-dark-slate p-3 flex items-center sticky top-0 z-10 rounded-t-[28px] border-b border-white/30">
+                <button id="back-button" class="mr-3 text-aura-accent hover:text-dark-slate transition duration-150">
+                    <!-- Back Arrow Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                </button>
+                
+                <!-- Contact Info -->
+                <div class="flex-1">
+                    <p id="chat-header-name" class="font-bold text-lg text-dark-slate"></p>
+                    <p id="chat-header-status" class="text-xs text-gray-600"></p>
+                </div>
+                
+                <!-- Call/Menu Icons -->
+                <div class="flex space-x-4 text-dark-slate">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hover:text-aura-accent cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hover:text-aura-accent cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                </div>
+            </header>
+            
+            <!-- MESSAGES AREA -->
+            <main id="messages-container" class="scroll-container h-[540px] p-4 overflow-y-auto bg-white/10 text-dark-slate"></main>
+
+            <!-- INPUT BAR (Glassy) -->
+            <div class="glass-element p-3 flex items-center border-t border-white/30 rounded-b-[28px]">
+                
+                <!-- Emoji Button -->
+                <button id="emoji-button" class="text-dark-slate opacity-70 hover:opacity-100 transition duration-150 mr-2 focus:outline-none">
+                    <!-- Icon: Smiling face -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                </button>
+
+                <!-- Attachment Menu Container -->
+                <div class="relative">
+                    <button id="attachment-button" class="text-dark-slate opacity-70 hover:opacity-100 transition duration-150 mr-2 focus:outline-none">
+                        <!-- Icon: Clip/Attachment -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19A2 2 0 0 1 5.49 13.5L14 5"/>
+                        </svg>
+                    </button>
+                    <!-- Attachment Popover (Hidden by default) -->
+                    <div id="attachment-menu" class="hidden absolute bottom-12 left-0 w-40 glass-element p-3 rounded-xl shadow-xl border border-white/50 space-y-2">
+                        <button id="media-upload-button" class="flex items-center text-sm w-full p-2 rounded-lg bg-white/50 hover:bg-white/80 text-dark-slate transition duration-150">
+                            <span class="mr-2 text-red-500">📸</span> Photo/Video
+                        </button>
+                        <button id="document-upload-button" class="flex items-center text-sm w-full p-2 rounded-lg bg-white/50 hover:bg-white/80 text-dark-slate transition duration-150">
+                            <span class="mr-2 text-blue-500">📄</span> Document
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Text Input -->
+                <input id="text-input" type="text" placeholder="Send a message..." class="flex-1 p-3 mr-2 bg-white/70 text-dark-slate rounded-xl border border-white/50 focus:outline-none focus:ring-2 focus:ring-aura-accent transition duration-200" />
+                
+                <!-- Send Button -->
+                <button id="send-button" class="bg-aura-accent text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-violet-600 transition duration-200 shadow-md focus:outline-none focus:ring-4 focus:ring-aura-accent/50">
+                    <!-- Send Icon (Paper Plane) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 rotate-45 -mt-0.5 -mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Emoji Popover (Absolutely positioned above the input bar) -->
+            <div id="emoji-menu" class="hidden absolute bottom-20 right-5 w-48 glass-element p-3 rounded-xl shadow-2xl border border-white/50 z-20">
+                <div class="grid grid-cols-4 gap-2 text-2xl">
+                    <span class="cursor-pointer hover:scale-110 transition duration-100" onclick="insertEmoji('😊')">😊</span>
+                    <span class="cursor-pointer hover:scale-110 transition duration-100" onclick="insertEmoji('🚀')">🚀</span>
+                    <span class="cursor-pointer hover:scale-110 transition duration-100" onclick="insertEmoji('💡')">💡</span>
+                    <span class="cursor-pointer hover:scale-110 transition duration-100" onclick="insertEmoji('🔥')">🔥</span>
+                    <span class="cursor-pointer hover:scale-110 transition duration-100" onclick="insertEmoji('😎')">😎</span>
+                    <span class="cursor-pointer hover:scale-110 transition duration-100" onclick="insertEmoji('💻')">💻</span>
+                    <span class="cursor-pointer hover:scale-110 transition duration-100" onclick="insertEmoji('✅')">✅</span>
+                    <span class="cursor-pointer hover:scale-110 transition duration-100" onclick="insertEmoji('🤯')">🤯</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+    <!-- FOOTER/DISCLAIMER -->
+    <footer class="absolute bottom-0 left-0 w-full text-center py-2 text-xs text-gray-700">
+        <p>AuraChat UI Replica (Glassmorphism)</p>
+    </footer>
+
+</body>
+</html>
