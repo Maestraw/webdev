@@ -49,12 +49,16 @@
         <!-- Controls Panel -->
         <div id="controls" class="flex flex-wrap justify-center items-center gap-4 p-4 bg-gray-100 rounded-lg shadow-inner">
             
-            <div class="flex items-center gap-2">
-                <label for="color" class="text-sm font-medium text-gray-600">Color:</label>
-                <input type="color" id="color" value="#000000" class="w-8 h-8 rounded-md border-2 border-gray-300">
+            <!-- NEW Color Selectors (Black and Red) -->
+            <div id="colorControls" class="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm">
+                <span class="text-sm font-medium text-gray-700 hidden sm:inline">Color:</span>
+                <!-- Black is the default selected color via the ring-4 class -->
+                <button id="colorBlack" data-color="#000000" class="color-btn w-8 h-8 rounded-full border-2 border-gray-300 bg-black transition-shadow ring-4 ring-offset-2 ring-indigo-400"></button>
+                <button id="colorRed" data-color="#FF0000" class="color-btn w-8 h-8 rounded-full border-2 border-gray-300 bg-red-600 transition-shadow"></button>
             </div>
+            <!-- END NEW Color Selectors -->
 
-            <!-- New Tool Selector: Pencils and Eraser -->
+            <!-- Tool Selector: Pencils and Eraser -->
             <div id="tools" class="flex items-center gap-4">
                 <div class="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm">
                     <span class="text-sm font-medium text-gray-700 hidden sm:inline">Pencils:</span>
@@ -75,7 +79,7 @@
                     Eraser
                 </button>
             </div>
-            <!-- End New Tool Selector -->
+            <!-- End Tool Selector -->
 
             <button id="clearBtn" class="px-4 py-2 text-sm font-semibold rounded-lg shadow-md transition duration-150 ease-in-out bg-red-500 hover:bg-red-600 text-white">
                 Clear Canvas
@@ -102,7 +106,9 @@
         const canvas = document.getElementById('noteCanvas');
         const ctx = canvas.getContext('2d');
         const clearBtn = document.getElementById('clearBtn');
-        const colorPicker = document.getElementById('color');
+        const colorButtons = document.querySelectorAll('.color-btn'); // New: Selects color buttons
+        const colorBlack = document.getElementById('colorBlack');
+        const colorRed = document.getElementById('colorRed');
         const textInput = document.getElementById('textInput');
         const textModeBtn = document.getElementById('textModeBtn');
         const toolButtons = document.querySelectorAll('.tool-btn');
@@ -116,6 +122,8 @@
         
         let currentTool = 'pen';        // 'pen' or 'eraser'
         let currentLineWidth = 3;       // Default size for 'S' pen
+        let currentColor = '#000000';   // New: Default color is black
+        let lastPenId = 'toolPenS';     // New: Tracks the ID of the last selected pen button
 
         // --- Canvas Setup ---
         /**
@@ -170,10 +178,11 @@
             // Apply composite operation and width before drawing starts
             if (currentTool === 'eraser') {
                 ctx.globalCompositeOperation = 'destination-out';
-                ctx.strokeStyle = '#FFFFFF'; // Color irrelevant, but set
+                ctx.strokeStyle = '#FFFFFF'; // Color irrelevant for destination-out
             } else {
                 ctx.globalCompositeOperation = 'source-over';
-                ctx.strokeStyle = colorPicker.value;
+                // Use currentColor
+                ctx.strokeStyle = currentColor; 
             }
             ctx.lineWidth = currentLineWidth;
         }
@@ -217,6 +226,18 @@
                 }
             });
         }
+
+        /**
+         * Updates the visual style of the active color button.
+         */
+        function updateColorButtons(activeColor) {
+            colorButtons.forEach(btn => {
+                btn.classList.remove('ring-4', 'ring-offset-2', 'ring-indigo-400');
+                if (btn.dataset.color === activeColor) {
+                    btn.classList.add('ring-4', 'ring-offset-2', 'ring-indigo-400');
+                }
+            });
+        }
         
         /**
          * Handles tool button clicks (Pen sizes and Eraser).
@@ -229,6 +250,7 @@
                 if (tool === 'pen') {
                     // Pen: set size and ensure normal drawing mode
                     currentLineWidth = parseInt(e.currentTarget.dataset.size, 10);
+                    lastPenId = e.currentTarget.id; // Save the last selected pen ID
                     canvas.classList.remove('eraser-cursor');
                     canvas.style.cursor = 'crosshair';
                 } else if (tool === 'eraser') {
@@ -240,6 +262,33 @@
                 
                 // Update active button style
                 updateToolButtons(e.currentTarget.id);
+            });
+        });
+
+        /**
+         * Handles color button clicks.
+         */
+        [colorBlack, colorRed].forEach(button => {
+            button.addEventListener('click', (e) => {
+                const newColor = e.currentTarget.dataset.color;
+                currentColor = newColor;
+                
+                // 1. Update active color button style
+                updateColorButtons(newColor);
+
+                // 2. If the user was erasing, switch back to the last pen settings
+                if (currentTool === 'eraser') {
+                    currentTool = 'pen';
+                    // Get the size from the last saved pen ID's data attribute
+                    currentLineWidth = parseInt(document.getElementById(lastPenId).dataset.size, 10);
+                    
+                    // Visually re-select the last used pen button
+                    updateToolButtons(lastPenId);
+                    
+                    // Restore pen cursor
+                    canvas.classList.remove('eraser-cursor');
+                    canvas.style.cursor = 'crosshair';
+                }
             });
         });
         
