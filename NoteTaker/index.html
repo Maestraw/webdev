@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Input Notes Taker</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for canvas/textarea container */
+        .canvas-area {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background-color: white;
+        }
+        #noteCanvas, #textInput {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-sizing: border-box;
+            cursor: crosshair; /* Indicate drawing mode */
+        }
+        #textInput {
+            padding: 2rem;
+            border: none;
+            font-size: 1.25rem; /* text-xl */
+            line-height: 1.6;
+            resize: none;
+            font-family: 'Inter', sans-serif;
+            cursor: text;
+        }
+        /* Custom cursor for Eraser mode */
+        .eraser-cursor {
+            cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path fill='white' stroke='black' stroke-width='1.5' d='M16.173 1.002c-1.332-1.334-3.525-1.334-4.856 0L1.789 10.536l-1.789 1.789 1.414 1.414 1.789-1.789L13.753 3.19c1.332-1.333 1.332-3.526 0-4.856zM24 10.999l-2-2-10 10 2 2z'/></svg>"), auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex flex-col items-center p-4 min-h-screen font-sans">
+
+    <div class="w-full max-w-4xl bg-white p-4 sm:p-6 rounded-xl shadow-2xl mb-6">
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-4 text-center">
+            Multi-Mode Notes
+        </h1>
+
+        <!-- Controls Panel -->
+        <div id="controls" class="flex flex-wrap justify-center items-center gap-4 p-4 bg-gray-100 rounded-lg shadow-inner">
+            
+            <div class="flex items-center gap-2">
+                <label for="color" class="text-sm font-medium text-gray-600">Color:</label>
+                <input type="color" id="color" value="#000000" class="w-8 h-8 rounded-md border-2 border-gray-300">
+            </div>
+
+            <!-- New Tool Selector: Pencils and Eraser -->
+            <div id="tools" class="flex items-center gap-4">
+                <div class="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm">
+                    <span class="text-sm font-medium text-gray-700 hidden sm:inline">Pencils:</span>
+                    <!-- Small Pen (Default selected via JS) -->
+                    <button id="toolPenS" data-tool="pen" data-size="3" class="tool-btn w-8 h-8 rounded-full border-2 border-green-500 bg-green-500 text-white flex items-center justify-center font-bold text-xs hover:shadow-lg transition-shadow">S</button>
+                    <!-- Medium Pen -->
+                    <button id="toolPenM" data-tool="pen" data-size="8" class="tool-btn w-8 h-8 rounded-full border-2 border-green-400 bg-green-400 text-white flex items-center justify-center font-bold text-xs hover:shadow-lg transition-shadow">M</button>
+                    <!-- Large Pen -->
+                    <button id="toolPenL" data-tool="pen" data-size="15" class="tool-btn w-8 h-8 rounded-full border-2 border-green-300 bg-green-300 text-white flex items-center justify-center font-bold text-xs hover:shadow-lg transition-shadow">L</button>
+                </div>
+
+                <!-- Eraser Tool -->
+                <button id="toolEraser" data-tool="eraser" class="tool-btn px-3 py-1.5 text-sm font-semibold rounded-lg shadow-md transition duration-150 ease-in-out bg-yellow-400 hover:bg-yellow-500 text-gray-800 flex items-center gap-1">
+                    <!-- Inline SVG for Eraser Icon -->
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M16.173 1.002c-1.332-1.334-3.525-1.334-4.856 0L1.789 10.536l-1.789 1.789 1.414 1.414 1.789-1.789L13.753 3.19c1.332-1.333 1.332-3.526 0-4.856zM24 10.999l-2-2-10 10 2 2z"/>
+                    </svg>
+                    Eraser
+                </button>
+            </div>
+            <!-- End New Tool Selector -->
+
+            <button id="clearBtn" class="px-4 py-2 text-sm font-semibold rounded-lg shadow-md transition duration-150 ease-in-out bg-red-500 hover:bg-red-600 text-white">
+                Clear Canvas
+            </button>
+
+            <button id="textModeBtn" class="px-4 py-2 text-sm font-semibold rounded-lg shadow-md transition duration-150 ease-in-out bg-indigo-500 hover:bg-indigo-600 text-white">
+                Toggle Text Mode
+            </button>
+        </div>
+    </div>
+
+    <!-- Canvas/Text Input Container -->
+    <div id="canvas-container" class="w-full max-w-4xl h-[60vh] min-h-[400px] border-4 border-gray-300 rounded-xl shadow-2xl overflow-hidden">
+        <div class="canvas-area">
+            <!-- Canvas for drawing (mouse and stylus) -->
+            <canvas id="noteCanvas"></canvas>
+            <!-- Text area for keyboard input -->
+            <textarea id="textInput" placeholder="Type your notes here..." style="display: none;"></textarea>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for Firebase setup are intentionally left as-is to meet platform requirements
+        const canvas = document.getElementById('noteCanvas');
+        const ctx = canvas.getContext('2d');
+        const clearBtn = document.getElementById('clearBtn');
+        const colorPicker = document.getElementById('color');
+        const textInput = document.getElementById('textInput');
+        const textModeBtn = document.getElementById('textModeBtn');
+        const toolButtons = document.querySelectorAll('.tool-btn');
+        const toolEraser = document.getElementById('toolEraser');
+        const penSmall = document.getElementById('toolPenS');
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let isTextMode = false;
+        
+        let currentTool = 'pen';        // 'pen' or 'eraser'
+        let currentLineWidth = 3;       // Default size for 'S' pen
+
+        // --- Canvas Setup ---
+        /**
+         * Resizes the canvas element to fill its parent container.
+         */
+        function resizeCanvas() {
+            // Set the canvas size to its parent container's size
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            // When resizing, drawing properties are reset, so we re-apply them
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            // Set initial composite operation (source-over for drawing)
+            ctx.globalCompositeOperation = 'source-over'; 
+        }
+        
+        // Initialize size and listen for window resizing
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- Drawing Logic (Stylus/Mouse) ---
+
+        /**
+         * Calculates coordinates relative to the canvas from a mouse or touch event.
+         */
+        function getCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+
+            if (e.touches && e.touches.length > 0) {
+                // Touch/Stylus input
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+                // Prevent default touch actions (like scrolling/zooming) during drawing
+                e.preventDefault(); 
+            } else {
+                // Mouse input
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return [clientX - rect.left, clientY - rect.top];
+        }
+
+        /**
+         * Begins the drawing process.
+         */
+        function startDrawing(e) {
+            if (isTextMode) return;
+            isDrawing = true;
+            [lastX, lastY] = getCoordinates(e); // Set starting position
+            
+            // Apply composite operation and width before drawing starts
+            if (currentTool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.strokeStyle = '#FFFFFF'; // Color irrelevant, but set
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = colorPicker.value;
+            }
+            ctx.lineWidth = currentLineWidth;
+        }
+
+        /**
+         * Draws the line segment.
+         */
+        function draw(e) {
+            if (!isDrawing || isTextMode) return;
+
+            const [x, y] = getCoordinates(e);
+
+            ctx.beginPath();
+            
+            // Draw line from last recorded point to current point
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            // Update last position for the next segment
+            [lastX, lastY] = [x, y]; 
+        }
+
+        /**
+         * Ends the drawing process.
+         */
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        // --- Tool Selection Functions ---
+
+        /**
+         * Updates the visual style of the active tool button.
+         */
+        function updateToolButtons(activeId) {
+            toolButtons.forEach(btn => {
+                btn.classList.remove('ring-4', 'ring-offset-2', 'ring-indigo-400');
+                if (btn.id === activeId) {
+                    btn.classList.add('ring-4', 'ring-offset-2', 'ring-indigo-400');
+                }
+            });
+        }
+        
+        /**
+         * Handles tool button clicks (Pen sizes and Eraser).
+         */
+        toolButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const tool = e.currentTarget.dataset.tool;
+                currentTool = tool;
+                
+                if (tool === 'pen') {
+                    // Pen: set size and ensure normal drawing mode
+                    currentLineWidth = parseInt(e.currentTarget.dataset.size, 10);
+                    canvas.classList.remove('eraser-cursor');
+                    canvas.style.cursor = 'crosshair';
+                } else if (tool === 'eraser') {
+                    // Eraser: set a large size for easy erasing
+                    currentLineWidth = 20; 
+                    canvas.classList.add('eraser-cursor');
+                    canvas.style.cursor = ''; // Reset CSS cursor to use the custom class
+                }
+                
+                // Update active button style
+                updateToolButtons(e.currentTarget.id);
+            });
+        });
+        
+        // Initialize: Set the default tool (Small Pen) as active
+        updateToolButtons('toolPenS');
+
+
+        // --- Event Listeners for Drawing ---
+        // Mouse Events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch/Stylus Events
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+        canvas.addEventListener('touchcancel', stopDrawing);
+
+
+        // --- Control Functions ---
+        clearBtn.addEventListener('click', () => {
+            if (!isTextMode) {
+                // Clear Canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            } else {
+                // Clear Text Area
+                textInput.value = ''; 
+            }
+        });
+
+        textModeBtn.addEventListener('click', () => {
+            isTextMode = !isTextMode;
+            
+            // Update button texts and cursor based on the new mode
+            textModeBtn.textContent = isTextMode ? 'Toggle Draw Mode' : 'Toggle Text Mode';
+            clearBtn.textContent = isTextMode ? 'Clear Text' : 'Clear Canvas';
+            
+            if (isTextMode) {
+                // Switch to Text Mode: Hide canvas, show textarea
+                canvas.style.display = 'none';
+                textInput.style.display = 'block';
+                textInput.focus(); 
+            } else {
+                // Switch to Draw Mode: Show canvas, hide textarea
+                canvas.style.display = 'block';
+                textInput.style.display = 'none';
+                
+                // Restore the appropriate drawing cursor
+                if (currentTool === 'eraser') {
+                    canvas.classList.add('eraser-cursor');
+                    canvas.style.cursor = '';
+                } else {
+                    canvas.classList.remove('eraser-cursor');
+                    canvas.style.cursor = 'crosshair';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
