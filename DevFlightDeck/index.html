@@ -3,95 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Flight Deck: Local Task Planner</title>
+    <title>DevOps Mission Control: 2065 Interface</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js for 3D Background -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
     <style>
+        /* Define the futuristic font and the dark, space background */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f7f7f9;
+            background-color: #0d0f1a; /* Deep Space Navy */
+            color: #e0f7fa; /* Light Aqua */
+            overflow-x: hidden;
+            min-height: 100vh;
         }
-        /* Custom scrollbar for better aesthetics */
+
+        /* 3D Canvas Styling */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -10; /* Ensure it's behind everything */
+            opacity: 0.8;
+        }
+
+        /* Glass/Acrylic Effect for containers */
+        .fui-glass {
+            background-color: rgba(16, 18, 27, 0.7); /* Dark transparent */
+            border: 1px solid rgba(0, 255, 255, 0.2); /* Neon cyan border */
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1), inset 0 0 5px rgba(0, 255, 255, 0.05); /* Subtle inner/outer glow */
+        }
+        
+        /* Neon Focus Rings */
+        input:focus, textarea:focus, select:focus {
+            border-color: #00ffff !important; /* Neon cyan */
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.6) !important;
+            outline: none;
+        }
+
+        /* Custom scrollbar for FUI look */
         ::-webkit-scrollbar {
             width: 8px;
         }
         ::-webkit-scrollbar-thumb {
-            background: #d1d5db;
-            border-radius: 10px;
+            background: #00ffff; /* Neon cyan */
+            border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #9ca3af;
+            background: #00d0d0;
         }
-        .container-fluid {
-            max-width: 90rem;
+        ::-webkit-scrollbar-track {
+            background: rgba(16, 18, 27, 0.7);
+        }
+        
+        /* Neon button hover effects */
+        .fui-btn-neon:hover {
+            box-shadow: 0 0 10px rgba(4, 116, 116, 0.8), 0 0 5px rgba(0, 255, 255, 0.4);
         }
     </style>
 </head>
 <body class="min-h-screen">
+    <!-- 3D Background Canvas -->
+    <canvas id="bg-canvas"></canvas>
 
     <!-- Notification Area (Used instead of alert()) -->
-    <div id="notification" class="fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white font-semibold transition-transform duration-300 z-50 transform translate-x-full"></div>
+    <div id="notification" class="fixed top-4 right-4 p-4 rounded-xl shadow-xl font-semibold transition-transform duration-300 z-50 transform translate-x-full text-black"></div>
 
-    <header class="bg-white shadow-md p-4 sticky top-0 z-10">
+    <header class="fui-glass p-4 sticky top-0 z-10 border-b-2 border-cyan-500/50">
         <div class="container-fluid mx-auto flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
-            <h1 class="text-3xl font-extrabold text-gray-900">
-                <span class="text-indigo-600">Dev</span> Flight Deck
+            <h1 class="text-3xl font-extrabold text-white">
+                <span class="text-[#00ffff]">DEVOPS</span> MISSION CONTROL
             </h1>
-            <div class="text-sm font-medium text-gray-500">
-                Data is stored locally. Use Export/Import for file management.
+            <div class="text-sm font-mono text-cyan-300/70">
+                // System Status: Local Memory Sync Active (LMS)
             </div>
         </div>
     </header>
 
-    <main class="container-fluid mx-auto p-4 md:p-8">
+    <main class="container-fluid mx-auto p-4 md:p-8 relative z-0">
         
         <!-- Metrics Dashboard -->
         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-indigo-500">
-                <p class="text-sm font-medium text-gray-500">Total Tasks Filed</p>
-                <p id="metric-total-tasks" class="text-3xl font-bold text-gray-900 mt-1">0</p>
+            <!-- Metric Card 1: Total Tasks -->
+            <div class="fui-glass p-6 rounded-xl border-l-4 border-[#00ffff]">
+                <p class="text-sm font-mono text-cyan-300/70">Total Tasks Filed</p>
+                <p id="metric-total-tasks" class="text-3xl font-extrabold text-[#00ffff] mt-1">0</p>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
-                <p class="text-sm font-medium text-gray-500">Tasks Completed</p>
-                <p id="metric-completed-tasks" class="text-3xl font-bold text-gray-900 mt-1">0</p>
+            <!-- Metric Card 2: Completed Tasks -->
+            <div class="fui-glass p-6 rounded-xl border-l-4 border-[#22c55e]">
+                <p class="text-sm font-mono text-green-300/70">Tasks Completed</p>
+                <p id="metric-completed-tasks" class="text-3xl font-extrabold text-[#22c55e] mt-1">0</p>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
-                <p class="text-sm font-medium text-gray-500">Total Est. Workload (Hours)</p>
-                <p id="metric-total-time" class="text-3xl font-bold text-gray-900 mt-1">0.0h</p>
+            <!-- Metric Card 3: Total Estimated Time -->
+            <div class="fui-glass p-6 rounded-xl border-l-4 border-[#eab308]">
+                <p class="text-sm font-mono text-yellow-300/70">Total Est. Workload (Hours)</p>
+                <p id="metric-total-time" class="text-3xl font-extrabold text-[#eab308] mt-1">0.0h</p>
             </div>
         </section>
 
         <!-- Form and File Operations -->
-        <section class="bg-white p-6 rounded-xl shadow-2xl mb-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">File New Task Plan</h2>
+        <section class="fui-glass p-6 rounded-xl mb-8">
+            <h2 class="text-2xl font-bold text-white mb-4" id="form-title">Define New Task Specification</h2>
             <form id="task-form">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" name="name" placeholder="Task Name (e.g., Implement Feature X)" required class="p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-                    <input type="text" name="module" placeholder="Module/Component (e.g., User Profile, Global Styles)" required class="p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-                </div>
+                <input type="hidden" id="editing-task-id" name="id" value="">
+
+                <!-- Task Name (Full Width) -->
+                <input type="text" name="name" placeholder="Task Name (e.g., Implement Feature X, Refactor Class Y)" required 
+                       class="w-full p-3 border border-cyan-500/30 rounded-lg bg-black/50 text-white transition-colors mb-4">
                 
-                <textarea name="route" placeholder="Route/Steps (e.g., Write SQL query, Develop API endpoint, Create component, Unit tests)" required rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 mt-4 transition-colors resize-none"></textarea>
+                <!-- Implementation Steps (Full Width) -->
+                <textarea name="route" placeholder="Implementation Steps/Notes (e.g., Write SQL, Develop API endpoint, Create component, Unit tests)" required rows="2" 
+                          class="w-full p-3 border border-cyan-500/30 rounded-lg bg-black/50 text-white transition-colors resize-none"></textarea>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                    <select name="priority" class="p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white">
-                        <option value="High">High Priority</option>
-                        <option value="Medium" selected>Medium Priority</option>
-                        <option value="Low">Low Priority</option>
+                    <!-- Priority Select -->
+                    <select name="priority" class="p-3 border border-cyan-500/30 rounded-lg bg-black/50 text-white transition-colors">
+                        <option class="bg-[#0d0f1a] text-red-400" value="High">Priority: HIGH</option>
+                        <option class="bg-[#0d0f1a] text-yellow-400" value="Medium" selected>Priority: MEDIUM</option>
+                        <option class="bg-[#0d0f1a] text-green-400" value="Low">Priority: LOW</option>
                     </select>
-                    <input type="number" name="estimate" placeholder="Est. Hours (e.g., 4.0)" value="4.0" min="0.5" step="0.5" required class="p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                    <!-- Estimated Hours Input -->
+                    <input type="number" name="estimate" placeholder="Est. Hours (e.g., 4.0)" value="4.0" min="0.5" step="0.5" required 
+                           class="p-3 border border-cyan-500/30 rounded-lg bg-black/50 text-white transition-colors">
                     
-                    <button type="submit" class="bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-300 transform hover:scale-105">
-                        File Plan
-                    </button>
-                    
-                    <div class="flex space-x-2">
-                        <button type="button" id="export-btn" class="flex-1 bg-gray-700 text-white font-bold rounded-lg shadow-md hover:bg-gray-800 transition-colors duration-300 transform hover:scale-105 text-sm p-3">
-                            Export (.txt)
+                    <!-- Action Buttons -->
+                    <div id="form-actions" class="flex space-x-2 col-span-2 md:col-span-1">
+                        <button type="submit" id="submit-btn" class="flex-1 bg-[#00ffff] text-gray-900 font-bold rounded-lg shadow-md hover:bg-[#00d0d0] fui-btn-neon transition-all duration-300">
+                            File Task
                         </button>
-                        <button type="button" id="import-btn" class="flex-1 bg-gray-700 text-white font-bold rounded-lg shadow-md hover:bg-gray-800 transition-colors duration-300 transform hover:scale-105 text-sm p-3">
-                            Import (.txt)
+                        <!-- Cancel Button (only visible during edit) -->
+                        <button type="button" id="cancel-edit-btn" class="flex-1 bg-gray-700 text-white font-bold rounded-lg shadow-md hover:bg-gray-600 transition-colors duration-300 text-sm hidden">
+                            Cancel
                         </button>
-                        <!-- Hidden input to handle file selection -->
+                    </div>
+
+                    <div class="flex space-x-2 col-span-2 md:col-span-1">
+                        <!-- File I/O Buttons -->
+                        <button type="button" id="export-btn" class="flex-1 bg-gray-900 text-[#00ffff] font-bold rounded-lg shadow-md border border-[#00ffff]/50 hover:bg-gray-800 fui-btn-neon transition-all duration-300 text-sm p-3">
+                            Export Backlog
+                        </button>
+                        <button type="button" id="import-btn" class="flex-1 bg-gray-900 text-[#00ffff] font-bold rounded-lg shadow-md border border-[#00ffff]/50 hover:bg-gray-800 fui-btn-neon transition-all duration-300 text-sm p-3">
+                            Import Backlog
+                        </button>
                         <input type="file" id="file-input" accept=".txt,.json" class="hidden">
                     </div>
                 </div>
@@ -99,7 +156,7 @@
         </section>
 
         <!-- Task List (The Flight Plan) -->
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Current Flight Plans</h2>
+        <h2 class="text-2xl font-bold text-white mb-6 border-b border-cyan-500/50 pb-2">Active Task Queue</h2>
         <section id="task-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <!-- Task Cards will be rendered here by JavaScript -->
         </section>
@@ -107,16 +164,96 @@
     </main>
 
     <script>
+        // --- THREE.JS 3D Background Logic (Preserved) ---
+        
+        let camera, scene, renderer, stars;
+        let mouseX = 0, mouseY = 0;
+        let windowHalfX = window.innerWidth / 2;
+        let windowHalfY = window.innerHeight / 2;
+        const PARTICLE_COUNT = 5000;
+
+        function init3D() {
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+            camera.position.z = 5;
+
+            scene = new THREE.Scene();
+            
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                vertices.push(
+                    (Math.random() * 2000) - 1000,
+                    (Math.random() * 2000) - 1000,
+                    (Math.random() * 2000) - 1000
+                );
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            
+            const material = new THREE.PointsMaterial({ 
+                color: 0x00ffff, 
+                size: 1.5,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            stars = new THREE.Points(geometry, material);
+            scene.add(stars);
+
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            document.addEventListener('mousemove', onDocumentMouseMove, false);
+            window.addEventListener('resize', onWindowResize, false);
+        }
+
+        function onWindowResize() {
+            windowHalfX = window.innerWidth / 2;
+            windowHalfY = window.innerHeight / 2;
+
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onDocumentMouseMove(event) {
+            mouseX = (event.clientX - windowHalfX);
+            mouseY = (event.clientY - windowHalfY);
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            render3D();
+        }
+
+        function render3D() {
+            const targetX = mouseX * 0.0001;
+            const targetY = mouseY * 0.0001;
+
+            camera.position.x += (targetX - camera.position.x) * 0.05;
+            camera.position.y += (-targetY - camera.position.y) * 0.05;
+            
+            camera.lookAt(scene.position);
+
+            stars.rotation.x += 0.0001;
+            stars.rotation.y += 0.0002;
+
+            renderer.render(scene, camera);
+        }
+
         // --- Core Application Logic ---
 
         let tasks = []; // In-memory "database"
 
-        // Task Constants
+        // Task Constants - Updated to Software Terminology
         const TASK_STATUS = {
-            PLANNED: 'Planned',
-            IN_PROGRESS: 'In Progress',
-            TESTING: 'Testing',
-            COMPLETED: 'Completed',
+            PLANNED: 'PLANNED',
+            IN_PROGRESS: 'IN PROGRESS',
+            TESTING: 'TESTING',
+            COMPLETED: 'COMPLETED',
         };
 
         const TASK_PRIORITY = {
@@ -126,16 +263,16 @@
         };
 
         const STATUS_COLORS = {
-            [TASK_STATUS.PLANNED]: 'bg-gray-200 text-gray-700 hover:bg-gray-300',
-            [TASK_STATUS.IN_PROGRESS]: 'bg-blue-200 text-blue-700 hover:bg-blue-300',
-            [TASK_STATUS.TESTING]: 'bg-yellow-200 text-yellow-700 hover:bg-yellow-300',
-            [TASK_STATUS.COMPLETED]: 'bg-green-200 text-green-700 hover:bg-green-300',
+            [TASK_STATUS.PLANNED]: 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/70',
+            [TASK_STATUS.IN_PROGRESS]: 'bg-blue-600/50 text-blue-300 hover:bg-blue-500/70',
+            [TASK_STATUS.TESTING]: 'bg-yellow-600/50 text-yellow-300 hover:bg-yellow-500/70',
+            [TASK_STATUS.COMPLETED]: 'bg-green-600/50 text-green-300 hover:bg-green-500/70',
         };
 
         const PRIORITY_COLORS = {
-            [TASK_PRIORITY.HIGH]: 'border-red-500 text-red-600',
-            [TASK_PRIORITY.MEDIUM]: 'border-yellow-500 text-yellow-600',
-            [TASK_PRIORITY.LOW]: 'border-green-500 text-green-600',
+            [TASK_PRIORITY.HIGH]: 'border-red-500 text-red-400 shadow-red-500/50',
+            [TASK_PRIORITY.MEDIUM]: 'border-yellow-500 text-yellow-400 shadow-yellow-500/50',
+            [TASK_PRIORITY.LOW]: 'border-green-500 text-green-400 shadow-green-500/50',
         };
 
         // --- Utility Functions ---
@@ -150,28 +287,75 @@
         
         /**
          * Displays a temporary notification banner.
-         * @param {string} message 
-         * @param {string} bgColor Tailwind background color class
          */
         function showNotification(message, bgColor) {
             const notif = document.getElementById('notification');
             notif.textContent = message;
-            // Show notification
-            notif.className = `fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white font-semibold transition-transform duration-300 z-50 ${bgColor} transform translate-x-0`;
+            const finalBgColor = bgColor.includes('bg-') ? bgColor : 'bg-cyan-400';
+            
+            notif.className = `fixed top-4 right-4 p-4 rounded-lg shadow-xl font-semibold transition-transform duration-300 z-50 text-black ${finalBgColor} transform translate-x-0`;
 
-            // Hide notification after 3 seconds
             setTimeout(() => {
-                notif.className = `fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white font-semibold transition-transform duration-300 z-50 ${bgColor} transform translate-x-full`;
+                notif.className = `fixed top-4 right-4 p-4 rounded-lg shadow-xl font-semibold transition-transform duration-300 z-50 text-black ${finalBgColor} transform translate-x-full`;
             }, 3000);
         }
 
-        // --- CRUD Operations (In-Memory) ---
+        // --- File I/O for .txt 'Database' ---
 
         /**
-         * Adds a new task to the in-memory array.
-         * @param {object} taskData
+         * Prompts the user to download the current tasks as a JSON-formatted .txt file.
          */
-        function addTask(taskData) {
+        function exportDataAsTextFile(action = 'Data saved') {
+            const data = JSON.stringify(tasks, null, 2);
+            const blob = new Blob([data], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `DevOps_Backlog_${new Date().toISOString().split('T')[0].replace(/-/g, '')}_${new Date().getHours()}${new Date().getMinutes()}${new Date().getSeconds()}.txt`;
+            document.body.appendChild(a);
+            
+            a.click();
+            
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showNotification(`${action}. New Backlog manifest downloaded.`, 'bg-[#00ffff]');
+        }
+
+        /**
+         * Imports tasks from a selected .txt file.
+         */
+        function importDataFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        tasks = importedData;
+                        sortAndRenderTasks();
+                        showNotification('Backlog Loaded. Ready for Deployment!', 'bg-green-400');
+                        event.target.value = null;
+                    } else {
+                        throw new Error("Invalid file format. Expected a JSON array.");
+                    }
+                } catch (error) {
+                    console.error("Error importing data:", error);
+                    showNotification('ERROR: Backlog data corrupted or invalid.', 'bg-red-500');
+                    event.target.value = null;
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- CRUD Operations (In-Memory) ---
+        
+        /**
+         * Creates a new task. The 'route' field is used for Implementation Steps/Notes.
+         */
+        function createTask(taskData) {
             const task = {
                 id: generateUniqueId(),
                 ...taskData,
@@ -179,13 +363,38 @@
                 createdAt: new Date().toISOString()
             };
             tasks.push(task);
+            exportDataAsTextFile('New Task Filed');
+        }
+
+        /**
+         * Updates an existing task's core details.
+         */
+        function updateTask(taskId, updatedData) {
+            const taskIndex = tasks.findIndex(t => t.id === taskId);
+            if (taskIndex !== -1) {
+                tasks[taskIndex] = {
+                    ...tasks[taskIndex],
+                    ...updatedData
+                };
+                exportDataAsTextFile('Task Specification Updated');
+            }
+        }
+
+        /**
+         * Handles the submission of the form (either Create or Update).
+         */
+        function handleTaskSubmit(taskData, taskId) {
+            if (taskId) {
+                updateTask(taskId, taskData);
+            } else {
+                createTask(taskData);
+            }
+            clearEditForm();
             sortAndRenderTasks();
-            showNotification('New Flight Plan Filed!', 'bg-indigo-600');
         }
 
         /**
          * Cycles the status of a task.
-         * @param {string} taskId
          */
         function updateTaskStatus(taskId) {
             const task = tasks.find(t => t.id === taskId);
@@ -196,11 +405,11 @@
             task.status = statuses[(currentIndex + 1) % statuses.length];
             
             sortAndRenderTasks();
+            exportDataAsTextFile('Task Status Changed');
         }
 
         /**
          * Deletes a task by ID.
-         * @param {string} taskId
          */
         function deleteTask(taskId) {
             const initialLength = tasks.length;
@@ -208,7 +417,7 @@
             
             if (tasks.length < initialLength) {
                 sortAndRenderTasks();
-                showNotification('Flight Plan Deleted.', 'bg-red-500');
+                exportDataAsTextFile('Task Decommissioned');
             }
         }
 
@@ -222,16 +431,48 @@
                 const priorityOrder = { [TASK_PRIORITY.HIGH]: 3, [TASK_PRIORITY.MEDIUM]: 2, [TASK_PRIORITY.LOW]: 1 };
                 const statusOrder = { [TASK_STATUS.PLANNED]: 4, [TASK_STATUS.IN_PROGRESS]: 3, [TASK_STATUS.TESTING]: 2, [TASK_STATUS.COMPLETED]: 1 };
 
-                // Primary sort: Priority (High first)
                 if (priorityOrder[b.priority] !== priorityOrder[a.priority]) {
                     return priorityOrder[b.priority] - priorityOrder[a.priority];
                 }
-                // Secondary sort: Status (In Progress/Planned first)
                 return statusOrder[b.status] - statusOrder[a.status];
             });
 
             renderTasks();
             updateMetrics();
+        }
+        
+        /**
+         * Clears the form and resets it from the editing state back to creation state.
+         */
+        function clearEditForm() {
+            document.getElementById('task-form').reset();
+            document.getElementById('editing-task-id').value = '';
+            document.getElementById('submit-btn').textContent = 'File Task';
+            document.getElementById('submit-btn').classList.remove('bg-yellow-600', 'hover:bg-yellow-500', 'text-gray-900');
+            document.getElementById('submit-btn').classList.add('bg-[#00ffff]', 'hover:bg-[#00d0d0]');
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            document.getElementById('form-title').textContent = 'Define New Task Specification';
+            document.querySelector('input[name="estimate"]').value = 4.0;
+        }
+
+        /**
+         * Fills the form with existing task data for editing.
+         */
+        function fillEditForm(task) {
+            document.getElementById('editing-task-id').value = task.id;
+            document.querySelector('input[name="name"]').value = task.name;
+            // The 'route' field now holds the implementation steps
+            document.querySelector('textarea[name="route"]').value = task.route; 
+            document.querySelector('select[name="priority"]').value = task.priority;
+            document.querySelector('input[name="estimate"]').value = task.estimate;
+
+            document.getElementById('submit-btn').textContent = 'Update Task';
+            document.getElementById('submit-btn').classList.remove('bg-[#00ffff]', 'hover:bg-[#00d0d0]');
+            document.getElementById('submit-btn').classList.add('bg-yellow-600', 'hover:bg-yellow-500', 'text-gray-900');
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            document.getElementById('form-title').textContent = `Editing Task: ${task.name}`;
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         /**
@@ -243,73 +484,76 @@
 
             if (tasks.length === 0) {
                 container.innerHTML = `
-                    <div class="text-center p-10 bg-white rounded-xl shadow-lg text-gray-500 col-span-full">
-                        All clear. No active tasks. File a new plan to begin your day!
+                    <div class="text-center p-10 fui-glass rounded-xl shadow-lg text-cyan-400/70 font-mono col-span-full">
+                        // Backlog Empty. Deploy a new Task Specification.
                     </div>
                 `;
                 return;
             }
 
             tasks.forEach(task => {
-                const priorityClass = PRIORITY_COLORS[task.priority] || 'border-gray-500 text-gray-600';
-                const statusClass = STATUS_COLORS[task.status] || 'bg-gray-100 text-gray-500';
+                const priorityClass = PRIORITY_COLORS[task.priority];
+                const statusClass = STATUS_COLORS[task.status];
+                const priorityBaseColor = priorityClass.split(' ')[0].replace('border-', 'text-');
 
                 const card = document.createElement('div');
-                card.className = `bg-white rounded-xl shadow-lg p-5 border-l-4 ${priorityClass} transition-all duration-300 hover:shadow-xl`;
+                card.className = `fui-glass rounded-xl p-5 border-l-4 ${priorityClass} transition-all duration-300 hover:shadow-[0_0_15px_rgba(0,255,255,0.4)]`;
                 
-                // Format date nicely for display
                 const taskDate = task.createdAt ? new Date(task.createdAt).toLocaleDateString() : 'Unknown Date';
 
                 card.innerHTML = `
-                    <div class="flex justify-between items-start mb-3">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                            ID: ${task.id.substring(0, 8)}
+                    <div class="flex justify-between items-start mb-3 border-b border-white/10 pb-2">
+                        <span class="text-xs font-mono uppercase tracking-widest text-white/50">
+                            TASK ID: ${task.id.substring(0, 8)}
                         </span>
-                        <button data-id="${task.id}" class="delete-btn text-gray-400 hover:text-red-500 transition-colors" aria-label="Delete Task">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
+                        <div class="flex space-x-3 text-white/70">
+                            <button data-id="${task.id}" class="edit-btn hover:text-[#00ffff] transition-colors" aria-label="Edit Task">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                            </button>
+                            <button data-id="${task.id}" class="delete-btn hover:text-red-500 transition-colors" aria-label="Delete Task">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
                     </div>
 
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">${task.name}</h3>
+                    <h3 class="text-xl font-bold text-white mb-2">${task.name}</h3>
                     
-                    <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
-                        <span class="flex items-center">
-                            <span class="font-semibold text-gray-700 mr-1">Module:</span>
-                            ${task.module}
-                        </span>
-                        <span class="flex items-center">
-                            <span class="font-semibold text-gray-700 mr-1">Est:</span>
+                    <div class="flex flex-wrap items-center gap-4 text-sm mb-4">
+                        <span class="flex items-center text-cyan-300/70 font-mono">
+                            <span class="font-semibold text-white mr-1">Est Time:</span>
                             ${task.estimate}h
                         </span>
-                        <span class="font-bold border px-2 py-0.5 rounded-full text-xs ${priorityClass.replace('border-', 'border').replace('text-', 'text')}">
-                            ${task.priority}
+                        <span class="font-bold border px-2 py-0.5 rounded-full text-xs border-dashed ${priorityBaseColor} bg-black/30">
+                            ${task.priority.toUpperCase()} PRIORITY
                         </span>
                     </div>
 
-                    <p class="text-sm italic text-gray-600 mb-4 border-t pt-3">
-                        **Route/Steps:** ${task.route}
+                    <p class="text-sm italic text-cyan-400/80 mb-4 border-t border-white/10 pt-3">
+                        // IMPLEMENTATION STEPS: ${task.route}
                     </p>
 
-                    <div class="flex justify-between items-center pt-3 border-t">
-                        <button data-id="${task.id}" class="status-btn px-3 py-1 text-xs font-bold rounded-full ${statusClass} transition-all duration-300">
+                    <div class="flex justify-between items-center pt-3 border-t border-white/10">
+                        <button data-id="${task.id}" class="status-btn px-3 py-1 text-xs font-bold rounded-full ${statusClass} transition-all duration-300 uppercase fui-btn-neon">
                             ${task.status}
                         </button>
-                        <span class="text-xs text-gray-400">
-                            ${taskDate}
+                        <span class="text-xs text-white/50 font-mono">
+                            Filed: ${taskDate}
                         </span>
                     </div>
                 `;
 
+                // Add event listeners dynamically
                 card.querySelector('.delete-btn').addEventListener('click', (e) => {
-                    const id = e.currentTarget.getAttribute('data-id');
-                    deleteTask(id);
+                    deleteTask(e.currentTarget.getAttribute('data-id'));
                 });
-
+                card.querySelector('.edit-btn').addEventListener('click', (e) => {
+                    const taskToEdit = tasks.find(t => t.id === e.currentTarget.getAttribute('data-id'));
+                    if (taskToEdit) {
+                        fillEditForm(taskToEdit);
+                    }
+                });
                 card.querySelector('.status-btn').addEventListener('click', (e) => {
-                    const id = e.currentTarget.getAttribute('data-id');
-                    updateTaskStatus(id);
+                    updateTaskStatus(e.currentTarget.getAttribute('data-id'));
                 });
 
                 container.appendChild(card);
@@ -329,96 +573,46 @@
         }
 
 
-        // --- File I/O for .txt 'Database' ---
-
-        /**
-         * Prompts the user to download the current tasks as a JSON-formatted .txt file.
-         */
-        function exportDataAsTextFile() {
-            // Data is already clean since we have no complex Firebase Timestamps
-            const data = JSON.stringify(tasks, null, 2);
-            const blob = new Blob([data], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `DevFlightDeck_Tasks_${new Date().toISOString().split('T')[0]}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showNotification('Tasks exported to .txt file!', 'bg-gray-700');
-        }
-
-        /**
-         * Imports tasks from a selected .txt file, replacing current tasks.
-         * @param {Event} event 
-         */
-        function importDataFromFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (Array.isArray(importedData)) {
-                        // Replace current tasks with imported data
-                        tasks = importedData;
-                        sortAndRenderTasks();
-                        showNotification('Tasks loaded successfully from file!', 'bg-gray-700');
-                        // Clear the file input so the same file can be imported again if needed
-                        event.target.value = null; 
-                    } else {
-                        throw new Error("Invalid file format. Expected a JSON array.");
-                    }
-                } catch (error) {
-                    console.error("Error importing data:", error);
-                    showNotification('Error importing file. Check format!', 'bg-red-500');
-                    event.target.value = null; 
-                }
-            };
-            reader.readAsText(file);
-        }
-
         // --- Initial Load and Event Handlers ---
 
         window.onload = function () {
-            // Render the initial state (empty)
+            // 1. Initialize 3D Background
+            init3D();
+            animate3D();
+            
+            // 2. Initialize Planner Logic
             sortAndRenderTasks();
 
             const form = document.getElementById('task-form');
             const fileInput = document.getElementById('file-input');
+            const cancelEditBtn = document.getElementById('cancel-edit-btn');
 
-            // Handle Form Submission
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const formData = new FormData(form);
                 const estimateValue = parseFloat(formData.get('estimate'));
+                const taskId = formData.get('id');
                 
                 const taskData = {
                     name: formData.get('name'),
-                    module: formData.get('module'),
                     priority: formData.get('priority'),
                     estimate: estimateValue,
-                    route: formData.get('route'),
+                    route: formData.get('route'), // 'route' holds the Implementation Steps
                 };
 
-                if (taskData.name && taskData.module && taskData.route && estimateValue > 0) {
-                    addTask(taskData);
-                    form.reset();
-                    // Keep the default estimate in the field after reset
-                    document.querySelector('input[name="estimate"]').value = 4.0; 
+                // Validate required fields (Task Name and Steps)
+                if (taskData.name && taskData.route && estimateValue > 0) {
+                    handleTaskSubmit(taskData, taskId);
                 } else {
-                    showNotification('Please fill all fields correctly!', 'bg-red-500');
+                    showNotification('ERROR: Input validation failed. Check fields.', 'bg-red-500');
                 }
             });
 
-            // Handle Export/Import Buttons
-            document.getElementById('export-btn').addEventListener('click', exportDataAsTextFile);
+            cancelEditBtn.addEventListener('click', clearEditForm);
+
+            document.getElementById('export-btn').addEventListener('click', () => exportDataAsTextFile('Manual Backlog Save'));
             
             document.getElementById('import-btn').addEventListener('click', () => {
-                // Trigger the hidden file input
                 fileInput.click();
             });
 
