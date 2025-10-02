@@ -2,7 +2,7 @@
   {
     "id": "mg941fmrqfp",
     "name": "Build Backend for Campaigns and Leads ",
-    "priority": "Medium",
+    "priority": "High",
     "estimate": 72,
     "subtasks": [
       {
