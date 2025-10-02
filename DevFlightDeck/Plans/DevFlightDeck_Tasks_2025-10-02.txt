@@ -1,0 +1,12 @@
+[
+  {
+    "id": "mg92otp4e43",
+    "name": "Build Backend For Campaigns and Leads",
+    "module": "unspecified",
+    "priority": "High",
+    "estimate": 4,
+    "route": "Create the database model\nCreate the sql query for the table \nCreate the campaigns Api [CRUD operations]\n",
+    "status": "Planned",
+    "createdAt": "2025-10-02T07:07:20.536Z"
+  }
+]

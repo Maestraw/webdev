@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Flight Deck: Local Task Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f9;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+        .container-fluid {
+            max-width: 90rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Notification Area (Used instead of alert()) -->
+    <div id="notification" class="fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white font-semibold transition-transform duration-300 z-50 transform translate-x-full"></div>
+
+    <header class="bg-white shadow-md p-4 sticky top-0 z-10">
+        <div class="container-fluid mx-auto flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
+            <h1 class="text-3xl font-extrabold text-gray-900">
+                <span class="text-indigo-600">Dev</span> Flight Deck
+            </h1>
+            <div class="text-sm font-medium text-gray-500">
+                Data is stored locally. Use Export/Import for file management.
+            </div>
+        </div>
+    </header>
+
+    <main class="container-fluid mx-auto p-4 md:p-8">
+        
+        <!-- Metrics Dashboard -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-indigo-500">
+                <p class="text-sm font-medium text-gray-500">Total Tasks Filed</p>
+                <p id="metric-total-tasks" class="text-3xl font-bold text-gray-900 mt-1">0</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
+                <p class="text-sm font-medium text-gray-500">Tasks Completed</p>
+                <p id="metric-completed-tasks" class="text-3xl font-bold text-gray-900 mt-1">0</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
+                <p class="text-sm font-medium text-gray-500">Total Est. Workload (Hours)</p>
+                <p id="metric-total-time" class="text-3xl font-bold text-gray-900 mt-1">0.0h</p>
+            </div>
+        </section>
+
+        <!-- Form and File Operations -->
+        <section class="bg-white p-6 rounded-xl shadow-2xl mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">File New Task Plan</h2>
+            <form id="task-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" name="name" placeholder="Task Name (e.g., Implement Feature X)" required class="p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                    <input type="text" name="module" placeholder="Module/Component (e.g., User Profile, Global Styles)" required class="p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                </div>
+                
+                <textarea name="route" placeholder="Route/Steps (e.g., Write SQL query, Develop API endpoint, Create component, Unit tests)" required rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 mt-4 transition-colors resize-none"></textarea>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                    <select name="priority" class="p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white">
+                        <option value="High">High Priority</option>
+                        <option value="Medium" selected>Medium Priority</option>
+                        <option value="Low">Low Priority</option>
+                    </select>
+                    <input type="number" name="estimate" placeholder="Est. Hours (e.g., 4.0)" value="4.0" min="0.5" step="0.5" required class="p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                    
+                    <button type="submit" class="bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-300 transform hover:scale-105">
+                        File Plan
+                    </button>
+                    
+                    <div class="flex space-x-2">
+                        <button type="button" id="export-btn" class="flex-1 bg-gray-700 text-white font-bold rounded-lg shadow-md hover:bg-gray-800 transition-colors duration-300 transform hover:scale-105 text-sm p-3">
+                            Export (.txt)
+                        </button>
+                        <button type="button" id="import-btn" class="flex-1 bg-gray-700 text-white font-bold rounded-lg shadow-md hover:bg-gray-800 transition-colors duration-300 transform hover:scale-105 text-sm p-3">
+                            Import (.txt)
+                        </button>
+                        <!-- Hidden input to handle file selection -->
+                        <input type="file" id="file-input" accept=".txt,.json" class="hidden">
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- Task List (The Flight Plan) -->
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Current Flight Plans</h2>
+        <section id="task-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Task Cards will be rendered here by JavaScript -->
+        </section>
+
+    </main>
+
+    <script>
+        // --- Core Application Logic ---
+
+        let tasks = []; // In-memory "database"
+
+        // Task Constants
+        const TASK_STATUS = {
+            PLANNED: 'Planned',
+            IN_PROGRESS: 'In Progress',
+            TESTING: 'Testing',
+            COMPLETED: 'Completed',
+        };
+
+        const TASK_PRIORITY = {
+            HIGH: 'High',
+            MEDIUM: 'Medium',
+            LOW: 'Low',
+        };
+
+        const STATUS_COLORS = {
+            [TASK_STATUS.PLANNED]: 'bg-gray-200 text-gray-700 hover:bg-gray-300',
+            [TASK_STATUS.IN_PROGRESS]: 'bg-blue-200 text-blue-700 hover:bg-blue-300',
+            [TASK_STATUS.TESTING]: 'bg-yellow-200 text-yellow-700 hover:bg-yellow-300',
+            [TASK_STATUS.COMPLETED]: 'bg-green-200 text-green-700 hover:bg-green-300',
+        };
+
+        const PRIORITY_COLORS = {
+            [TASK_PRIORITY.HIGH]: 'border-red-500 text-red-600',
+            [TASK_PRIORITY.MEDIUM]: 'border-yellow-500 text-yellow-600',
+            [TASK_PRIORITY.LOW]: 'border-green-500 text-green-600',
+        };
+
+        // --- Utility Functions ---
+
+        /**
+         * Generates a unique, temporary ID for tasks.
+         * @returns {string}
+         */
+        function generateUniqueId() {
+            return Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+        }
+        
+        /**
+         * Displays a temporary notification banner.
+         * @param {string} message 
+         * @param {string} bgColor Tailwind background color class
+         */
+        function showNotification(message, bgColor) {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            // Show notification
+            notif.className = `fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white font-semibold transition-transform duration-300 z-50 ${bgColor} transform translate-x-0`;
+
+            // Hide notification after 3 seconds
+            setTimeout(() => {
+                notif.className = `fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white font-semibold transition-transform duration-300 z-50 ${bgColor} transform translate-x-full`;
+            }, 3000);
+        }
+
+        // --- CRUD Operations (In-Memory) ---
+
+        /**
+         * Adds a new task to the in-memory array.
+         * @param {object} taskData
+         */
+        function addTask(taskData) {
+            const task = {
+                id: generateUniqueId(),
+                ...taskData,
+                status: TASK_STATUS.PLANNED,
+                createdAt: new Date().toISOString()
+            };
+            tasks.push(task);
+            sortAndRenderTasks();
+            showNotification('New Flight Plan Filed!', 'bg-indigo-600');
+        }
+
+        /**
+         * Cycles the status of a task.
+         * @param {string} taskId
+         */
+        function updateTaskStatus(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            const statuses = Object.values(TASK_STATUS);
+            const currentIndex = statuses.indexOf(task.status);
+            task.status = statuses[(currentIndex + 1) % statuses.length];
+            
+            sortAndRenderTasks();
+        }
+
+        /**
+         * Deletes a task by ID.
+         * @param {string} taskId
+         */
+        function deleteTask(taskId) {
+            const initialLength = tasks.length;
+            tasks = tasks.filter(t => t.id !== taskId);
+            
+            if (tasks.length < initialLength) {
+                sortAndRenderTasks();
+                showNotification('Flight Plan Deleted.', 'bg-red-500');
+            }
+        }
+
+        // --- UI Rendering and Metrics ---
+
+        /**
+         * Sorts tasks and triggers re-rendering.
+         */
+        function sortAndRenderTasks() {
+            tasks.sort((a, b) => {
+                const priorityOrder = { [TASK_PRIORITY.HIGH]: 3, [TASK_PRIORITY.MEDIUM]: 2, [TASK_PRIORITY.LOW]: 1 };
+                const statusOrder = { [TASK_STATUS.PLANNED]: 4, [TASK_STATUS.IN_PROGRESS]: 3, [TASK_STATUS.TESTING]: 2, [TASK_STATUS.COMPLETED]: 1 };
+
+                // Primary sort: Priority (High first)
+                if (priorityOrder[b.priority] !== priorityOrder[a.priority]) {
+                    return priorityOrder[b.priority] - priorityOrder[a.priority];
+                }
+                // Secondary sort: Status (In Progress/Planned first)
+                return statusOrder[b.status] - statusOrder[a.status];
+            });
+
+            renderTasks();
+            updateMetrics();
+        }
+
+        /**
+         * Renders all tasks to the DOM.
+         */
+        function renderTasks() {
+            const container = document.getElementById('task-list-container');
+            container.innerHTML = '';
+
+            if (tasks.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center p-10 bg-white rounded-xl shadow-lg text-gray-500 col-span-full">
+                        All clear. No active tasks. File a new plan to begin your day!
+                    </div>
+                `;
+                return;
+            }
+
+            tasks.forEach(task => {
+                const priorityClass = PRIORITY_COLORS[task.priority] || 'border-gray-500 text-gray-600';
+                const statusClass = STATUS_COLORS[task.status] || 'bg-gray-100 text-gray-500';
+
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-xl shadow-lg p-5 border-l-4 ${priorityClass} transition-all duration-300 hover:shadow-xl`;
+                
+                // Format date nicely for display
+                const taskDate = task.createdAt ? new Date(task.createdAt).toLocaleDateString() : 'Unknown Date';
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                            ID: ${task.id.substring(0, 8)}
+                        </span>
+                        <button data-id="${task.id}" class="delete-btn text-gray-400 hover:text-red-500 transition-colors" aria-label="Delete Task">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">${task.name}</h3>
+                    
+                    <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
+                        <span class="flex items-center">
+                            <span class="font-semibold text-gray-700 mr-1">Module:</span>
+                            ${task.module}
+                        </span>
+                        <span class="flex items-center">
+                            <span class="font-semibold text-gray-700 mr-1">Est:</span>
+                            ${task.estimate}h
+                        </span>
+                        <span class="font-bold border px-2 py-0.5 rounded-full text-xs ${priorityClass.replace('border-', 'border').replace('text-', 'text')}">
+                            ${task.priority}
+                        </span>
+                    </div>
+
+                    <p class="text-sm italic text-gray-600 mb-4 border-t pt-3">
+                        **Route/Steps:** ${task.route}
+                    </p>
+
+                    <div class="flex justify-between items-center pt-3 border-t">
+                        <button data-id="${task.id}" class="status-btn px-3 py-1 text-xs font-bold rounded-full ${statusClass} transition-all duration-300">
+                            ${task.status}
+                        </button>
+                        <span class="text-xs text-gray-400">
+                            ${taskDate}
+                        </span>
+                    </div>
+                `;
+
+                card.querySelector('.delete-btn').addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    deleteTask(id);
+                });
+
+                card.querySelector('.status-btn').addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    updateTaskStatus(id);
+                });
+
+                container.appendChild(card);
+            });
+        }
+
+        /**
+         * Updates the numerical metrics on the dashboard.
+         */
+        function updateMetrics() {
+            const totalEstimatedTime = tasks.reduce((sum, task) => sum + (parseFloat(task.estimate) || 0), 0);
+            const completedTasks = tasks.filter(t => t.status === TASK_STATUS.COMPLETED).length;
+
+            document.getElementById('metric-total-tasks').textContent = tasks.length;
+            document.getElementById('metric-completed-tasks').textContent = completedTasks;
+            document.getElementById('metric-total-time').textContent = `${totalEstimatedTime.toFixed(1)}h`;
+        }
+
+
+        // --- File I/O for .txt 'Database' ---
+
+        /**
+         * Prompts the user to download the current tasks as a JSON-formatted .txt file.
+         */
+        function exportDataAsTextFile() {
+            // Data is already clean since we have no complex Firebase Timestamps
+            const data = JSON.stringify(tasks, null, 2);
+            const blob = new Blob([data], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `DevFlightDeck_Tasks_${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showNotification('Tasks exported to .txt file!', 'bg-gray-700');
+        }
+
+        /**
+         * Imports tasks from a selected .txt file, replacing current tasks.
+         * @param {Event} event 
+         */
+        function importDataFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        // Replace current tasks with imported data
+                        tasks = importedData;
+                        sortAndRenderTasks();
+                        showNotification('Tasks loaded successfully from file!', 'bg-gray-700');
+                        // Clear the file input so the same file can be imported again if needed
+                        event.target.value = null; 
+                    } else {
+                        throw new Error("Invalid file format. Expected a JSON array.");
+                    }
+                } catch (error) {
+                    console.error("Error importing data:", error);
+                    showNotification('Error importing file. Check format!', 'bg-red-500');
+                    event.target.value = null; 
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- Initial Load and Event Handlers ---
+
+        window.onload = function () {
+            // Render the initial state (empty)
+            sortAndRenderTasks();
+
+            const form = document.getElementById('task-form');
+            const fileInput = document.getElementById('file-input');
+
+            // Handle Form Submission
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(form);
+                const estimateValue = parseFloat(formData.get('estimate'));
+                
+                const taskData = {
+                    name: formData.get('name'),
+                    module: formData.get('module'),
+                    priority: formData.get('priority'),
+                    estimate: estimateValue,
+                    route: formData.get('route'),
+                };
+
+                if (taskData.name && taskData.module && taskData.route && estimateValue > 0) {
+                    addTask(taskData);
+                    form.reset();
+                    // Keep the default estimate in the field after reset
+                    document.querySelector('input[name="estimate"]').value = 4.0; 
+                } else {
+                    showNotification('Please fill all fields correctly!', 'bg-red-500');
+                }
+            });
+
+            // Handle Export/Import Buttons
+            document.getElementById('export-btn').addEventListener('click', exportDataAsTextFile);
+            
+            document.getElementById('import-btn').addEventListener('click', () => {
+                // Trigger the hidden file input
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', importDataFromFile);
+        };
+    </script>
+</body>
+</html>
