@@ -1,7 +1,7 @@
 [
   {
     "id": "mg941fmrqfp",
-    "name": "Build Backend for Campaigns and Leads ",
+    "name": "Build Backend for Campaigns and Leads",
     "priority": "High",
     "estimate": 72,
     "subtasks": [
@@ -81,12 +81,27 @@
         "completed": false
       },
       {
-        "id": "sub-h23z1",
-        "description": "train users  on how to use the feature",
+        "id": "sub-v6wok",
+        "description": "create branch and checkout",
+        "completed": false
+      }
+    ],
+    "status": "IN PROGRESS",
+    "createdAt": "2025-10-02T07:45:08.451Z"
+  },
+  {
+    "id": "mg95f6hbf5b",
+    "name": "BUG FIX  [BonVie Nyaradzo Fund USD]",
+    "priority": "Medium",
+    "estimate": 1,
+    "subtasks": [
+      {
+        "id": "sub-w9c1f",
+        "description": "Trace the root source of the error",
         "completed": false
       }
     ],
     "status": "PLANNED",
-    "createdAt": "2025-10-02T07:45:08.451Z"
+    "createdAt": "2025-10-02T08:23:49.391Z"
   }
 ]
