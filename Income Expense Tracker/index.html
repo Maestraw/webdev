@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Income and Expense Tracker</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Chart.js for visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f9;
+        }
+        /* Custom scrollbar for table */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #e2e8f0; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto bg-white shadow-2xl rounded-xl p-6 md:p-10">
+
+        <!-- Header -->
+        <header class="mb-8 border-b pb-4">
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Personal Financial Flow Tracker</h1>
+            <p class="mt-2 text-lg text-gray-600">Monitor your income, expenditures, and net balance over time.</p>
+        </header>
+
+        <!-- Current Metrics -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+
+            <!-- Total Income -->
+            <div class="bg-green-50 p-5 rounded-lg shadow-lg border border-green-200">
+                <p class="text-sm font-medium text-green-700">Total Income (All Time)</p>
+                <p id="total-income-display" class="text-3xl font-bold text-green-800 mt-1">$0.00</p>
+            </div>
+
+            <!-- Total Expenses -->
+            <div class="bg-red-50 p-5 rounded-lg shadow-lg border border-red-200">
+                <p class="text-sm font-medium text-red-700">Total Expenses (All Time)</p>
+                <p id="total-expense-display" class="text-3xl font-bold text-red-800 mt-1">$0.00</p>
+            </div>
+
+            <!-- Net Balance -->
+            <div id="net-balance-card" class="bg-indigo-50 p-5 rounded-lg shadow-lg border border-indigo-200">
+                <p class="text-sm font-medium text-indigo-700">Net Financial Balance</p>
+                <p id="net-balance-display" class="text-3xl font-bold text-indigo-800 mt-1">$0.00</p>
+            </div>
+
+        </div>
+
+        <!-- Monthly Net Flow Line Graph -->
+        <section class="mb-10 p-6 bg-gray-50 rounded-lg shadow-lg border border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Monthly Net Flow (Income - Expense)</h2>
+            <div class="relative h-80">
+                <canvas id="netFlowChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Add New Entry -->
+        <section class="mb-10 p-6 bg-gray-100 rounded-lg shadow-lg border border-gray-300">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Record New Transaction</h2>
+            <form id="add-entry-form" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                <div>
+                    <label for="entry-type" class="block text-sm font-medium text-gray-700">Type</label>
+                    <select id="entry-type" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="entry-date" class="block text-sm font-medium text-gray-700">Date</label>
+                    <input type="date" id="entry-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="entry-amount" class="block text-sm font-medium text-gray-700">Amount ($)</label>
+                    <input type="number" id="entry-amount" placeholder="e.g., 50.00" required step="0.01" min="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="entry-note" class="block text-sm font-medium text-gray-700">Category / Note</label>
+                    <input type="text" id="entry-note" placeholder="e.g., Salary, Rent, Groceries" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <button type="submit" class="md:col-span-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out">
+                    Add Transaction
+                </button>
+            </form>
+            <p id="message-box" class="text-sm mt-3 text-red-600"></p>
+        </section>
+
+        <!-- History Table -->
+        <section class="mb-10">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Transaction History</h2>
+            <div class="overflow-x-auto rounded-lg shadow-xl border border-gray-300">
+                <div class="max-h-96 overflow-y-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-100 sticky top-0">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Data entries will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Management (TXT File Simulation) -->
+        <section class="p-6 bg-blue-50 rounded-lg shadow-inner border border-blue-200">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Data Management (TXT File Operations)</h2>
+            <p class="text-sm text-gray-600 mb-4">
+                Export your current data for backup or import a saved .txt file to restore your progress.
+            </p>
+            <div class="flex flex-col md:flex-row gap-4">
+                <button onclick="exportData()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out">
+                    Export Data to budget.txt
+                </button>
+                <button onclick="showImportModal()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out">
+                    Import Data from .txt
+                </button>
+            </div>
+        </section>
+
+        <!-- Import Modal -->
+        <div id="import-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden items-center justify-center">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
+                <h3 class="text-xl font-bold mb-4">Import Data from Text File</h3>
+                <p class="mb-4 text-sm text-gray-600">Select your previously exported **monthly\_budget\_tracker\_data.txt** file. This will overwrite all current data.</p>
+                <input type="file" id="import-file-input" accept=".txt" class="w-full mb-4 p-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                <div class="mt-4 flex justify-end gap-3">
+                    <button onclick="hideImportModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                    <button onclick="importData()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Import & Overwrite</button>
+                </div>
+                <p id="import-message" class="text-sm mt-3 text-red-600"></p>
+            </div>
+        </div>
+
+        <!-- Edit Modal (Simplified for brevity, similar to previous file) -->
+        <div id="edit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden items-center justify-center">
+            <div class="bg-white rounded-lg p-6 w-full max-w-lg shadow-2xl">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Edit Transaction Entry</h3>
+                <form id="edit-entry-form">
+                    <input type="hidden" id="edit-entry-id">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label for="edit-entry-type" class="block text-sm font-medium text-gray-700">Type</label>
+                            <select id="edit-entry-type" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="income">Income</option>
+                                <option value="expense">Expense</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="edit-entry-date" class="block text-sm font-medium text-gray-700">Date</label>
+                            <input type="date" id="edit-entry-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="edit-entry-amount" class="block text-sm font-medium text-gray-700">Amount ($)</label>
+                            <input type="number" id="edit-entry-amount" required step="0.01" min="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <label for="edit-entry-note" class="block text-sm font-medium text-gray-700">Category / Note</label>
+                        <input type="text" id="edit-entry-note" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div class="mt-4 flex justify-end gap-3">
+                        <button type="button" onclick="hideEditModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Save Changes</button>
+                    </div>
+                    <p id="edit-message-box" class="text-sm mt-3 text-red-600"></p>
+                </form>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        // Global Constants
+        const STORAGE_KEY = 'monthly_budget_data';
+        let transactions = [];
+        let netFlowChart = null; // Variable to hold the Chart.js instance
+
+        // --- Utility Functions ---
+
+        /** Safely loads data from localStorage. */
+        function loadData() {
+            try {
+                const storedData = localStorage.getItem(STORAGE_KEY);
+                if (storedData) {
+                    transactions = JSON.parse(storedData);
+                    // Ensure amounts are numbers and types are correct
+                    transactions = transactions.map(entry => ({
+                        ...entry,
+                        amount: parseFloat(entry.amount) || 0,
+                        type: entry.type === 'expense' ? 'expense' : 'income'
+                    })).filter(entry => entry.amount > 0);
+                } else {
+                    transactions = [];
+                }
+            } catch (error) {
+                console.error("Error loading data from localStorage:", error);
+                transactions = [];
+            }
+        }
+
+        /** Saves the current state to localStorage. */
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+        }
+
+        /** Formats a number to currency string. */
+        function formatCurrency(amount, colorize = false) {
+            const formatted = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+            }).format(amount);
+
+            if (colorize) {
+                if (amount > 0) return `<span class="text-green-600">${formatted}</span>`;
+                if (amount < 0) return `<span class="text-red-600">${formatted}</span>`;
+            }
+            return formatted;
+        }
+
+        /** Displays a message in the main message box temporarily. */
+        function displayMessage(message, isError = false) {
+            const box = document.getElementById('message-box');
+            box.textContent = message;
+            box.className = 'text-sm mt-3';
+            if (isError) {
+                box.classList.add('text-red-600');
+            } else {
+                box.classList.add('text-green-600');
+            }
+            setTimeout(() => {
+                box.textContent = '';
+                box.className = 'text-sm mt-3 text-red-600'; // Reset to default error color
+            }, 3000);
+        }
+
+
+        // --- Chart & Metrics Logic ---
+
+        /** Aggregates transactions by month to calculate net flow. */
+        function getMonthlyNetFlow() {
+            const monthlyData = {};
+
+            transactions.forEach(t => {
+                // Use YYYY-MM format for keys
+                const monthKey = t.date.substring(0, 7); 
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = { income: 0, expense: 0, net: 0 };
+                }
+
+                const amount = t.amount;
+                if (t.type === 'income') {
+                    monthlyData[monthKey].income += amount;
+                    monthlyData[monthKey].net += amount;
+                } else {
+                    monthlyData[monthKey].expense += amount;
+                    monthlyData[monthKey].net -= amount;
+                }
+            });
+
+            // Convert object to sorted array
+            return Object.keys(monthlyData)
+                .sort() // Sort by month key (YYYY-MM)
+                .map(monthKey => ({
+                    month: new Date(monthKey + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
+                    ...monthlyData[monthKey]
+                }));
+        }
+
+        /** Renders or updates the Chart.js line graph. */
+        function renderChart() {
+            const monthlyNetFlow = getMonthlyNetFlow();
+            const labels = monthlyNetFlow.map(d => d.month);
+            const dataPoints = monthlyNetFlow.map(d => d.net);
+
+            const ctx = document.getElementById('netFlowChart').getContext('2d');
+            
+            // Destroy previous instance if it exists
+            if (netFlowChart) {
+                netFlowChart.destroy();
+            }
+
+            netFlowChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Monthly Net Flow ($)',
+                        data: dataPoints,
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Net Balance'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ' Net: ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        /** Calculates total metrics and updates the dashboard. */
+        function updateMetrics() {
+            const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+            const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+            const netBalance = totalIncome - totalExpense;
+
+            // Update display elements
+            document.getElementById('total-income-display').textContent = formatCurrency(totalIncome);
+            document.getElementById('total-expense-display').textContent = formatCurrency(totalExpense);
+            document.getElementById('net-balance-display').textContent = formatCurrency(netBalance);
+
+            // Update Net Balance Card appearance
+            const netCard = document.getElementById('net-balance-card');
+            netCard.classList.remove('bg-green-50', 'bg-red-50', 'bg-indigo-50', 'border-green-200', 'border-red-200', 'border-indigo-200');
+            
+            if (netBalance >= 0) {
+                netCard.classList.add('bg-green-50', 'border-green-200');
+                document.getElementById('net-balance-display').classList.remove('text-red-800');
+                document.getElementById('net-balance-display').classList.add('text-green-800');
+            } else {
+                netCard.classList.add('bg-red-50', 'border-red-200');
+                document.getElementById('net-balance-display').classList.remove('text-green-800');
+                document.getElementById('net-balance-display').classList.add('text-red-800');
+            }
+
+            renderHistoryTable();
+            renderChart();
+            saveData();
+        }
+
+        /** Renders the transaction history table. */
+        function renderHistoryTable() {
+            const tbody = document.getElementById('history-body');
+            tbody.innerHTML = ''; 
+
+            // Sort entries newest first
+            const sortedEntries = transactions.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (sortedEntries.length === 0) {
+                 tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No transactions recorded yet.</td></tr>';
+                 return;
+            }
+
+            sortedEntries.forEach(entry => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+
+                const formattedDate = new Date(entry.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                const typeText = entry.type.charAt(0).toUpperCase() + entry.type.slice(1);
+                const typeColor = entry.type === 'income' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${formattedDate}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeColor}">
+                            ${typeText}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm ${entry.type === 'income' ? 'text-green-700' : 'text-red-700'} font-semibold">
+                        ${formatCurrency(entry.amount)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">${entry.note}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <button onclick="showEditModal('${entry.id}')" class="text-indigo-600 hover:text-indigo-900 transition duration-150 ease-in-out p-1 rounded hover:bg-indigo-100">
+                            Edit
+                        </button>
+                        <button onclick="deleteEntry('${entry.id}')" class="text-red-600 hover:text-red-900 transition duration-150 ease-in-out p-1 rounded hover:bg-red-100">
+                            Delete
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        /** Handles form submission to add a new transaction entry. */
+        document.getElementById('add-entry-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const type = document.getElementById('entry-type').value;
+            const date = document.getElementById('entry-date').value;
+            const amount = parseFloat(document.getElementById('entry-amount').value);
+            const note = document.getElementById('entry-note').value.trim();
+
+            if (!date || isNaN(amount) || amount <= 0.01 || !note) {
+                displayMessage("Please ensure all fields are filled correctly (Amount must be greater than $0.01).", true);
+                return;
+            }
+
+            const newEntry = {
+                id: Date.now().toString(),
+                type: type,
+                date: date,
+                amount: amount,
+                note: note
+            };
+
+            transactions.push(newEntry);
+            updateMetrics();
+            event.target.reset();
+            document.getElementById('entry-date').valueAsDate = new Date(); // Reset date for convenience
+            document.getElementById('entry-type').value = type; // Keep the type selected
+            displayMessage(`Successfully added ${type.toUpperCase()} of ${formatCurrency(amount)}.`);
+        });
+
+        /** Deletes an entry by ID. */
+        function deleteEntry(id) {
+            const initialLength = transactions.length;
+            transactions = transactions.filter(entry => entry.id !== id);
+            
+            if (transactions.length < initialLength) {
+                displayMessage("Entry deleted successfully.");
+                updateMetrics();
+            } else {
+                displayMessage("Error deleting entry.", true);
+            }
+        }
+
+        // --- Edit Modal Functions ---
+        
+        function showEditModal(id) {
+            const entry = transactions.find(e => e.id === id);
+            if (!entry) {
+                displayMessage("Entry not found for editing.", true);
+                return;
+            }
+
+            document.getElementById('edit-entry-id').value = entry.id;
+            document.getElementById('edit-entry-type').value = entry.type;
+            document.getElementById('edit-entry-date').value = entry.date;
+            document.getElementById('edit-entry-amount').value = entry.amount;
+            document.getElementById('edit-entry-note').value = entry.note;
+
+            document.getElementById('edit-modal').classList.remove('hidden');
+            document.getElementById('edit-modal').classList.add('flex');
+            document.getElementById('edit-message-box').textContent = '';
+        }
+
+        function hideEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+            document.getElementById('edit-modal').classList.remove('flex');
+        }
+
+        document.getElementById('edit-entry-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('edit-entry-id').value;
+            const type = document.getElementById('edit-entry-type').value;
+            const date = document.getElementById('edit-entry-date').value;
+            const amount = parseFloat(document.getElementById('edit-entry-amount').value);
+            const note = document.getElementById('edit-entry-note').value.trim();
+            const editMessageBox = document.getElementById('edit-message-box');
+
+            if (!date || isNaN(amount) || amount <= 0.01 || !note) {
+                editMessageBox.textContent = "Please ensure all fields are filled correctly (Amount must be positive).";
+                editMessageBox.classList.add('text-red-600');
+                return;
+            }
+
+            const index = transactions.findIndex(e => e.id === id);
+            if (index > -1) {
+                transactions[index] = { id, type, date, amount, note };
+                updateMetrics();
+                hideEditModal();
+                displayMessage("Entry successfully updated!");
+            } else {
+                editMessageBox.textContent = "Error: Entry not found during save.";
+            }
+        });
+
+
+        // --- TXT File Simulation Functions (Adapted) ---
+
+        /** Exports the current data to a downloadable .txt file. */
+        function exportData() {
+            const data = JSON.stringify(transactions, null, 2);
+            const filename = 'monthly_budget_tracker_data.txt';
+            const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
+
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            displayMessage(`Data exported! Look for '${filename}' in your downloads.`);
+        }
+
+        function showImportModal() {
+            document.getElementById('import-modal').classList.remove('hidden');
+            document.getElementById('import-modal').classList.add('flex');
+            document.getElementById('import-message').textContent = "";
+            document.getElementById('import-file-input').value = null;
+        }
+
+        function hideImportModal() {
+            document.getElementById('import-modal').classList.add('hidden');
+            document.getElementById('import-modal').classList.remove('flex');
+        }
+
+        /** Imports data from the uploaded file, overwrites current data, and updates the dashboard. */
+        function importData() {
+            const fileInput = document.getElementById('import-file-input');
+            const file = fileInput.files[0];
+            const messageEl = document.getElementById('import-message');
+            messageEl.textContent = "";
+
+            if (!file) {
+                messageEl.textContent = "Please select a .txt file to import.";
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                let importedEntries;
+                const importText = e.target.result;
+
+                try {
+                    importedEntries = JSON.parse(importText);
+                } catch (error) {
+                    console.error("JSON Parsing Error:", error);
+                    messageEl.textContent = `Import failed: JSON Syntax Error. Please check your .txt file.`;
+                    return; 
+                }
+                
+                if (!Array.isArray(importedEntries)) {
+                    messageEl.textContent = "Import failed: File content is not a list (JSON array).";
+                    return;
+                }
+
+                // Robust structure validation for the new data format
+                let firstInvalidEntry = null;
+                const validTypes = ['income', 'expense'];
+
+                const isValid = importedEntries.every(entry => {
+                    const isValidEntry = (
+                        entry.id && typeof entry.id === 'string' &&
+                        entry.date && typeof entry.date === 'string' &&
+                        entry.note && typeof entry.note === 'string' &&
+                        validTypes.includes(entry.type) &&
+                        !isNaN(parseFloat(entry.amount)) && parseFloat(entry.amount) > 0
+                    );
+                    
+                    if (!isValidEntry && !firstInvalidEntry) {
+                        firstInvalidEntry = entry;
+                    }
+                    return isValidEntry;
+                });
+
+
+                if (!isValid) {
+                    messageEl.textContent = "Import failed: One or more entries are missing required fields (id, date, note, type [income/expense], amount [>0]). Please check the console for details.";
+                    console.error("--- FIRST INVALID ENTRY FAILED VALIDATION ---");
+                    console.error("Invalid Entry:", firstInvalidEntry);
+                    console.error("---------------------------------------------");
+                    return;
+                }
+                
+                // If valid, sanitize and process
+                transactions = importedEntries.map(entry => ({
+                    ...entry,
+                    amount: parseFloat(entry.amount),
+                    type: entry.type // Already validated to be 'income' or 'expense'
+                }));
+
+                saveData();
+                updateMetrics();
+                hideImportModal();
+                displayMessage("Data successfully imported and dashboard updated! The previous data was overwritten.");
+            };
+
+            reader.onerror = function() {
+                messageEl.textContent = "Error reading the file.";
+            };
+
+            reader.readAsText(file);
+        }
+
+        // --- Initialization ---
+
+        window.onload = () => {
+            // Set today's date as default
+            document.getElementById('entry-date').valueAsDate = new Date();
+            loadData();
+            updateMetrics();
+        };
+
+    </script>
+</body>
+</html>

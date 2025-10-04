@@ -1,0 +1,121 @@
+[
+  {
+    "id": "1759601210500",
+    "type": "income",
+    "date": "2025-09-30",
+    "amount": 500,
+    "note": "salary"
+  },
+  {
+    "id": "1759601235714",
+    "type": "expense",
+    "date": "2025-10-01",
+    "amount": 125,
+    "note": "rent"
+  },
+  {
+    "id": "1759601272948",
+    "type": "expense",
+    "date": "2025-09-30",
+    "amount": 80,
+    "note": "5289 Allowance"
+  },
+  {
+    "id": "1759601313271",
+    "type": "expense",
+    "date": "2025-10-01",
+    "amount": 15,
+    "note": "Dinner"
+  },
+  {
+    "id": "1759601356523",
+    "type": "expense",
+    "date": "2025-10-01",
+    "amount": 2.5,
+    "note": "indrive"
+  },
+  {
+    "id": "1759601368747",
+    "type": "income",
+    "date": "2025-10-04",
+    "amount": 1,
+    "note": "Ecocash received"
+  },
+  {
+    "id": "1759601418005",
+    "type": "expense",
+    "date": "2025-10-01",
+    "amount": 120,
+    "note": "Airtime"
+  },
+  {
+    "id": "1759601465048",
+    "type": "expense",
+    "date": "2025-10-04",
+    "amount": 140,
+    "note": "savings"
+  },
+  {
+    "id": "1759601520097",
+    "type": "expense",
+    "date": "2025-10-03",
+    "amount": 4,
+    "note": "Mazoe"
+  },
+  {
+    "id": "1759601555067",
+    "type": "expense",
+    "date": "2025-10-03",
+    "amount": 1,
+    "note": "biscuits and ciggarets"
+  },
+  {
+    "id": "1759601581601",
+    "type": "expense",
+    "date": "2025-10-04",
+    "amount": 2,
+    "note": "Transport to sentosa"
+  },
+  {
+    "id": "1759601597833",
+    "type": "expense",
+    "date": "2025-10-04",
+    "amount": 0.5,
+    "note": "soft drink"
+  },
+  {
+    "id": "1759601639089",
+    "type": "expense",
+    "date": "2025-10-01",
+    "amount": 2,
+    "note": "trip to town"
+  },
+  {
+    "id": "1759601663327",
+    "type": "expense",
+    "date": "2025-10-04",
+    "amount": 2,
+    "note": "trip to and from cabs"
+  },
+  {
+    "id": "1759601696452",
+    "type": "expense",
+    "date": "2025-10-01",
+    "amount": 2,
+    "note": "trip to and from sentosa"
+  },
+  {
+    "id": "1759601711194",
+    "type": "expense",
+    "date": "2025-10-04",
+    "amount": 1,
+    "note": "Queensdale"
+  },
+  {
+    "id": "1759601758688",
+    "type": "expense",
+    "date": "2025-10-04",
+    "amount": 1,
+    "note": "roxbury"
+  }
+]
