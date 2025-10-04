@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InDrive Capital Accumulation Tracker</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f9;
+        }
+        /* Custom scrollbar for table */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-6 md:p-10">
+
+        <!-- Header and Goal -->
+        <header class="mb-8 border-b pb-4">
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Phase 1: InDrive Launch Fund Tracker</h1>
+            <p class="mt-2 text-xl text-indigo-600 font-semibold">Goal: Toyota Aqua Capital Accumulation</p>
+            <p class="text-sm text-gray-500">Track your progress toward the estimated <span class="font-bold text-gray-700">$11,000</span> for the vehicle and license.</p>
+        </header>
+
+        <!-- Progress Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+
+            <!-- Total Goal -->
+            <div class="bg-indigo-50 p-4 rounded-lg shadow-md border border-indigo-200">
+                <p class="text-sm font-medium text-indigo-700">Total Goal</p>
+                <p class="text-2xl font-bold text-indigo-900">$11,000</p>
+            </div>
+
+            <!-- Total Saved -->
+            <div class="bg-green-50 p-4 rounded-lg shadow-md border border-green-200">
+                <p class="text-sm font-medium text-green-700">Total Saved</p>
+                <p id="total-saved-display" class="text-2xl font-bold text-green-900">$0.00</p>
+            </div>
+
+            <!-- Remaining -->
+            <div class="bg-yellow-50 p-4 rounded-lg shadow-md border border-yellow-200">
+                <p class="text-sm font-medium text-yellow-700">Amount Remaining</p>
+                <p id="remaining-display" class="text-2xl font-bold text-yellow-900">$11,000.00</p>
+            </div>
+
+            <!-- Progress Percentage -->
+            <div class="bg-gray-50 p-4 rounded-lg shadow-md border border-gray-200 flex flex-col justify-center">
+                <p class="text-sm font-medium text-gray-700">Progress</p>
+                <p id="progress-percent-display" class="text-3xl font-extrabold text-gray-900">0%</p>
+            </div>
+
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-200 rounded-full h-4 mb-8 shadow-inner">
+            <div id="progress-bar" class="bg-indigo-600 h-4 rounded-full transition-all duration-700 ease-in-out" style="width: 0%"></div>
+        </div>
+
+        <!-- Add New Savings Entry -->
+        <section class="mb-10 p-6 bg-gray-50 rounded-lg shadow-lg border border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Record New Savings Contribution</h2>
+            <form id="add-entry-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div>
+                    <label for="entry-date" class="block text-sm font-medium text-gray-700">Date</label>
+                    <input type="date" id="entry-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="entry-amount" class="block text-sm font-medium text-gray-700">Amount ($)</label>
+                    <input type="number" id="entry-amount" placeholder="e.g., 200" required step="0.01" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="entry-note" class="block text-sm font-medium text-gray-700">Source / Note</label>
+                    <input type="text" id="entry-note" placeholder="e.g., Monthly Salary Contribution, Weekend InDrive Earnings" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <button type="submit" class="md:col-span-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out">
+                    Add Entry
+                </button>
+            </form>
+            <p id="message-box" class="text-sm mt-3 text-red-600"></p>
+        </section>
+
+        <!-- Savings History -->
+        <section class="mb-10">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Savings History</h2>
+            <div class="overflow-x-auto rounded-lg shadow-xl border border-gray-300">
+                <div class="max-h-96 overflow-y-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-100 sticky top-0">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source/Note</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="savings-history-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Data entries will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Management (TXT File Simulation) -->
+        <section class="p-6 bg-blue-50 rounded-lg shadow-inner border border-blue-200">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Data Management (TXT File Operations)</h2>
+            <p class="text-sm text-gray-600 mb-4">
+                Export your current data for backup or import a saved .txt file to restore your progress.
+            </p>
+            <div class="flex flex-col md:flex-row gap-4">
+                <button onclick="exportData()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out">
+                    Export Data to progress.txt
+                </button>
+                <button onclick="showImportModal()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out">
+                    Import Data from .txt
+                </button>
+            </div>
+        </section>
+
+        <!-- Import Modal -->
+        <div id="import-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden items-center justify-center">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
+                <h3 class="text-xl font-bold mb-4">Import Data from Text File</h3>
+                <p class="mb-4 text-sm text-gray-600">Select your previously exported **financial\_progress\_tracker\_data.txt** file. This will overwrite all current data.</p>
+                <input type="file" id="import-file-input" accept=".txt" class="w-full mb-4 p-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                <div class="mt-4 flex justify-end gap-3">
+                    <button onclick="hideImportModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                    <button onclick="importData()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Import & Overwrite</button>
+                </div>
+                <p id="import-message" class="text-sm mt-3 text-red-600"></p>
+            </div>
+        </div>
+
+        <!-- Edit Modal -->
+        <div id="edit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden items-center justify-center">
+            <div class="bg-white rounded-lg p-6 w-full max-w-lg shadow-2xl">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Edit Savings Entry</h3>
+                <form id="edit-entry-form">
+                    <input type="hidden" id="edit-entry-id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="edit-entry-date" class="block text-sm font-medium text-gray-700">Date</label>
+                            <input type="date" id="edit-entry-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="edit-entry-amount" class="block text-sm font-medium text-gray-700">Amount ($)</label>
+                            <input type="number" id="edit-entry-amount" required step="0.01" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <label for="edit-entry-note" class="block text-sm font-medium text-gray-700">Source / Note</label>
+                        <input type="text" id="edit-entry-note" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div class="mt-4 flex justify-end gap-3">
+                        <button type="button" onclick="hideEditModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Save Changes</button>
+                    </div>
+                    <p id="edit-message-box" class="text-sm mt-3 text-red-600"></p>
+                </form>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        // Global Constants
+        const GOAL_AMOUNT = 11000;
+        const STORAGE_KEY = 'indrive_savings_data';
+
+        // State (Savings Array)
+        let savingsEntries = [];
+
+        // --- Utility Functions ---
+
+        /**
+         * Safely loads data from localStorage.
+         */
+        function loadData() {
+            try {
+                const storedData = localStorage.getItem(STORAGE_KEY);
+                if (storedData) {
+                    savingsEntries = JSON.parse(storedData);
+                    // Ensure amounts are treated as numbers and entries are valid
+                    savingsEntries = savingsEntries.map(entry => ({
+                        ...entry,
+                        amount: parseFloat(entry.amount) || 0,
+                    })).filter(entry => entry.amount > 0); // Filter out zero or invalid entries
+                } else {
+                    savingsEntries = [];
+                }
+            } catch (error) {
+                console.error("Error loading data from localStorage:", error);
+                savingsEntries = [];
+            }
+        }
+
+        /**
+         * Saves the current state to localStorage.
+         */
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(savingsEntries));
+        }
+
+        /**
+         * Formats a number to currency string.
+         * @param {number} amount
+         */
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+            }).format(amount);
+        }
+
+        /**
+         * Displays a message in the main message box temporarily.
+         * @param {string} message 
+         * @param {boolean} isError 
+         */
+        function displayMessage(message, isError = false) {
+            const box = document.getElementById('message-box');
+            box.textContent = message;
+            box.className = 'text-sm mt-3';
+            if (isError) {
+                box.classList.add('text-red-600');
+            } else {
+                box.classList.add('text-green-600');
+            }
+            setTimeout(() => {
+                box.textContent = '';
+                box.className = 'text-sm mt-3 text-red-600'; // Reset to default error color
+            }, 3000);
+        }
+
+
+        // --- Core Application Logic ---
+
+        /**
+         * Calculates total saved and updates all dashboard metrics.
+         */
+        function updateMetrics() {
+            const totalSaved = savingsEntries.reduce((sum, entry) => sum + (entry.amount || 0), 0);
+            const remaining = Math.max(0, GOAL_AMOUNT - totalSaved);
+            const progressPercent = Math.min(100, (totalSaved / GOAL_AMOUNT) * 100);
+
+            // Update display elements
+            document.getElementById('total-saved-display').textContent = formatCurrency(totalSaved);
+            document.getElementById('remaining-display').textContent = formatCurrency(remaining);
+            document.getElementById('progress-percent-display').textContent = `${progressPercent.toFixed(1)}%`;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+            // Goal status management
+            const remainingDisplay = document.getElementById('remaining-display');
+            if (totalSaved >= GOAL_AMOUNT) {
+                remainingDisplay.classList.remove('text-yellow-900');
+                remainingDisplay.classList.add('text-green-600', 'font-extrabold');
+                remainingDisplay.textContent = "Goal Achieved!";
+                displayMessage("Congratulations! You have reached your funding goal for Phase 1. Now begin Phase 2: Property Investment!");
+            } else {
+                 remainingDisplay.classList.remove('text-green-600', 'font-extrabold');
+                 remainingDisplay.classList.add('text-yellow-900');
+            }
+
+            renderHistoryTable();
+            saveData();
+        }
+
+        /**
+         * Renders the savings history table.
+         */
+        function renderHistoryTable() {
+            const tbody = document.getElementById('savings-history-body');
+            tbody.innerHTML = ''; // Clear existing rows
+
+            // Sort entries newest first
+            const sortedEntries = savingsEntries.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (sortedEntries.length === 0) {
+                 tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No savings entries recorded yet. Start tracking!</td></tr>';
+                 return;
+            }
+
+            sortedEntries.forEach(entry => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+
+                const formattedDate = new Date(entry.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${formattedDate}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-semibold">${formatCurrency(entry.amount)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">${entry.note}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <button onclick="showEditModal('${entry.id}')" class="text-indigo-600 hover:text-indigo-900 transition duration-150 ease-in-out p-1 rounded hover:bg-indigo-100">
+                            Edit
+                        </button>
+                        <button onclick="deleteEntry('${entry.id}')" class="text-red-600 hover:text-red-900 transition duration-150 ease-in-out p-1 rounded hover:bg-red-100">
+                            Delete
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        /**
+         * Handles form submission to add a new savings entry.
+         */
+        document.getElementById('add-entry-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const date = document.getElementById('entry-date').value;
+            const amount = parseFloat(document.getElementById('entry-amount').value);
+            const note = document.getElementById('entry-note').value.trim();
+
+            if (!date || isNaN(amount) || amount <= 0 || !note) {
+                displayMessage("Please ensure all fields are filled correctly (Amount must be a positive number).", true);
+                return;
+            }
+
+            const newEntry = {
+                id: Date.now().toString(), // Simple unique ID
+                date: date,
+                amount: amount,
+                note: note
+            };
+
+            savingsEntries.push(newEntry);
+            updateMetrics();
+            event.target.reset(); // Clear form after submission
+            // Reset date field for convenience
+            document.getElementById('entry-date').valueAsDate = new Date(); 
+            displayMessage(`Successfully added ${formatCurrency(amount)} to your savings!`);
+        });
+
+        /**
+         * Deletes a savings entry by ID.
+         * @param {string} id
+         */
+        function deleteEntry(id) {
+            // Implemented without window.confirm()
+            const initialLength = savingsEntries.length;
+            savingsEntries = savingsEntries.filter(entry => entry.id !== id);
+            
+            if (savingsEntries.length < initialLength) {
+                displayMessage("Entry deleted successfully.");
+                updateMetrics();
+            } else {
+                displayMessage("Error deleting entry.", true);
+            }
+        }
+
+        // --- Edit Modal Functions ---
+        
+        function showEditModal(id) {
+            const entry = savingsEntries.find(e => e.id === id);
+            if (!entry) {
+                displayMessage("Entry not found for editing.", true);
+                return;
+            }
+
+            document.getElementById('edit-entry-id').value = entry.id;
+            document.getElementById('edit-entry-date').value = entry.date;
+            document.getElementById('edit-entry-amount').value = entry.amount;
+            document.getElementById('edit-entry-note').value = entry.note;
+
+            document.getElementById('edit-modal').classList.remove('hidden');
+            document.getElementById('edit-modal').classList.add('flex');
+            document.getElementById('edit-message-box').textContent = '';
+        }
+
+        function hideEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+            document.getElementById('edit-modal').classList.remove('flex');
+        }
+
+        document.getElementById('edit-entry-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('edit-entry-id').value;
+            const date = document.getElementById('edit-entry-date').value;
+            const amount = parseFloat(document.getElementById('edit-entry-amount').value);
+            const note = document.getElementById('edit-entry-note').value.trim();
+            const editMessageBox = document.getElementById('edit-message-box');
+
+            if (!date || isNaN(amount) || amount <= 0 || !note) {
+                editMessageBox.textContent = "Please ensure all fields are filled correctly (Amount must be a positive number).";
+                editMessageBox.classList.add('text-red-600');
+                return;
+            }
+
+            const index = savingsEntries.findIndex(e => e.id === id);
+            if (index > -1) {
+                savingsEntries[index] = { id, date, amount, note };
+                updateMetrics();
+                hideEditModal();
+                displayMessage("Entry successfully updated!");
+            } else {
+                editMessageBox.textContent = "Error: Entry not found during save.";
+            }
+        });
+
+
+        // --- TXT File Simulation Functions ---
+
+        /**
+         * Exports the current data to a downloadable .txt file.
+         */
+        function exportData() {
+            const data = JSON.stringify(savingsEntries, null, 2);
+            const filename = 'financial_progress_tracker_data.txt';
+            const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
+
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            displayMessage(`Data exported! Look for '${filename}' in your downloads.`);
+        }
+
+        function showImportModal() {
+            document.getElementById('import-modal').classList.remove('hidden');
+            document.getElementById('import-modal').classList.add('flex');
+            document.getElementById('import-message').textContent = "";
+            document.getElementById('import-file-input').value = null; // Clear previous selection
+        }
+
+        function hideImportModal() {
+            document.getElementById('import-modal').classList.add('hidden');
+            document.getElementById('import-modal').classList.remove('flex');
+        }
+
+        /**
+         * Imports data from the uploaded file, overwrites current data, and updates the dashboard.
+         */
+        function importData() {
+            const fileInput = document.getElementById('import-file-input');
+            const file = fileInput.files[0];
+            const messageEl = document.getElementById('import-message');
+            messageEl.textContent = "";
+
+            if (!file) {
+                messageEl.textContent = "Please select a .txt file to import.";
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                let importedEntries;
+                const importText = e.target.result;
+
+                try {
+                    // 1. Attempt to parse the file content as JSON
+                    importedEntries = JSON.parse(importText);
+                } catch (error) {
+                    console.error("JSON Parsing Error:", error);
+                    messageEl.textContent = `Import failed: JSON Syntax Error. Please check your .txt file for stray commas, quotes, or brackets.`;
+                    return; // Stop execution if JSON is invalid
+                }
+                
+                // 2. Validate that the parsed data is an array
+                if (!Array.isArray(importedEntries)) {
+                    messageEl.textContent = "Import failed: File content is not a list (JSON array).";
+                    return;
+                }
+
+                // 3. Perform robust structure validation
+                let firstInvalidEntry = null;
+                const isValid = importedEntries.every(entry => {
+                    const isValidEntry = (
+                        entry.id && typeof entry.id === 'string' &&
+                        entry.date && typeof entry.date === 'string' &&
+                        entry.note && typeof entry.note === 'string' &&
+                        !isNaN(parseFloat(entry.amount)) && parseFloat(entry.amount) > 0 // Amount must be a positive number
+                    );
+                    
+                    if (!isValidEntry && !firstInvalidEntry) {
+                        firstInvalidEntry = entry;
+                    }
+                    return isValidEntry;
+                });
+
+
+                if (!isValid) {
+                    messageEl.textContent = "Import failed: Imported data structure is invalid. Please check your browser's console for the problematic entry.";
+                    console.error("--- FIRST INVALID ENTRY FOUND DURING IMPORT ---");
+                    console.error("The following entry failed validation (must have non-empty id, date, note, and amount > 0):", firstInvalidEntry);
+                    console.error("---------------------------------------------");
+                    return;
+                }
+                
+                // If valid, sanitize and process
+                const sanitizedEntries = importedEntries.map(entry => ({
+                    ...entry,
+                    amount: parseFloat(entry.amount) || 0
+                }));
+
+
+                savingsEntries = sanitizedEntries.filter(entry => entry.amount > 0);
+                saveData(); // Save the new data to local storage
+                updateMetrics(); // Rerender the dashboard
+                hideImportModal();
+                displayMessage("Data successfully imported and dashboard updated! The previous data was overwritten.");
+
+            };
+
+            reader.onerror = function() {
+                messageEl.textContent = "Error reading the file.";
+            };
+
+            reader.readAsText(file);
+        }
+
+        // --- Initialization ---
+
+        window.onload = () => {
+            // Set today's date as default for convenience
+            document.getElementById('entry-date').valueAsDate = new Date();
+            loadData();
+            updateMetrics();
+        };
+
+    </script>
+</body>
+</html>

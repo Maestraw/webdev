@@ -1,0 +1,272 @@
+[
+  {
+    "id": "mgamsr9vwwc",
+    "name": "ADD PSMAS USD  TO NON MEDICAL AID FUNDED VISITS ",
+    "priority": "High",
+    "estimate": 3,
+    "subtasks": [
+      {
+        "id": "sub-wwfq1",
+        "description": "Create branch and checkout",
+        "completed": false
+      },
+      {
+        "id": "sub-q3is8",
+        "description": "add PSMAS USD the create visit workflow",
+        "completed": false
+      },
+      {
+        "id": "sub-d3n2f",
+        "description": "run tests :locally,test env and live env",
+        "completed": false
+      },
+      {
+        "id": "sub-76w0l",
+        "description": "merge with master and notify team",
+        "completed": false
+      },
+      {
+        "id": "sub-09gfw",
+        "description": "notify users of the new additions",
+        "completed": false
+      }
+    ],
+    "status": "PLANNED",
+    "createdAt": "2025-10-03T09:18:02.515Z"
+  },
+  {
+    "id": "mgaorl2vczj",
+    "name": "ADD MUKANDO AS A MEDICAL AID FUNDER",
+    "priority": "High",
+    "estimate": 10,
+    "subtasks": [
+      {
+        "id": "sub-ljm4j",
+        "description": "dependants management by id number [mini member lookup ]",
+        "completed": false
+      }
+    ],
+    "status": "PLANNED",
+    "createdAt": "2025-10-03T10:13:07.063Z"
+  },
+  {
+    "id": "mg941fmrqfp",
+    "name": "Build Backend for Campaigns and Leads ",
+    "priority": "High",
+    "estimate": 72,
+    "subtasks": [
+      {
+        "id": "sub-5c0v2",
+        "description": "Create the database models",
+        "completed": true
+      },
+      {
+        "id": "sub-s7483",
+        "description": "Prepare the sql queries for the tables",
+        "completed": true
+      },
+      {
+        "id": "sub-h3jxg",
+        "description": "create the campaigns and leads services",
+        "completed": true
+      },
+      {
+        "id": "sub-k811v",
+        "description": "build the campaigns google cloud functions for adding",
+        "completed": true
+      },
+      {
+        "id": "sub-o91nt",
+        "description": "build the campaigns google cloud functions for  deleting",
+        "completed": true
+      },
+      {
+        "id": "sub-szzfl",
+        "description": "build the campaigns google cloud functions for updating",
+        "completed": true
+      },
+      {
+        "id": "sub-4uyez",
+        "description": "Intergrate the frontend with the apis",
+        "completed": false
+      },
+      {
+        "id": "sub-nvemk",
+        "description": "test locally",
+        "completed": false
+      },
+      {
+        "id": "sub-fre5f",
+        "description": "deploy to test env",
+        "completed": false
+      },
+      {
+        "id": "sub-6wy32",
+        "description": "test on test env",
+        "completed": false
+      },
+      {
+        "id": "sub-ia813",
+        "description": "deploy to live env",
+        "completed": false
+      },
+      {
+        "id": "sub-98unq",
+        "description": "test on live env",
+        "completed": false
+      },
+      {
+        "id": "sub-bf04h",
+        "description": "merge branches with master",
+        "completed": false
+      },
+      {
+        "id": "sub-rjvut",
+        "description": "notify  team of the merge and advise them to pull",
+        "completed": false
+      },
+      {
+        "id": "sub-h23z1",
+        "description": "train users  on how to use the feature",
+        "completed": false
+      },
+      {
+        "id": "sub-lazjp",
+        "description": "Create Branches [system backend repository]",
+        "completed": true
+      }
+    ],
+    "status": "IN PROGRESS",
+    "createdAt": "2025-10-02T07:45:08.451Z"
+  },
+  {
+    "id": "mg95f6hbf5b",
+    "name": "BUG FIX  [BonVie Nyaradzo Fund USD]",
+    "priority": "Medium",
+    "estimate": 1,
+    "subtasks": [
+      {
+        "id": "sub-w9c1f",
+        "description": "Trace the root source of the error",
+        "completed": false
+      },
+      {
+        "id": "sub-ln8e4",
+        "description": "Create Branch & and Check out [dashboard repository]",
+        "completed": false
+      },
+      {
+        "id": "sub-xfp10",
+        "description": "test locally",
+        "completed": false
+      },
+      {
+        "id": "sub-5awtq",
+        "description": "deploy to test env",
+        "completed": false
+      },
+      {
+        "id": "sub-if6tv",
+        "description": "test on test env",
+        "completed": false
+      },
+      {
+        "id": "sub-7s6w2",
+        "description": "deploy to live env",
+        "completed": false
+      },
+      {
+        "id": "sub-h8q5h",
+        "description": "test on live envv",
+        "completed": false
+      },
+      {
+        "id": "sub-d5c9b",
+        "description": "merge with master branch",
+        "completed": false
+      },
+      {
+        "id": "sub-3gvl6",
+        "description": "notify team and advise them to pull the changes",
+        "completed": false
+      }
+    ],
+    "status": "PLANNED",
+    "createdAt": "2025-10-02T08:23:49.391Z"
+  },
+  {
+    "id": "mgahxvgkl4b",
+    "name": "Fix Member Look up For exisiting customer autocomplete field ",
+    "priority": "Medium",
+    "estimate": 2,
+    "subtasks": [
+      {
+        "id": "sub-dsec0",
+        "description": "Create branch and check out",
+        "completed": false
+      },
+      {
+        "id": "sub-jg2fs",
+        "description": "Examine code and trace bug source and fix",
+        "completed": false
+      },
+      {
+        "id": "sub-q79mv",
+        "description": "run tests locally,test env and live env",
+        "completed": false
+      },
+      {
+        "id": "sub-7mxov",
+        "description": "merge branch",
+        "completed": false
+      },
+      {
+        "id": "sub-9nrzb",
+        "description": "notify team and advise them to pull",
+        "completed": false
+      },
+      {
+        "id": "sub-5wim4",
+        "description": "notify users about the fix",
+        "completed": false
+      }
+    ],
+    "status": "PLANNED",
+    "createdAt": "2025-10-03T07:02:03.140Z"
+  },
+  {
+    "id": "mgai8dperzj",
+    "name": "Add Filter By Branch [Bookings]",
+    "priority": "Medium",
+    "estimate": 4,
+    "subtasks": [
+      {
+        "id": "sub-m3lf6",
+        "description": "Create Branch and check out",
+        "completed": false
+      },
+      {
+        "id": "sub-joone",
+        "description": "add filter tools on front end",
+        "completed": false
+      },
+      {
+        "id": "sub-muhnl",
+        "description": "run tests locally ,test env and live env",
+        "completed": false
+      },
+      {
+        "id": "sub-71b4a",
+        "description": "merge with master and notify team and advise to pull",
+        "completed": false
+      },
+      {
+        "id": "sub-qzpz1",
+        "description": "notify users about the users",
+        "completed": false
+      }
+    ],
+    "status": "PLANNED",
+    "createdAt": "2025-10-03T07:10:13.346Z"
+  }
+]
