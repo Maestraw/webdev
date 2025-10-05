@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Santa Thadeu Big Picture Mapping Dashboard</title>
+    <title>Santa Thadeu Big Picture Mapping Dashboard (Local Storage)</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Use Inter Font -->
@@ -27,6 +27,14 @@
             background-color: rgba(0, 0, 0, 0.6);
             z-index: 50;
         }
+        /* Style for scrollbar in feed */
+        #activity-feed::-webkit-scrollbar, #modal-detail-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        #activity-feed::-webkit-scrollbar-thumb, #modal-detail-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -36,12 +44,12 @@
         
         <!-- Sidebar / Activity Feed -->
         <div class="lg:w-1/4 w-full bg-white border-r border-gray-100 p-6 shadow-2xl lg:shadow-md order-2 lg:order-1">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 text-indigo-600"><path d="M12 2l10 5.5v11L12 22 2 17.5v-11L12 2z"/><polyline points="12 2 12 12 2 17.5"/></svg>
-               Santa Thadeu Big Picture Mapping
+                Santa Thadeu Big Picture Mapping
             </h2>
 
-            <p id="auth-status" class="text-sm text-gray-600 mb-4 rounded-lg bg-gray-100 p-2 border border-gray-200">Status: Mock API Mode</p>
+            <p id="auth-status" class="text-sm text-gray-600 mb-4 rounded-lg bg-gray-100 p-2 border border-gray-200">Status: Local Storage Mode</p>
             <p id="user-id-display" class="text-xs text-gray-500 mb-6"></p>
 
             <!-- Announcement Post Form -->
@@ -71,8 +79,18 @@
         
         <!-- Main Content Area / Progress Board (Based on Image) -->
         <div class="lg:w-3/4 w-full p-6 lg:p-10 order-1 lg:order-2">
-            <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Key Objectives & Progress</h1>
-            <p class="text-gray-500 mb-8">Track what's critical and justify status changes to maintain team clarity.</p>
+            
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Key Objectives & Progress</h1>
+                    <p class="text-gray-500">Track what's critical and justify status changes to maintain team clarity.</p>
+                </div>
+                <!-- New Objective Button -->
+                <button onclick="window.showObjectiveCrudModal('add', null, null)" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-2 px-4 rounded-xl transition duration-150 shadow-lg flex items-center min-w-[150px] justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    New Objective
+                </button>
+            </div>
 
             <div id="progress-board" class="space-y-10">
                 <!-- Data will be rendered here -->
@@ -90,7 +108,7 @@
             <!-- Modal Content Wrapper for switching views -->
             <div id="modal-content-wrapper">
                 
-                <!-- 1. Status Update Justification Form View -->
+                <!-- 1. Status Update Justification Form View (Existing) -->
                 <div id="modal-form-view" class="hidden">
                     <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Status Update Justification</h3>
                     <p class="text-sm text-gray-600 mb-4">You are changing the status for <span id="modal-title-form" class="font-semibold text-indigo-700"></span>.</p>
@@ -118,7 +136,7 @@
                     </div>
                 </div>
 
-                <!-- 2. Objective Detail View (Activity History) -->
+                <!-- 2. Objective Detail View (Activity History - Existing) -->
                 <div id="modal-detail-view" class="hidden">
                     <div class="flex justify-between items-center mb-4 border-b pb-2">
                         <h3 class="text-xl font-bold text-gray-800">Activity History</h3>
@@ -132,6 +150,78 @@
                     </div>
                 </div>
 
+                <!-- 3. Objective CRUD Form (Add/Edit Objective) -->
+                <div id="modal-objective-crud-view" class="hidden">
+                    <h3 id="objective-crud-title" class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Add New Objective</h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label for="objective-name-input" class="block text-sm font-medium text-gray-700 mb-1">Objective Name</label>
+                            <input type="text" id="objective-name-input" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Finalize Q3 Marketing Strategy">
+                        </div>
+                        <div>
+                            <label for="objective-group-select" class="block text-sm font-medium text-gray-700 mb-1">Objective Category</label>
+                            <select id="objective-group-select" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <!-- Options populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <p id="objective-crud-error" class="text-red-500 text-sm mt-3 hidden">Please provide a valid objective name and select a category.</p>
+
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button onclick="window.closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-150">
+                            Cancel
+                        </button>
+                        <button id="objective-crud-submit" onclick="window.confirmObjectiveCrud()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-150 shadow-md">
+                            Save Objective
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4. Feed Item CRUD Form (Edit/Delete Feed Item) -->
+                <div id="modal-feed-crud-view" class="hidden">
+                    <h3 id="feed-crud-title" class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Edit Team Post</h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label for="feed-content-input" class="block text-sm font-medium text-gray-700 mb-1">Post Content</label>
+                            <textarea id="feed-content-input" rows="5" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Edit the announcement or task content here."></textarea>
+                        </div>
+                    </div>
+                    
+                    <p id="feed-crud-error" class="text-red-500 text-sm mt-3 hidden">Post content cannot be empty.</p>
+
+                    <div class="flex justify-between items-center mt-6">
+                        <button id="feed-delete-button" onclick="window.deleteFeedItemConfirmation(null)" class="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition duration-150 shadow-sm">
+                            Delete Post
+                        </button>
+                        <div class="flex space-x-3">
+                            <button onclick="window.closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-150">
+                                Cancel
+                            </button>
+                            <button id="feed-crud-submit" onclick="window.confirmFeedItemEdit()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-150 shadow-md">
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 5. Generic Confirmation/Alert Modal -->
+                <div id="modal-confirm-view" class="hidden text-center">
+                    <h3 id="confirm-title" class="text-xl font-bold text-gray-800 mb-4">Are you sure?</h3>
+                    <p id="confirm-message" class="text-gray-700 mb-6">This action cannot be undone.</p>
+                    <div class="flex justify-center space-x-4">
+                        <button onclick="window.closeModal()" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                            Cancel
+                        </button>
+                        <button id="confirm-action-button" onclick="/* Action set by JS */" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-md">
+                            Confirm Delete
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -139,14 +229,21 @@
 
     <!-- Local App Script -->
     <script>
-        // --- Global State & Mock Data ---
+        // --- Configuration & Global State ---
+        const STORAGE_KEY = 'santa_thadeu_dashboard_data';
         let currentGoals;
         let activityFeedData = [];
-        let modalContext = null; // Stores context for the modal update
-        const currentUserId = 'MockUser-A1B2C3D4'; // Static mock user ID
+        let modalContext = {}; // Stores context for all modal operations
+        const currentUserId = 'LOCAL_USER_ID-A1B2C3D4'; // Static local user ID
         let currentFilter = 'all'; // Default filter state
 
-        // Initial goals structure (kept for mock data initialization)
+        const STATUS_COLORS = {
+            'ON TRACK': 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200',
+            'WATCH IT': 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200',
+            'OFF TRACK': 'bg-red-100 text-red-700 border-red-300 hover:bg-red-200',
+            'default': 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'
+        };
+
         const initialGoals = {
             'THEMATIC_GOAL': {
                 title: "THEMATIC GOAL",
@@ -161,7 +258,7 @@
                 objectives: [
                     { id: 'd1', name: "Launch funding product", status: "ON TRACK" },
                     { id: 'd2', name: "Do cash based outreaches", status: "WATCH IT" },
-                    { id: 'd3', name: "Launch Optometry", status: "OFF TRACK" }, // Start OFF TRACK for testing
+                    { id: 'd3', name: "Launch Optometry", status: "OFF TRACK" },
                     { id: 'd4', name: "Open branches in low medical aid areas", status: "WATCH IT" },
                     { id: 'd5', name: "Launch pharmacy/dispensary service", status: "OFF TRACK" },
                     { id: 'd6', name: "Do promotions & specials at branches", status: "ON TRACK" },
@@ -183,27 +280,73 @@
             }
         };
 
-        const STATUS_COLORS = {
-            'ON TRACK': 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200',
-            'WATCH IT': 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200',
-            'OFF TRACK': 'bg-red-100 text-red-700 border-red-300 hover:bg-red-200',
-            'default': 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'
+        // --- Utility Functions ---
+
+        /** Generates a simple unique ID for local data. */
+        function generateUniqueId(prefix = 'id') {
+            return prefix + Math.random().toString(36).substring(2) + Date.now().toString(36);
+        }
+
+        /** Hides all modal views and resets the context. */
+        window.closeModal = () => {
+             document.getElementById('app-modal').classList.add('hidden');
+             document.querySelectorAll('#modal-content-wrapper > div').forEach(el => el.classList.add('hidden'));
+             modalContext = {};
         };
 
-        // --- Date Helpers for Filtering ---
 
-        /** Calculates the start of the current week (Monday, 00:00:00). */
+        // --- Persistence Functions ---
+
+        function loadDataFromStorage() {
+            try {
+                const storedData = localStorage.getItem(STORAGE_KEY);
+                if (storedData) {
+                    const parsedData = JSON.parse(storedData);
+                    
+                    currentGoals = parsedData.goals;
+                    
+                    // Parse feed, ensuring timestamps are converted back to Date objects and feedIds exist
+                    activityFeedData = parsedData.feed.map(item => ({
+                        ...item,
+                        timestamp: new Date(item.timestamp),
+                        feedId: item.feedId || generateUniqueId('feed') // Ensure every item has a feedId
+                    }));
+                    console.log('[LocalStorage] Data loaded successfully.');
+                    return true;
+                }
+            } catch (error) {
+                console.error('[LocalStorage] Error loading or parsing data:', error);
+            }
+            return false;
+        }
+
+        function saveDataToStorage() {
+            try {
+                const dataToStore = {
+                    goals: currentGoals,
+                    feed: activityFeedData.map(item => ({
+                        ...item,
+                        timestamp: item.timestamp.toISOString()
+                    }))
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToStore));
+                console.log('[LocalStorage] Data saved successfully.');
+            } catch (error) {
+                console.error('[LocalStorage] Error saving data:', error);
+            }
+        }
+
+        // --- Date Helpers (Existing) ---
+
         function getStartOfWeek() {
             const d = new Date();
-            const day = d.getDay(); // 0 is Sunday, 1 is Monday...
-            // Adjust to Monday (1). If today is Sunday (0), use -6 to get last Monday. Otherwise, use 1.
+            const day = d.getDay();
             const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
             const startOfWeek = new Date(d.setDate(diff));
             startOfWeek.setHours(0, 0, 0, 0);
             return startOfWeek;
         }
 
-        /** Calculates the start of the current month (1st day, 00:00:00). */
         function getStartOfMonth() {
             const d = new Date();
             const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
@@ -211,8 +354,11 @@
             return startOfMonth;
         }
 
-        // --- Core Application Logic ---
+        // --- Objective CRUD Logic ---
 
+        /**
+         * Renders the Objective Progress Board with CRUD controls.
+         */
         function renderProgressBoard(goals) {
             const board = document.getElementById('progress-board');
             let html = '';
@@ -220,7 +366,7 @@
             for (const key in goals) {
                 const group = goals[key];
                 
-                // 1. Group Header (e.g., THEMATIC GOAL)
+                // Group Header
                 html += `
                     <div class="mb-4">
                         <h3 class="text-xl font-bold ${group.color} border-b-2 ${group.color.replace('text-', 'border-')} pb-1">${group.title}</h3>
@@ -228,21 +374,34 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 `;
 
-                // 2. Objectives within the group
+                // Objectives within the group
                 group.objectives.forEach(obj => {
                     const currentStatus = obj.status || 'ON TRACK';
-                    // Make the card itself clickable to show details
+                    // Pass groupKey to status update
                     html += `
                         <div 
                             onclick="window.showObjectiveDetails('${obj.id}', '${obj.name}')"
-                            class="bg-white p-5 rounded-xl shadow-lg hover:shadow-xl transition-shadow border-t-4 cursor-pointer hover:bg-gray-50 ${STATUS_COLORS[currentStatus].replace('bg-', 'border-').replace('-100', '-600').split(' ')[0]}"
+                            class="relative bg-white p-5 pt-7 rounded-xl shadow-lg hover:shadow-xl transition-shadow border-t-4 cursor-pointer hover:bg-gray-50 ${STATUS_COLORS[currentStatus].replace('bg-', 'border-').replace('-100', '-600').split(' ')[0]}"
                         >
+                            <!-- CRUD Controls (Edit/Delete) -->
+                            <div class="absolute top-2 right-2 flex space-x-1 z-10" onclick="event.stopPropagation()">
+                                <!-- Edit Button -->
+                                <button onclick="window.showObjectiveCrudModal('edit', '${obj.id}', '${key}')" class="text-gray-400 hover:text-blue-600 p-1 rounded-full hover:bg-blue-100 transition" title="Edit Objective Name/Group">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                </button>
+                                <!-- Delete Button -->
+                                <button onclick="window.deleteObjectiveConfirmation('${obj.id}', '${obj.name}', '${key}')" class="text-gray-400 hover:text-red-600 p-1 rounded-full hover:bg-red-100 transition" title="Delete Objective">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            </div>
+                            
                             <p class="font-semibold text-gray-800 mb-3">${obj.name}</p>
+                            
                             <!-- Status buttons are kept inside for quick status change -->
                             <div class="flex space-x-2" onclick="event.stopPropagation()">
                                 ${['ON TRACK', 'WATCH IT', 'OFF TRACK'].map(status => `
                                     <button 
-                                        onclick="window.updateObjectiveStatus('${obj.id}', '${status}', '${key}')"
+                                        onclick="window.updateObjectiveStatus('${obj.id}', '${status}', '${key}', '${obj.name}')"
                                         class="status-button ${status === currentStatus ? STATUS_COLORS[status] : STATUS_COLORS['default']}"
                                     >
                                         ${status}
@@ -258,16 +417,214 @@
 
             board.innerHTML = html;
         }
-        
-        // --- Modal Control Functions ---
-        window.closeModal = () => {
-             document.getElementById('app-modal').classList.add('hidden');
-             document.getElementById('modal-error-message').classList.add('hidden');
-             modalContext = null;
+
+        /**
+         * Sets up and displays the Add/Edit Objective Modal.
+         */
+        window.showObjectiveCrudModal = (mode, objectiveId, groupKey) => {
+            const crudView = document.getElementById('modal-objective-crud-view');
+            const groupSelect = document.getElementById('objective-group-select');
+            const nameInput = document.getElementById('objective-name-input');
+            const title = document.getElementById('objective-crud-title');
+            
+            // Clear previous state
+            nameInput.value = '';
+            document.getElementById('objective-crud-error').classList.add('hidden');
+            
+            // Populate group select options
+            groupSelect.innerHTML = '';
+            for (const key in currentGoals) {
+                const groupTitle = currentGoals[key].title;
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = groupTitle;
+                groupSelect.appendChild(option);
+            }
+            
+            // Set modal context and content based on mode
+            modalContext.mode = mode;
+            modalContext.objectiveId = objectiveId;
+            modalContext.groupKey = groupKey;
+
+            if (mode === 'add') {
+                title.textContent = 'Add New Objective';
+                document.getElementById('objective-crud-submit').textContent = 'Create Objective';
+            } else if (mode === 'edit') {
+                const objective = currentGoals[groupKey].objectives.find(obj => obj.id === objectiveId);
+                title.textContent = `Edit Objective: ${objective.name}`;
+                nameInput.value = objective.name;
+                groupSelect.value = groupKey;
+                document.getElementById('objective-crud-submit').textContent = 'Save Changes';
+            }
+
+            // Show CRUD view
+            crudView.classList.remove('hidden');
+            document.getElementById('app-modal').classList.remove('hidden');
         };
 
+        /**
+         * Finalizes the Add/Edit Objective operation.
+         */
+        window.confirmObjectiveCrud = () => {
+            const nameInput = document.getElementById('objective-name-input');
+            const groupSelect = document.getElementById('objective-group-select');
+            const name = nameInput.value.trim();
+            const newGroupKey = groupSelect.value;
+            const error = document.getElementById('objective-crud-error');
+
+            if (!name || !newGroupKey) {
+                error.classList.remove('hidden');
+                return;
+            }
+            error.classList.add('hidden');
+
+            const { mode, objectiveId, groupKey: oldGroupKey } = modalContext;
+            
+            if (mode === 'add') {
+                const newObjective = { 
+                    id: generateUniqueId('obj'), 
+                    name: name, 
+                    status: "ON TRACK" 
+                };
+                currentGoals[newGroupKey].objectives.unshift(newObjective);
+                
+                // Log activity
+                activityFeedData.unshift({
+                    feedId: generateUniqueId('feed'),
+                    userId: currentUserId,
+                    objectiveId: newObjective.id,
+                    content: `**New Objective** added: "${name}" in the **${currentGoals[newGroupKey].title}** category.`,
+                    type: 'announcement',
+                    timestamp: new Date()
+                });
+
+            } else if (mode === 'edit') {
+                let objective = currentGoals[oldGroupKey].objectives.find(obj => obj.id === objectiveId);
+                const oldName = objective.name;
+                
+                // Handle group change (move objective)
+                if (oldGroupKey !== newGroupKey) {
+                    // Remove from old group
+                    currentGoals[oldGroupKey].objectives = currentGoals[oldGroupKey].objectives.filter(obj => obj.id !== objectiveId);
+                    // Add to new group
+                    currentGoals[newGroupKey].objectives.push(objective);
+                    
+                    // Log group move
+                    activityFeedData.unshift({
+                        feedId: generateUniqueId('feed'),
+                        userId: currentUserId,
+                        objectiveId: objectiveId,
+                        content: `Objective **"${oldName}"** moved from **${currentGoals[oldGroupKey].title}** to **${currentGoals[newGroupKey].title}**.`,
+                        type: 'announcement',
+                        timestamp: new Date()
+                    });
+                }
+
+                // Update name (happens regardless of group move)
+                if (oldName !== name) {
+                    objective.name = name;
+                    // Log name change
+                    activityFeedData.unshift({
+                        feedId: generateUniqueId('feed'),
+                        userId: currentUserId,
+                        objectiveId: objectiveId,
+                        content: `Objective name changed from "${oldName}" to **"${name}"**.`,
+                        type: 'announcement',
+                        timestamp: new Date()
+                    });
+                }
+            }
+
+            saveDataToStorage();
+            renderProgressBoard(currentGoals);
+            window.filterActivityFeed(currentFilter);
+            window.closeModal();
+        };
+
+
+        /**
+         * Shows the confirmation modal for deleting an objective.
+         */
+        window.deleteObjectiveConfirmation = (objectiveId, objectiveName, groupKey) => {
+            const confirmView = document.getElementById('modal-confirm-view');
+            
+            document.getElementById('confirm-title').textContent = 'Confirm Objective Deletion';
+            document.getElementById('confirm-message').innerHTML = `Are you sure you want to delete objective <strong>"${objectiveName}"</strong>? This will also remove all related activity history.`;
+            document.getElementById('confirm-action-button').textContent = 'Yes, Delete Objective';
+            
+            // Set up the action handler
+            const confirmButton = document.getElementById('confirm-action-button');
+            confirmButton.onclick = () => window.deleteObjective(objectiveId, objectiveName, groupKey);
+
+            // Show confirm view
+            confirmView.classList.remove('hidden');
+            document.getElementById('app-modal').classList.remove('hidden');
+        };
+
+        /**
+         * Deletes an objective and all related feed items.
+         */
+        window.deleteObjective = (objectiveId, objectiveName, groupKey) => {
+            // 1. Remove objective from goals
+            currentGoals[groupKey].objectives = currentGoals[groupKey].objectives.filter(obj => obj.id !== objectiveId);
+            
+            // 2. Remove associated activity feed items
+            const initialFeedCount = activityFeedData.length;
+            activityFeedData = activityFeedData.filter(item => item.objectiveId !== objectiveId);
+            const itemsRemoved = initialFeedCount - activityFeedData.length;
+
+            // 3. Log deletion
+            activityFeedData.unshift({
+                feedId: generateUniqueId('feed'),
+                userId: currentUserId,
+                objectiveId: null,
+                content: `Objective **"${objectiveName}"** and its ${itemsRemoved} history items were permanently deleted.`,
+                type: 'announcement',
+                timestamp: new Date()
+            });
+
+            saveDataToStorage();
+            renderProgressBoard(currentGoals);
+            window.filterActivityFeed(currentFilter);
+            window.closeModal();
+        };
+
+        // --- Status Update Logic (Existing - Modified to use objectiveName) ---
+
+        window.updateObjectiveStatus = (objectiveId, newStatus, groupKey, objectiveName) => {
+            const objectives = currentGoals[groupKey].objectives;
+            const objective = objectives.find(obj => obj.id === objectiveId);
+            const currentStatus = objective.status;
+
+            if (currentStatus === newStatus) {
+                console.log(`Status for ${objective.name} is already ${newStatus}. No change needed.`);
+                return;
+            }
+
+            // MANDATORY: Store context and show modal (FORM VIEW) for ANY status change.
+            modalContext = { 
+                objectiveId, 
+                newStatus, 
+                groupKey, 
+                objectiveName: objective.name,
+                previousStatus: currentStatus
+            };
+            
+            document.getElementById('modal-title-form').textContent = objective.name;
+            document.getElementById('modal-feedback-input').value = '';
+            document.getElementById('modal-actions-input').value = '';
+            document.getElementById('modal-error-message').classList.add('hidden');
+            
+            document.getElementById('modal-detail-view').classList.add('hidden');
+            document.getElementById('modal-objective-crud-view').classList.add('hidden');
+            document.getElementById('modal-feed-crud-view').classList.add('hidden');
+            document.getElementById('modal-confirm-view').classList.add('hidden');
+            document.getElementById('modal-form-view').classList.remove('hidden');
+            document.getElementById('app-modal').classList.remove('hidden');
+        };
+        
         window.confirmUpdateFromModal = () => {
-            if (!modalContext) return;
+            if (!modalContext || !modalContext.objectiveId) return;
 
             const feedback = document.getElementById('modal-feedback-input').value.trim();
             const actions = document.getElementById('modal-actions-input').value.trim();
@@ -279,7 +636,6 @@
             }
             errorMessage.classList.add('hidden');
 
-            // Process the update with the new feedback and actions
             window.processStatusUpdate(
                 modalContext.objectiveId, 
                 modalContext.newStatus, 
@@ -289,83 +645,39 @@
             );
             window.closeModal();
         };
-
-        // --- Status Update Logic (Handles Pre-check) ---
-
-        /**
-         * Simulates an API call to update the objective status.
-         * Checks if the status is changing, and if so, shows the mandatory justification modal.
-         */
-        window.updateObjectiveStatus = (objectiveId, newStatus, groupKey) => {
-            // 1. Find the objective in the local state
-            const objectives = currentGoals[groupKey].objectives;
-            const objective = objectives.find(obj => obj.id === objectiveId);
-            const currentStatus = objective.status;
-
-            // 2. If the user clicks the status the objective is already in, do nothing.
-            if (currentStatus === newStatus) {
-                console.log(`Status for ${objective.name} is already ${newStatus}. No change needed.`);
-                return;
-            }
-
-            // 3. MANDATORY: Store context and show modal (FORM VIEW) for ANY status change.
-            modalContext = { 
-                objectiveId, 
-                newStatus, 
-                groupKey, 
-                objectiveName: objective.name,
-                previousStatus: currentStatus // Store previous status for better logging later
-            };
-            
-            // Update modal title to be generic for any change
-            document.getElementById('modal-title-form').textContent = objective.name;
-            
-            // Clear inputs and error message
-            document.getElementById('modal-feedback-input').value = '';
-            document.getElementById('modal-actions-input').value = '';
-            document.getElementById('modal-error-message').classList.add('hidden');
-            
-            // Ensure form view is shown and detail view is hidden
-            document.getElementById('modal-detail-view').classList.add('hidden');
-            document.getElementById('modal-form-view').classList.remove('hidden');
-            document.getElementById('app-modal').classList.remove('hidden');
-        };
         
-        /**
-         * Finalizes the status update, updates local state, and posts to feed.
-         */
         window.processStatusUpdate = (objectiveId, newStatus, groupKey, feedback, actions) => {
             const objectives = currentGoals[groupKey].objectives;
             const objectiveIndex = objectives.findIndex(obj => obj.id === objectiveId);
             
             if (objectiveIndex !== -1) {
                 const objectiveName = objectives[objectiveIndex].name;
-                const previousStatus = objectives[objectiveIndex].status; // Get status *before* update
+                const previousStatus = objectives[objectiveIndex].status;
 
-                // --- MOCK API WRITE (Update local state) ---
                 objectives[objectiveIndex].status = newStatus;
-                console.log(`[Mock API] Updated status for "${objectiveName}" from ${previousStatus} to ${newStatus}`);
                 
-                // Re-render the board
                 renderProgressBoard(currentGoals);
                 
-                // Simulate posting a structured update to the feed
                 let content = `**"${objectiveName}"** status changed from **${previousStatus}** to **${newStatus}**.
                 <span class="block mt-2 text-xs font-semibold text-gray-800">Rationale/Feedback:</span> ${feedback}
                 <span class="block mt-2 text-xs font-semibold text-gray-800">Action Points:</span> ${actions}`;
 
                 activityFeedData.unshift({
+                    feedId: generateUniqueId('feed'),
                     userId: currentUserId,
-                    objectiveId: objectiveId, // <<< Storing the Objective ID for filtering
+                    objectiveId: objectiveId,
                     content: content,
                     type: 'status_update',
                     timestamp: new Date()
                 });
                 
-                // Re-filter and re-render the feed to show the new update
+                saveDataToStorage();
                 window.filterActivityFeed(currentFilter);
             }
         };
+
+
+        // --- Activity Feed CRUD Logic ---
 
         /**
          * Renders the activity feed items.
@@ -380,14 +692,23 @@
             feedContainer.innerHTML = feedItems.map(item => {
                 const timestamp = item.timestamp ? item.timestamp.toLocaleString() : 'Just now';
                 const userTag = item.userId.substring(0, 8);
+                const isEditable = item.type === 'announcement' || item.type === 'task';
                 
                 return `
                     <div class="bg-white p-4 rounded-xl shadow-md border-t-2 border-indigo-200">
                         <div class="flex justify-between items-start mb-2">
                             <span class="text-xs font-bold ${item.type === 'task' ? 'text-red-600 bg-red-100' : (item.type === 'status_update' ? 'text-green-600 bg-green-100' : 'text-indigo-600 bg-indigo-100')} px-2 py-0.5 rounded-full">
-                                ${item.type === 'task' ? 'TASK' : (item.type === 'status_update' ? 'PROGRESS UPDATE' : 'ANNOUNCEMENT')}
+                                ${item.type.toUpperCase().replace('_', ' ')}
                             </span>
-                            <span class="text-xs text-gray-500">${timestamp}</span>
+                            
+                            <!-- Edit/Delete Controls for General Posts -->
+                            <div class="flex items-center space-x-2" onclick="event.stopPropagation()">
+                                ${isEditable ? `
+                                    <button onclick="window.showFeedItemCrudModal('${item.feedId}')" class="text-xs text-gray-500 hover:text-blue-600 p-1 -m-1 transition duration-100">Edit</button>
+                                    <button onclick="window.deleteFeedItemConfirmation('${item.feedId}')" class="text-xs text-gray-500 hover:text-red-600 p-1 -m-1 transition duration-100">Delete</button>
+                                ` : ''}
+                                <span class="text-xs text-gray-500">${timestamp}</span>
+                            </div>
                         </div>
                         <p class="text-gray-700 text-sm break-words">${item.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
                         <p class="text-xs text-gray-400 mt-2">Posted by: ${userTag}...</p>
@@ -397,8 +718,152 @@
         }
 
         /**
-         * Logic to filter and re-render the activity feed based on a time range.
+         * Sets up and displays the Edit/Delete Feed Item Modal.
          */
+        window.showFeedItemCrudModal = (feedId) => {
+            const crudView = document.getElementById('modal-feed-crud-view');
+            const feedItem = activityFeedData.find(item => item.feedId === feedId);
+
+            if (!feedItem || (feedItem.type !== 'announcement' && feedItem.type !== 'task')) {
+                console.error("Cannot edit this item type or item not found.");
+                return;
+            }
+            
+            modalContext = { 
+                mode: 'edit_feed', 
+                feedId: feedId, 
+                originalContent: feedItem.content, 
+                type: feedItem.type 
+            };
+            
+            document.getElementById('feed-crud-title').textContent = `Edit Post (${feedItem.type.toUpperCase()})`;
+            document.getElementById('feed-content-input').value = feedItem.content;
+            document.getElementById('feed-delete-button').onclick = () => window.deleteFeedItemConfirmation(feedId);
+
+            crudView.classList.remove('hidden');
+            document.getElementById('app-modal').classList.remove('hidden');
+        };
+
+        /**
+         * Finalizes the Edit Feed Item operation.
+         */
+        window.confirmFeedItemEdit = () => {
+            const contentInput = document.getElementById('feed-content-input');
+            const newContent = contentInput.value.trim();
+            const error = document.getElementById('feed-crud-error');
+
+            if (!newContent) {
+                error.classList.remove('hidden');
+                return;
+            }
+            error.classList.add('hidden');
+
+            const index = activityFeedData.findIndex(item => item.feedId === modalContext.feedId);
+            
+            if (index !== -1) {
+                activityFeedData[index].content = newContent;
+                
+                // Log the edit
+                activityFeedData.unshift({
+                    feedId: generateUniqueId('feed'),
+                    userId: currentUserId,
+                    objectiveId: activityFeedData[index].objectiveId,
+                    content: `A **${activityFeedData[index].type.toUpperCase()}** post was edited.`,
+                    type: 'announcement',
+                    timestamp: new Date()
+                });
+
+                saveDataToStorage();
+                window.filterActivityFeed(currentFilter);
+                window.closeModal();
+            }
+        };
+
+        /**
+         * Shows the confirmation modal for deleting a feed item.
+         */
+        window.deleteFeedItemConfirmation = (feedId) => {
+            // If called from the Edit modal, use the context feedId
+            const idToDelete = feedId || modalContext.feedId;
+
+            if (!idToDelete) return; 
+
+            const confirmView = document.getElementById('modal-confirm-view');
+            const feedItem = activityFeedData.find(item => item.feedId === idToDelete);
+
+            document.getElementById('confirm-title').textContent = 'Confirm Post Deletion';
+            document.getElementById('confirm-message').innerHTML = `Are you sure you want to delete this **${feedItem.type.toUpperCase()}** post?`;
+            document.getElementById('confirm-action-button').textContent = 'Yes, Delete Post';
+            
+            // Set up the action handler
+            const confirmButton = document.getElementById('confirm-action-button');
+            confirmButton.onclick = () => window.deleteFeedItem(idToDelete);
+
+            // Hide other views and show confirm view
+            document.querySelectorAll('#modal-content-wrapper > div').forEach(el => el.classList.add('hidden'));
+            confirmView.classList.remove('hidden');
+            document.getElementById('app-modal').classList.remove('hidden');
+        };
+
+        /**
+         * Deletes a feed item.
+         */
+        window.deleteFeedItem = (feedId) => {
+            const itemToDelete = activityFeedData.find(item => item.feedId === feedId);
+            if (!itemToDelete) {
+                window.closeModal();
+                return;
+            }
+
+            // Remove item
+            activityFeedData = activityFeedData.filter(item => item.feedId !== feedId);
+            
+            // Log the deletion (optional, but good for tracking)
+            activityFeedData.unshift({
+                feedId: generateUniqueId('feed'),
+                userId: currentUserId,
+                objectiveId: null,
+                content: `A **${itemToDelete.type.toUpperCase()}** post was deleted by ${currentUserId.substring(0, 8)}...`,
+                type: 'announcement',
+                timestamp: new Date()
+            });
+
+            saveDataToStorage();
+            window.filterActivityFeed(currentFilter);
+            window.closeModal();
+        };
+
+        // --- Post Announcement (Existing - Modified to add feedId) ---
+
+        window.postAnnouncement = () => {
+            const input = document.getElementById('announcement-input');
+            const content = input.value.trim();
+
+            if (!content) {
+                return;
+            }
+
+            const isTask = content.toLowerCase().startsWith('task:');
+            const type = isTask ? 'task' : 'announcement';
+            
+            activityFeedData.unshift({
+                feedId: generateUniqueId('feed'), // New unique ID
+                userId: currentUserId,
+                objectiveId: null,
+                content: content,
+                type: type,
+                timestamp: new Date()
+            });
+
+            console.log(`[Local State] Posted new ${type}`);
+            input.value = '';
+            
+            saveDataToStorage();
+            window.filterActivityFeed(currentFilter);
+        };
+        
+        // --- Filter & Initializer (Existing) ---
+
         window.filterActivityFeed = (range) => {
             currentFilter = range;
             let cutOffDate = null;
@@ -413,26 +878,17 @@
 
             if (cutOffDate) {
                 filteredData = activityFeedData.filter(item => {
-                    if (!(item.timestamp instanceof Date)) {
-                        // Ensure timestamp is a Date object, convert if needed (mock data ensures this usually)
-                        item.timestamp = new Date(item.timestamp);
-                    }
-                    if (!item.timestamp) return false;
-                    
-                    // Filter: only include items that happened ON or AFTER the cutoff date
+                    if (!item.timestamp || !(item.timestamp instanceof Date)) return false;
                     return item.timestamp >= cutOffDate;
-                }).sort((a, b) => b.timestamp - a.timestamp); // Keep sorted by newest first
-            } else {
-                 filteredData.sort((a, b) => b.timestamp - a.timestamp);
+                });
             }
+            
+            filteredData.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
             renderActivityFeed(filteredData);
             updateFilterButtons(range);
         };
         
-        /**
-         * Updates the visual styling of the filter buttons.
-         */
         function updateFilterButtons(activeRange) {
             document.querySelectorAll('.filter-button').forEach(button => {
                 button.classList.remove('bg-indigo-600', 'text-white', 'shadow-md');
@@ -447,116 +903,69 @@
             }
         }
 
-
-        /**
-         * Shows the objective's activity history in the modal.
-         */
         window.showObjectiveDetails = (objectiveId, objectiveName) => {
-            // 1. Filter relevant feed items by objectiveId
             const relevantUpdates = activityFeedData.filter(item => item.objectiveId === objectiveId)
-                                                    .sort((a, b) => b.timestamp - a.timestamp); // Sort by newest first
+                                                    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-            // 2. Update the modal title dynamically
             const detailView = document.getElementById('modal-detail-view');
             const titleElement = detailView.querySelector('h3');
             titleElement.textContent = `Activity History: ${objectiveName}`;
 
-            // 3. Render the filtered items into the modal content area
             renderActivityFeed(relevantUpdates, 'modal-detail-content');
 
-            // 4. Show the Detail View and hide the Form View
-            document.getElementById('modal-form-view').classList.add('hidden');
-            document.getElementById('modal-detail-view').classList.remove('hidden');
+            // Ensure only detail view is shown
+            document.querySelectorAll('#modal-content-wrapper > div').forEach(el => el.classList.add('hidden'));
+            detailView.classList.remove('hidden');
             document.getElementById('app-modal').classList.remove('hidden');
         };
-
-        /**
-         * Simulates an API call to add a new announcement/task.
-         */
-        window.postAnnouncement = () => {
-            const input = document.getElementById('announcement-input');
-            const content = input.value.trim();
-
-            if (!content) {
-                return;
-            }
-
-            const isTask = content.toLowerCase().startsWith('task:');
-            const type = isTask ? 'task' : 'announcement';
-            
-            // --- MOCK API WRITE ---
-            activityFeedData.unshift({
-                userId: currentUserId,
-                objectiveId: null, // General posts do not belong to a specific objective
-                content: content,
-                type: type,
-                timestamp: new Date()
-            });
-
-            console.log(`[Mock API] Posted new ${type}`);
-            input.value = ''; // Clear input on success
-            
-            // Re-filter and re-render the feed to show the new update
-            window.filterActivityFeed(currentFilter);
-        };
         
-        /**
-         * Initialize the entire application with mock data.
-         */
         function initLocalApp() {
-            // Initialize goals by deep cloning the initial structure to allow modification
-            currentGoals = JSON.parse(JSON.stringify(initialGoals));
+            // 1. Try to load data from localStorage (our "file")
+            const dataLoaded = loadDataFromStorage();
 
-            // ADD INITIAL ACTIVITY DATA FOR TESTING DETAIL VIEW AND FORM FLOW
-            activityFeedData.push({
-                userId: 'MockUser-Alpha',
-                objectiveId: 'd3', // Launch Optometry (Initial status: OFF TRACK)
-                content: `**"Launch Optometry"** is blocked by licensing. Need legal review.`,
-                type: 'status_update',
-                timestamp: new Date(Date.now() - 3600000 * 24 * 1) // 1 day ago
-            });
-            activityFeedData.push({
-                userId: 'MockUser-Bravo',
-                objectiveId: 'd5', // Launch pharmacy/dispensary service (Initial status: OFF TRACK)
-                content: `**"Launch pharmacy/dispensary service"** has funding issues. Awaiting CFO approval.`,
-                type: 'status_update',
-                timestamp: new Date(Date.now() - 3600000 * 2) // 2 hours ago
-            });
-            activityFeedData.push({
-                userId: currentUserId,
-                objectiveId: null, // General post
-                content: `Team sync meeting scheduled for tomorrow at 10 AM.`,
-                type: 'announcement',
-                timestamp: new Date(Date.now() - 3600000 * 0.5) // 30 mins ago
-            });
-            activityFeedData.push({
-                userId: 'MockUser-Charlie',
-                objectiveId: 's4', // Customer engagement
-                content: `**"Customer engagement"** went OFF TRACK due to low survey response rates.`,
-                type: 'status_update',
-                timestamp: new Date(Date.now() - 3600000 * 24 * 30) // ~30 days ago (Good for testing "This Month" filter)
-            });
-            activityFeedData.push({
-                userId: 'MockUser-Delta',
-                objectiveId: 't1', // Thematic Goal
-                content: `**"Break reliance..."** achieved its Q1 milestone.`,
-                type: 'announcement',
-                timestamp: new Date(Date.now() - 3600000 * 24 * 90) // ~90 days ago (Should be filtered out by 'This Month' and 'This Week')
-            });
+            // 2. If no data loaded, initialize with mock data
+            if (!dataLoaded) {
+                console.log('[LocalStorage] No data found. Initializing with mock data.');
+                currentGoals = JSON.parse(JSON.stringify(initialGoals));
+                
+                // Ensure initial goals also have unique IDs in case new objectives are added
+                for (const key in currentGoals) {
+                    currentGoals[key].objectives.forEach(obj => {
+                        if (!obj.id) obj.id = generateUniqueId('obj');
+                    });
+                }
+
+                // Add initial activity data 
+                activityFeedData.push({
+                    feedId: generateUniqueId('feed'),
+                    userId: 'Initial-Setup',
+                    objectiveId: 'd3', // Launch Optometry
+                    content: `**"Launch Optometry"** status is currently OFF TRACK due to licensing delays.`,
+                    type: 'status_update',
+                    timestamp: new Date(Date.now() - 3600000 * 24 * 1) // 1 day ago
+                });
+                activityFeedData.push({
+                    feedId: generateUniqueId('feed'),
+                    userId: 'Initial-Setup',
+                    objectiveId: null, // General post
+                    content: `Welcome to the Santa Thadeu Mapping Dashboard!`,
+                    type: 'announcement',
+                    timestamp: new Date()
+                });
+                saveDataToStorage(); 
+            }
             
-            // Display mock user info
-            document.getElementById('auth-status').textContent = `Status: Logged in (Mock API)`;
-            document.getElementById('user-id-display').textContent = `Your ID (Mock): ${currentUserId}`;
+            // 3. Display user info
+            document.getElementById('auth-status').textContent = `Status: Logged in (Local Storage)`;
+            document.getElementById('user-id-display').textContent = `Your ID (Local): ${currentUserId}`;
 
-            // Initial render of the boards
+            // 4. Initial render of the boards and feed
             renderProgressBoard(currentGoals);
-            
-            // Initial render of feed, filtered to 'All Time'
             window.filterActivityFeed('all');
         }
         
-        // Start the local application
-        initLocalApp();
+        window.onload = initLocalApp;
+
     </script>
 
 </body>
