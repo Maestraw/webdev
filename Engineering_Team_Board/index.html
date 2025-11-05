@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Team Objective Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f7fafc; }
+    .status-btn { font-size: 12px; font-weight:600; border-radius: 6px; padding:2px 12px; margin-right:6px; cursor:pointer;}
+    .current { background: #bfdbfe; color:#1e40af; }
+    .future { background: #e0e7ff; color:#4f46e5; }
+    .completed { background: #d1fae5; color:#065f46;}
+    /* Group Card Styling */
+    .group-card { background: #eff6ff; border-radius: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,0.03); padding:1.25rem 1.5rem; margin-bottom:2rem;}
+    /* Activity Feed Styling */
+    .feed-box { border-left: 4px solid #6366f1; background: #f8fafc; }
+    .feed-icon { color: #6366f1; font-weight: bold; font-size:1.2em; margin-right:6px; }
+    .feed-time { float: right; font-size: 0.87em; color: #a0aec0; font-weight: 400; margin-left:12px;}
+    .feed-add { color: #16a34a;}
+    .feed-update { color: #f59e42;}
+    .feed-delete { color: #ef4444;}
+    .feed-complete { color: #065f46;}
+  </style>
+</head>
+<body class="p-6">
+  <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6">
+    <h1 class="text-2xl font-bold mb-4">Key Objectives & Progress</h1>
+    <button onclick="showTaskForm()" class="mb-4 bg-indigo-600 text-white px-4 py-2 rounded">Add Task</button>
+    <div id="task-list"></div>
+    <hr class="my-8"/>
+    <h2 class="text-xl font-bold mb-4">Activity Feed</h2>
+    <div class="flex mb-2">
+      <button onclick="filterFeed('all')" class="mr-2 bg-gray-200 px-2 rounded">All Time</button>
+      <button onclick="filterFeed('week')" class="mr-2 bg-gray-200 px-2 rounded">This Week</button>
+      <button onclick="filterFeed('month')" class="bg-gray-200 px-2 rounded">This Month</button>
+    </div>
+    <div id="feed" style="max-height:220px; overflow-y:auto;"></div>
+  </div>
+
+  <!-- Modal for Add/Edit Task -->
+  <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white p-8 rounded shadow-lg w-[350px]">
+      <h3 id="modal-title" class="font-bold mb-2"></h3>
+      <input id="task-name" type="text" class="border p-2 rounded w-full mb-2" placeholder="Task Name">
+      <input id="task-responsible" type="text" class="border p-2 rounded w-full mb-2" placeholder="Responsible (Who)">
+      <button onclick="saveTask()" class="bg-indigo-600 text-white px-4 py-2 rounded w-full mb-2">Save</button>
+      <button onclick="closeModal()" class="px-4 py-2 w-full">Cancel</button>
+      <input type="hidden" id="edit-id" value="">
+    </div>
+  </div>
+
+  <script>
+    let tasks = JSON.parse(localStorage.getItem('tasks') || '[]'),
+        feed = JSON.parse(localStorage.getItem('feed') || '[]');
+    function saveState() {
+      localStorage.setItem('tasks',JSON.stringify(tasks));
+      localStorage.setItem('feed',JSON.stringify(feed));
+    }
+
+    // GROUP task cards by Responsible, sorted A-Z
+    function renderTasks() {
+      if (!tasks.length) {
+        document.getElementById('task-list').innerHTML = '<div class="text-gray-500">No tasks yet.</div>';
+        return;
+      }
+      // Group by responsible
+      let groups = {};
+      tasks.forEach(t => {
+        let r = t.responsible? t.responsible.trim() : 'Unassigned';
+        if (!groups[r]) groups[r] = [];
+        groups[r].push(t);
+      });
+      // Prepare group cards, sorted by responsible name
+      let html = Object.keys(groups).sort().map(responsible => `
+        <div class="group-card">
+          <div class="text-lg font-bold text-blue-900 mb-4">${responsible}</div>
+          ${groups[responsible].map(t => `
+            <div class="mb-4 border-b pb-3 last:border-0 last:pb-0 flex justify-between items-center ${t.status === 'COMPLETED' ? 'bg-green-50' : ''}">
+              <div>
+                <span class="font-semibold">${t.name}</span><br/>
+                <span>Status:
+                  <button class="status-btn current ${t.status==='CURRENT'?'ring-2 ring-blue-400':''}" onclick="updateStatus('${t.id}', 'CURRENT')">CURRENT</button>
+                  <button class="status-btn future ${t.status==='FUTURE'?'ring-2 ring-indigo-400':''}" onclick="updateStatus('${t.id}', 'FUTURE')">FUTURE</button>
+                  <button class="status-btn completed ${t.status==='COMPLETED'?'ring-2 ring-green-400':''}" onclick="updateStatus('${t.id}', 'COMPLETED')">COMPLETED</button>
+                </span>
+              </div>
+              <div>
+                <button onclick="editTask('${t.id}')" class="text-blue-500 mr-2">Edit</button>
+                <button onclick="deleteTask('${t.id}')" class="text-red-500">Delete</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+      document.getElementById('task-list').innerHTML = html;
+    }
+
+    // Render Activity Feed: only 5 most recent logs, scrollable
+    function renderFeed(filtered = feed) {
+      let view = filtered.slice(0,5); // show only 5 logs at a time
+      document.getElementById('feed').innerHTML = view.length ?
+        view.map(f => {
+          let txt = f.replace(/\s*\(([^)]+)\)\s*$/,''), time = (f.match(/\(([^)]+)\)/) || [])[1] || '',
+            add = txt.startsWith("New task"),
+            upd = txt.indexOf("updated")>-1,
+            del = txt.indexOf("deleted")>-1,
+            comp = txt.indexOf("set to COMPLETED")>-1;
+          return `<div class="feed-box rounded px-4 py-3 mb-3 shadow-sm flex items-center">
+            <span class="feed-icon ${add?'feed-add':upd?'feed-update':del?'feed-delete':comp?'feed-complete':''}">${
+              add?'✦':upd?'⟳':del?'✖':comp?'✔':'✦'
+            }</span>
+            <div class="flex-1">
+              <span class="font-semibold ${add?'feed-add':upd?'feed-update':del?'feed-delete':comp?'feed-complete':''}">
+                ${add?'Task Added:':upd?'Task Updated:':comp?'Task Completed:':del?'Task Deleted:':'Activity:'}
+              </span>
+              ${txt.replace(/^(New task|Task|Status of) /,'')}
+            </div>
+            <span class="feed-time">${time}</span>
+          </div>`;
+        }).join('') : '<div class="text-gray-400">Nothing to display.</div>';
+    }
+
+    // CRUD Modal Logic
+    function showTaskForm(editId='') {
+      document.getElementById('task-modal').style.display = 'flex';
+      document.getElementById('modal-title').textContent = editId?'Edit Task':'Add New Task';
+      if (editId) {
+        let t = tasks.find(x=>x.id===editId);
+        document.getElementById('task-name').value = t.name;
+        document.getElementById('task-responsible').value = t.responsible;
+      } else {
+        document.getElementById('task-name').value = '';
+        document.getElementById('task-responsible').value = '';
+      }
+      document.getElementById('edit-id').value = editId;
+    }
+    function closeModal() { document.getElementById('task-modal').style.display = 'none'; }
+    function saveTask() {
+      let name=document.getElementById('task-name').value.trim(),
+          resp=document.getElementById('task-responsible').value.trim(),
+          id=document.getElementById('edit-id').value;
+      if (!name||!resp) return alert('Fill out all fields');
+      if (id) {
+        let t=tasks.find(x=>x.id===id), oldname=t.name, oldresp=t.responsible;
+        t.name=name; t.responsible=resp;
+        feed.unshift(`Task "${oldname}" updated to "${name}" [Responsible: ${resp}] (${new Date().toLocaleString()})`);
+      } else {
+        let tid='t'+Date.now();
+        tasks.unshift({id:tid,name:name,responsible:resp,status:"CURRENT"});
+        feed.unshift(`New task "${name}" [Responsible: ${resp}] added. (${new Date().toLocaleString()})`);
+      }
+      saveState(); renderTasks(); renderFeed(); closeModal();
+    }
+    function editTask(id) { showTaskForm(id); }
+    function deleteTask(id) {
+      let t=tasks.find(x=>x.id===id);
+      if(confirm(`Delete "${t.name}"?`)) {
+        tasks = tasks.filter(x=>x.id!==id);
+        feed.unshift(`Task "${t.name}" was deleted. (${new Date().toLocaleString()})`);
+        saveState(); renderTasks(); renderFeed();
+      }
+    }
+    function updateStatus(id, status) {
+      let t=tasks.find(x=>x.id===id);
+      if(t.status!==status) {
+        t.status=status;
+        let extra=status==='COMPLETED' ? ' 🎉' : '';
+        feed.unshift(`Status of "${t.name}" set to ${status}.${extra} (${new Date().toLocaleString()})`);
+        saveState(); renderTasks(); renderFeed();
+      }
+    }
+    function filterFeed(type) {
+      let now=new Date(), out=feed;
+      if(type==='week') {
+        let startOfWeek=new Date(now.getDate() - now.getDay() + 1 ? now.setDate(now.getDate() - now.getDay() + 1) : now); startOfWeek.setHours(0,0,0,0);
+        out = feed.filter(f=>new Date(f.match(/\(([^)]+)\)/)[1])>=startOfWeek);
+      }
+      if(type==='month') {
+        let startOfMonth=new Date(now.getFullYear(),now.getMonth(),1); startOfMonth.setHours(0,0,0,0);
+        out = feed.filter(f=>new Date(f.match(/\(([^)]+)\)/)[1])>=startOfMonth);
+      }
+      renderFeed(out);
+    }
+    // Initial load
+    renderTasks(); renderFeed();
+  </script>
+</body>
+</html>
