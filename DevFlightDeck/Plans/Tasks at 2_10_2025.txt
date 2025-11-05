@@ -1,30 +1,5 @@
 [
   {
-    "id": "mgggox0o32k",
-    "name": "Conditional Pricing for Alliance ",
-    "priority": "High",
-    "estimate": 4,
-    "subtasks": [
-      {
-        "id": "sub-w8rtr",
-        "description": "increase consultation price [$60]",
-        "completed": false
-      },
-      {
-        "id": "sub-t3skk",
-        "description": "increase dental consultation prices for alliance",
-        "completed": false
-      },
-      {
-        "id": "sub-ktrpd",
-        "description": "Collect more details from Cee",
-        "completed": false
-      }
-    ],
-    "status": "PLANNED",
-    "createdAt": "2025-10-07T11:13:42.696Z"
-  },
-  {
     "id": "mggtns3agh4",
     "name": "build finger print scanner driver and api.[on the 5 project]",
     "priority": "High",
@@ -40,299 +15,13 @@
     "createdAt": "2025-10-07T17:16:44.662Z"
   },
   {
-    "id": "mgja0jlu1eo",
-    "name": "Accomodate Cash Visits In The Same Flow As The Medical Aid Funded Visits.",
+    "id": "mha9ik16uko",
+    "name": "bugs on search fields [Customer Name fields [auto complete fields]]",
     "priority": "High",
     "estimate": 4,
-    "subtasks": [
-      {
-        "id": "sub-k2b9h",
-        "description": "Plan the steps",
-        "completed": false
-      }
-    ],
+    "subtasks": [],
     "status": "PLANNED",
-    "createdAt": "2025-10-09T10:30:06.402Z"
-  },
-  {
-    "id": "mgj0ce4j5fk",
-    "name": "Bookings Messaging [notifications and reminders]",
-    "priority": "High",
-    "estimate": 4,
-    "subtasks": [
-      {
-        "id": "sub-wzw6m",
-        "description": "Create backend branches and checkout",
-        "completed": false
-      },
-      {
-        "id": "sub-3cznm",
-        "description": "Integrate with whatsapp Api",
-        "completed": false
-      },
-      {
-        "id": "sub-mpmx2",
-        "description": "run tests",
-        "completed": false
-      },
-      {
-        "id": "sub-k5090",
-        "description": "deploy",
-        "completed": false
-      },
-      {
-        "id": "sub-cn72v",
-        "description": "merge and notify team and advise them to pull",
-        "completed": false
-      },
-      {
-        "id": "sub-ac8iu",
-        "description": "notify users about the new feature/addition",
-        "completed": false
-      }
-    ],
-    "status": "IN PROGRESS",
-    "createdAt": "2025-10-09T05:59:23.011Z"
-  },
-  {
-    "id": "mggtmd1sjev",
-    "name": "Daily Report [sales report[shared to unit managers]]",
-    "priority": "High",
-    "estimate": 4,
-    "subtasks": [
-      {
-        "id": "sub-fi2da",
-        "description": "create branches [back & front end ]",
-        "completed": true
-      },
-      {
-        "id": "sub-hvgms",
-        "description": "build the ui",
-        "completed": true
-      },
-      {
-        "id": "sub-j3pjd",
-        "description": "integrate api's with client",
-        "completed": true
-      },
-      {
-        "id": "sub-alroz",
-        "description": "run tests [locally,test env and live env]",
-        "completed": true
-      },
-      {
-        "id": "sub-kgoyi",
-        "description": "merge with master branch  , notify team & and advise them to pull changes",
-        "completed": true
-      },
-      {
-        "id": "sub-igm5r",
-        "description": "notify users about the new addittion",
-        "completed": true
-      }
-    ],
-    "status": "COMPLETED",
-    "createdAt": "2025-10-07T17:15:38.512Z"
-  },
-  {
-    "id": "mgamsr9vwwc",
-    "name": "ADD PSMAS USD  OFFLINE MEDICAL AID FUNDED VISITS ",
-    "priority": "High",
-    "estimate": 3,
-    "subtasks": [
-      {
-        "id": "sub-wwfq1",
-        "description": "Create branch and checkout",
-        "completed": true
-      },
-      {
-        "id": "sub-q3is8",
-        "description": "add PSMAS USD the create visit workflow",
-        "completed": true
-      },
-      {
-        "id": "sub-d3n2f",
-        "description": "run tests :locally,test env and live env",
-        "completed": true
-      },
-      {
-        "id": "sub-76w0l",
-        "description": "merge with master and notify team",
-        "completed": true
-      },
-      {
-        "id": "sub-09gfw",
-        "description": "notify users of the new additions",
-        "completed": true
-      }
-    ],
-    "status": "COMPLETED",
-    "createdAt": "2025-10-03T09:18:02.515Z"
-  },
-  {
-    "id": "mg941fmrqfp",
-    "name": "Build Backend for Campaigns and Leads ",
-    "priority": "High",
-    "estimate": 72,
-    "subtasks": [
-      {
-        "id": "sub-5c0v2",
-        "description": "Create the database models",
-        "completed": true
-      },
-      {
-        "id": "sub-s7483",
-        "description": "Prepare the sql queries for the tables",
-        "completed": true
-      },
-      {
-        "id": "sub-h3jxg",
-        "description": "create the campaigns and leads services",
-        "completed": true
-      },
-      {
-        "id": "sub-k811v",
-        "description": "build the campaigns google cloud functions for adding",
-        "completed": true
-      },
-      {
-        "id": "sub-o91nt",
-        "description": "build the campaigns google cloud functions for  deleting",
-        "completed": true
-      },
-      {
-        "id": "sub-szzfl",
-        "description": "build the campaigns google cloud functions for updating",
-        "completed": true
-      },
-      {
-        "id": "sub-4uyez",
-        "description": "Intergrate the frontend with the apis",
-        "completed": true
-      },
-      {
-        "id": "sub-nvemk",
-        "description": "Connect Leads and bookings [to enable tracking a lead's life cycle]",
-        "completed": true
-      },
-      {
-        "id": "sub-fre5f",
-        "description": "deploy to test env",
-        "completed": true
-      },
-      {
-        "id": "sub-6wy32",
-        "description": "test on test env",
-        "completed": true
-      },
-      {
-        "id": "sub-ia813",
-        "description": "deploy to live env",
-        "completed": true
-      },
-      {
-        "id": "sub-98unq",
-        "description": "test on live env",
-        "completed": true
-      },
-      {
-        "id": "sub-bf04h",
-        "description": "merge branches with master",
-        "completed": true
-      },
-      {
-        "id": "sub-rjvut",
-        "description": "notify  team of the merge and advise them to pull",
-        "completed": true
-      },
-      {
-        "id": "sub-h23z1",
-        "description": "train users  on how to use the feature",
-        "completed": true
-      },
-      {
-        "id": "sub-lazjp",
-        "description": "Create Branches [system backend repository]",
-        "completed": true
-      }
-    ],
-    "status": "COMPLETED",
-    "createdAt": "2025-10-02T07:45:08.451Z"
-  },
-  {
-    "id": "mgaorl2vczj",
-    "name": "ADD MUKANDO AS A MEDICAL AID FUNDER",
-    "priority": "High",
-    "estimate": 10,
-    "subtasks": [
-      {
-        "id": "sub-ljm4j",
-        "description": "dependants management by id number [mini member lookup ]",
-        "completed": true
-      },
-      {
-        "id": "sub-aegdv",
-        "description": "notify users about  the new addition",
-        "completed": true
-      }
-    ],
-    "status": "COMPLETED",
-    "createdAt": "2025-10-03T10:13:07.063Z"
-  },
-  {
-    "id": "mg95f6hbf5b",
-    "name": "BUG FIX  [BonVie Nyaradzo Fund USD]",
-    "priority": "Medium",
-    "estimate": 1,
-    "subtasks": [
-      {
-        "id": "sub-w9c1f",
-        "description": "Trace the root source of the error",
-        "completed": false
-      },
-      {
-        "id": "sub-ln8e4",
-        "description": "Create Branch & and Check out [dashboard repository]",
-        "completed": false
-      },
-      {
-        "id": "sub-xfp10",
-        "description": "test locally",
-        "completed": false
-      },
-      {
-        "id": "sub-5awtq",
-        "description": "deploy to test env",
-        "completed": false
-      },
-      {
-        "id": "sub-if6tv",
-        "description": "test on test env",
-        "completed": false
-      },
-      {
-        "id": "sub-7s6w2",
-        "description": "deploy to live env",
-        "completed": false
-      },
-      {
-        "id": "sub-h8q5h",
-        "description": "test on live envv",
-        "completed": false
-      },
-      {
-        "id": "sub-d5c9b",
-        "description": "merge with master branch",
-        "completed": false
-      },
-      {
-        "id": "sub-3gvl6",
-        "description": "notify team and advise them to pull the changes",
-        "completed": false
-      }
-    ],
-    "status": "PLANNED",
-    "createdAt": "2025-10-02T08:23:49.391Z"
+    "createdAt": "2025-10-28T07:45:53.898Z"
   },
   {
     "id": "mgahxvgkl4b",
@@ -375,31 +64,6 @@
     "createdAt": "2025-10-03T07:02:03.140Z"
   },
   {
-    "id": "mggtj1lnhnc",
-    "name": "add auto booking for next 360 Check up ",
-    "priority": "Medium",
-    "estimate": 4,
-    "subtasks": [
-      {
-        "id": "sub-ca46r",
-        "description": "plan the steps and list them",
-        "completed": false
-      },
-      {
-        "id": "sub-8ov28",
-        "description": "Add offline  medical aid funders  360 Visits",
-        "completed": false
-      },
-      {
-        "id": "sub-c0t8b",
-        "description": "Add Cash 360 Visits",
-        "completed": false
-      }
-    ],
-    "status": "PLANNED",
-    "createdAt": "2025-10-07T17:13:03.707Z"
-  },
-  {
     "id": "mggtjz6hwgu",
     "name": "Auto submit offline claims [via email]",
     "priority": "Medium",
@@ -430,118 +94,87 @@
     "createdAt": "2025-10-07T17:14:10.153Z"
   },
   {
-    "id": "mghl3icezam",
-    "name": "Fix Cash Funded Visits _Transactions_Record Feedback ",
+    "id": "mh1t4tnmuoa",
+    "name": "BUILD SOCIAL MEDIA MANAGER TOOL (CUSTOMER ENGAGEMENT)",
     "priority": "Medium",
     "estimate": 4,
     "subtasks": [
       {
-        "id": "sub-cnnao",
-        "description": "Transaction must be created before visit is created",
+        "id": "sub-cye6d",
+        "description": "plan the steps",
         "completed": false
       }
     ],
     "status": "PLANNED",
-    "createdAt": "2025-10-08T06:04:48.158Z"
+    "createdAt": "2025-10-22T09:45:09.922Z"
   },
   {
-    "id": "mgfosybt92p",
-    "name": "SENTOSA PERMIT",
+    "id": "mha9k4wappk",
+    "name": "New Health Api Not returning Responses ",
     "priority": "Medium",
     "estimate": 4,
     "subtasks": [
       {
-        "id": "sub-frylo",
-        "description": "Remind Chipo to scan the document",
+        "id": "sub-ncihh",
+        "description": "return appropriate responses and allow user to continue",
         "completed": false
       }
     ],
     "status": "PLANNED",
-    "createdAt": "2025-10-06T22:13:01.769Z"
+    "createdAt": "2025-10-28T07:47:07.594Z"
   },
   {
-    "id": "mgj7b1aw9vu",
-    "name": "Add Dental Tariff [98302] To Grouped Dental Tariffs",
+    "id": "mgqmtc9vd7h",
+    "name": "Add Ecocash and Swipe transactions to daily sales",
     "priority": "Medium",
     "estimate": 4,
     "subtasks": [
       {
-        "id": "sub-1klsk",
-        "description": "Plan",
-        "completed": false
-      },
-      {
-        "id": "sub-fje8e",
-        "description": "zwg($1000),usd ($50)",
-        "completed": false
-      }
-    ],
-    "status": "PLANNED",
-    "createdAt": "2025-10-09T09:14:17.048Z"
-  },
-  {
-    "id": "mgja2ts3nn7",
-    "name": "Add Apply Co-Payment Button",
-    "priority": "Medium",
-    "estimate": 4,
-    "subtasks": [
-      {
-        "id": "sub-15dyt",
-        "description": "Plan the steps",
-        "completed": false
-      }
-    ],
-    "status": "PLANNED",
-    "createdAt": "2025-10-09T10:31:52.899Z"
-  },
-  {
-    "id": "mgai8dperzj",
-    "name": "Add Filter By Branch [Bookings]",
-    "priority": "Medium",
-    "estimate": 4,
-    "subtasks": [
-      {
-        "id": "sub-m3lf6",
-        "description": "Create Branch and check out",
+        "id": "sub-xujka",
+        "description": "Create Branches and Check out",
         "completed": true
       },
       {
-        "id": "sub-joone",
-        "description": "add filter tools on front end",
+        "id": "sub-s3x2y",
+        "description": "build and run tests",
         "completed": true
       },
       {
-        "id": "sub-muhnl",
-        "description": "run tests locally ,test env and live env",
+        "id": "sub-7xn8d",
+        "description": "merge with master and advise team to pull",
         "completed": true
       },
       {
-        "id": "sub-71b4a",
-        "description": "merge with master and notify team and advise to pull",
-        "completed": true
-      },
-      {
-        "id": "sub-qzpz1",
-        "description": "notify users about the users",
+        "id": "sub-jpofo",
+        "description": "train users/staff where neccessary",
         "completed": true
       }
     ],
     "status": "COMPLETED",
-    "createdAt": "2025-10-03T07:10:13.346Z"
+    "createdAt": "2025-10-14T14:02:48.547Z"
   },
   {
-    "id": "mgja43e918t",
-    "name": "ADD APPLY  Co-Payment ",
-    "priority": "High",
+    "id": "mgrxo2eirhv",
+    "name": "SECURING_UNI_API[AUTHENTICATION AND TOKENS]",
+    "priority": "Medium",
     "estimate": 4,
     "subtasks": [
       {
-        "id": "sub-ysctv",
-        "description": "PLAN THE STEPS",
+        "id": "sub-g65zs",
+        "description": "AFTER 5 JOB",
         "completed": false
       }
     ],
+    "status": "COMPLETED",
+    "createdAt": "2025-10-15T11:54:24.426Z"
+  },
+  {
+    "id": "mhahncaalbv",
+    "name": "add leads page [the add new lead option [reposition it to a friendly position]]",
+    "priority": "Medium",
+    "estimate": 4,
+    "subtasks": [],
     "status": "PLANNED",
-    "createdAt": "2025-10-09T10:32:52.017Z"
+    "createdAt": "2025-10-28T11:33:34.066Z"
   }
 ]
