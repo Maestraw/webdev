@@ -13,6 +13,7 @@
     .completed { background: #d1fae5; color:#065f46;}
     /* Group Card Styling */
     .group-card { background: #eff6ff; border-radius: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,0.03); padding:1.25rem 1.5rem; margin-bottom:2rem;}
+    .task-scroll { max-height:300px; overflow-y:auto; margin: -1rem -1.5rem 0 -1.5rem; padding: 1rem 1.5rem 0 1.5rem;}
     /* Activity Feed Styling */
     .feed-box { border-left: 4px solid #6366f1; background: #f8fafc; }
     .feed-icon { color: #6366f1; font-weight: bold; font-size:1.2em; margin-right:6px; }
@@ -58,7 +59,7 @@
       localStorage.setItem('feed',JSON.stringify(feed));
     }
 
-    // GROUP task cards by Responsible, sort tasks: current → future → completed
+    // GROUP task cards by Responsible, sort tasks: current → future → completed (5 at a time per card, scroll)
     function renderTasks() {
       if (!tasks.length) {
         document.getElementById('task-list').innerHTML = '<div class="text-gray-500">No tasks yet.</div>';
@@ -81,22 +82,24 @@
         return `
           <div class="group-card">
             <div class="text-lg font-bold text-blue-900 mb-4">${responsible}</div>
-            ${sortedTasks.map(t => `
-              <div class="mb-4 border-b pb-3 last:border-0 last:pb-0 flex justify-between items-center ${t.status === 'COMPLETED' ? 'bg-green-50' : ''}">
-                <div>
-                  <span class="font-semibold">${t.name}</span><br/>
-                  <span>Status:
-                    <button class="status-btn current ${t.status==='CURRENT'?'ring-2 ring-blue-400':''}" onclick="updateStatus('${t.id}', 'CURRENT')">CURRENT</button>
-                    <button class="status-btn future ${t.status==='FUTURE'?'ring-2 ring-indigo-400':''}" onclick="updateStatus('${t.id}', 'FUTURE')">FUTURE</button>
-                    <button class="status-btn completed ${t.status==='COMPLETED'?'ring-2 ring-green-400':''}" onclick="updateStatus('${t.id}', 'COMPLETED')">COMPLETED</button>
-                  </span>
+            <div class="task-scroll">
+              ${sortedTasks.map(t => `
+                <div class="mb-4 border-b pb-3 last:border-0 last:pb-0 flex justify-between items-center ${t.status === 'COMPLETED' ? 'bg-green-50' : ''}">
+                  <div>
+                    <span class="font-semibold">${t.name}</span><br/>
+                    <span>Status:
+                      <button class="status-btn current ${t.status==='CURRENT'?'ring-2 ring-blue-400':''}" onclick="updateStatus('${t.id}', 'CURRENT')">CURRENT</button>
+                      <button class="status-btn future ${t.status==='FUTURE'?'ring-2 ring-indigo-400':''}" onclick="updateStatus('${t.id}', 'FUTURE')">FUTURE</button>
+                      <button class="status-btn completed ${t.status==='COMPLETED'?'ring-2 ring-green-400':''}" onclick="updateStatus('${t.id}', 'COMPLETED')">COMPLETED</button>
+                    </span>
+                  </div>
+                  <div>
+                    <button onclick="editTask('${t.id}')" class="text-blue-500 mr-2">Edit</button>
+                    <button onclick="deleteTask('${t.id}')" class="text-red-500">Delete</button>
+                  </div>
                 </div>
-                <div>
-                  <button onclick="editTask('${t.id}')" class="text-blue-500 mr-2">Edit</button>
-                  <button onclick="deleteTask('${t.id}')" class="text-red-500">Delete</button>
-                </div>
-              </div>
-            `).join('')}
+              `).join('')}
+            </div>
           </div>
         `;
       }).join('');
