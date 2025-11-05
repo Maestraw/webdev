@@ -58,7 +58,7 @@
       localStorage.setItem('feed',JSON.stringify(feed));
     }
 
-    // GROUP task cards by Responsible, sorted A-Z
+    // GROUP task cards by Responsible, sort tasks: current → future → completed
     function renderTasks() {
       if (!tasks.length) {
         document.getElementById('task-list').innerHTML = '<div class="text-gray-500">No tasks yet.</div>';
@@ -67,32 +67,39 @@
       // Group by responsible
       let groups = {};
       tasks.forEach(t => {
-        let r = t.responsible? t.responsible.trim() : 'Unassigned';
+        let r = t.responsible ? t.responsible.trim() : 'Unassigned';
         if (!groups[r]) groups[r] = [];
         groups[r].push(t);
       });
-      // Prepare group cards, sorted by responsible name
-      let html = Object.keys(groups).sort().map(responsible => `
-        <div class="group-card">
-          <div class="text-lg font-bold text-blue-900 mb-4">${responsible}</div>
-          ${groups[responsible].map(t => `
-            <div class="mb-4 border-b pb-3 last:border-0 last:pb-0 flex justify-between items-center ${t.status === 'COMPLETED' ? 'bg-green-50' : ''}">
-              <div>
-                <span class="font-semibold">${t.name}</span><br/>
-                <span>Status:
-                  <button class="status-btn current ${t.status==='CURRENT'?'ring-2 ring-blue-400':''}" onclick="updateStatus('${t.id}', 'CURRENT')">CURRENT</button>
-                  <button class="status-btn future ${t.status==='FUTURE'?'ring-2 ring-indigo-400':''}" onclick="updateStatus('${t.id}', 'FUTURE')">FUTURE</button>
-                  <button class="status-btn completed ${t.status==='COMPLETED'?'ring-2 ring-green-400':''}" onclick="updateStatus('${t.id}', 'COMPLETED')">COMPLETED</button>
-                </span>
+      // Status order mapping
+      const statusOrder = { 'CURRENT': 1, 'FUTURE': 2, 'COMPLETED': 3 };
+      let html = Object.keys(groups).sort().map(responsible => {
+        // Sort tasks within group by status
+        let sortedTasks = groups[responsible].slice().sort((a, b) => {
+          return statusOrder[a.status] - statusOrder[b.status];
+        });
+        return `
+          <div class="group-card">
+            <div class="text-lg font-bold text-blue-900 mb-4">${responsible}</div>
+            ${sortedTasks.map(t => `
+              <div class="mb-4 border-b pb-3 last:border-0 last:pb-0 flex justify-between items-center ${t.status === 'COMPLETED' ? 'bg-green-50' : ''}">
+                <div>
+                  <span class="font-semibold">${t.name}</span><br/>
+                  <span>Status:
+                    <button class="status-btn current ${t.status==='CURRENT'?'ring-2 ring-blue-400':''}" onclick="updateStatus('${t.id}', 'CURRENT')">CURRENT</button>
+                    <button class="status-btn future ${t.status==='FUTURE'?'ring-2 ring-indigo-400':''}" onclick="updateStatus('${t.id}', 'FUTURE')">FUTURE</button>
+                    <button class="status-btn completed ${t.status==='COMPLETED'?'ring-2 ring-green-400':''}" onclick="updateStatus('${t.id}', 'COMPLETED')">COMPLETED</button>
+                  </span>
+                </div>
+                <div>
+                  <button onclick="editTask('${t.id}')" class="text-blue-500 mr-2">Edit</button>
+                  <button onclick="deleteTask('${t.id}')" class="text-red-500">Delete</button>
+                </div>
               </div>
-              <div>
-                <button onclick="editTask('${t.id}')" class="text-blue-500 mr-2">Edit</button>
-                <button onclick="deleteTask('${t.id}')" class="text-red-500">Delete</button>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      `).join('');
+            `).join('')}
+          </div>
+        `;
+      }).join('');
       document.getElementById('task-list').innerHTML = html;
     }
 
