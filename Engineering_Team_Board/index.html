@@ -1,199 +1,418 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Team Objective Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { font-family: 'Inter', sans-serif; background: #f7fafc; }
-    .status-btn { font-size: 12px; font-weight:600; border-radius: 6px; padding:2px 12px; margin-right:6px; cursor:pointer;}
-    .current { background: #bfdbfe; color:#1e40af; }
-    .future { background: #e0e7ff; color:#4f46e5; }
-    .completed { background: #d1fae5; color:#065f46;}
-    /* Group Card Styling */
-    .group-card { background: #eff6ff; border-radius: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,0.03); padding:1.25rem 1.5rem; margin-bottom:2rem;}
-    .task-scroll { max-height:300px; overflow-y:auto; margin: -1rem -1.5rem 0 -1.5rem; padding: 1rem 1.5rem 0 1.5rem;}
-    /* Activity Feed Styling */
-    .feed-box { border-left: 4px solid #6366f1; background: #f8fafc; }
-    .feed-icon { color: #6366f1; font-weight: bold; font-size:1.2em; margin-right:6px; }
-    .feed-time { float: right; font-size: 0.87em; color: #a0aec0; font-weight: 400; margin-left:12px;}
-    .feed-add { color: #16a34a;}
-    .feed-update { color: #f59e42;}
-    .feed-delete { color: #ef4444;}
-    .feed-complete { color: #065f46;}
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Team Objective Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], }, }, }, }</script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f7fafc; }
+        .status-btn { font-size: 12px; font-weight:600; border-radius: 6px; padding:2px 12px; margin-right:6px; cursor:pointer;}
+        .current { background: #bfdbfe; color:#1e40af; }
+        .future { background: #e0e7ff; color:#4f46e5; }
+        .completed { background: #d1fae5; color:#065f46;}
+        /* Group Card Styling */
+        .group-card { background: #eff6ff; border-radius: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,0.03); padding:1.25rem 1.5rem; margin-bottom:2rem;}
+        .task-scroll { max-height:300px; overflow-y:auto; margin: -1rem -1.5rem 0 -1.5rem; padding: 1rem 1.5rem 0 1.5rem;}
+        /* Activity Feed Styling */
+        .feed-box { border-left: 4px solid #6366f1; background: #f8fafc; }
+        .feed-icon { color: #6366f1; font-weight: bold; font-size:1.2em; margin-right:6px; }
+        .feed-time { float: right; font-size: 0.87em; color: #a0aec0; font-weight: 400; margin-left:12px;}
+        .feed-add { color: #16a34a;}
+        .feed-update { color: #f59e42;}
+        .feed-delete { color: #ef4444;}
+        .feed-complete { color: #065f46;}
+        .tab-active { border-bottom: 3px solid #6366f1; color: #6366f1; font-weight: 600; }
+        
+        /* Custom Scrollbar for task-scroll */
+        .task-scroll::-webkit-scrollbar { width: 6px; }
+        .task-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .task-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
 </head>
-<body class="p-6">
-  <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6">
-    <h1 class="text-2xl font-bold mb-4">Team Collaboration Dashboard</h1>
-    <button onclick="showTaskForm()" class="mb-4 bg-indigo-600 text-white px-4 py-2 rounded">Add Task</button>
-    <div id="task-list"></div>
-    <hr class="my-8"/>
-    <h2 class="text-xl font-bold mb-4">Activity Feed</h2>
-    <div class="flex mb-2">
-      <button onclick="filterFeed('all')" class="mr-2 bg-gray-200 px-2 rounded">All Time</button>
-      <button onclick="filterFeed('week')" class="mr-2 bg-gray-200 px-2 rounded">This Week</button>
-      <button onclick="filterFeed('month')" class="bg-gray-200 px-2 rounded">This Month</button>
+<body class="p-4 sm:p-6">
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl p-6">
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-2">Team Collaboration Dashboard</h1>
+        
+        <!-- Tab Navigation -->
+        <div class="flex border-b border-gray-200 mb-6">
+            <button id="tab-dashboard" onclick="changeView('dashboard')" class="px-4 py-2 text-sm transition duration-150 ease-in-out tab-active">
+                Team Dashboard (Assigned)
+            </button>
+            <button id="tab-features" onclick="changeView('unassigned')" class="px-4 py-2 text-sm text-gray-500 transition duration-150 ease-in-out">
+                Unassigned Features
+            </button>
+        </div>
+
+        <button onclick="showTaskForm()" class="mb-4 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition duration-150 ease-in-out shadow-md">
+            + Add New Task/Feature
+        </button>
+
+        <!-- Main Content View -->
+        <div id="loading-indicator" class="text-center p-8 text-indigo-500 font-medium hidden">Loading data...</div>
+        
+        <div id="dashboard-view" class="view-content">
+            <div id="task-list"></div>
+            <hr class="my-8"/>
+            <h2 class="text-xl font-bold mb-4">Activity Feed</h2>
+            <div class="flex mb-2">
+                <button onclick="filterFeed('all')" class="mr-2 bg-indigo-500 text-white px-3 py-1 rounded-full text-xs">All Time</button>
+                <button onclick="filterFeed('week')" class="mr-2 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-full text-xs">This Week</button>
+                <button onclick="filterFeed('month')" class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-full text-xs">This Month</button>
+            </div>
+            <div id="feed" style="max-height:220px; overflow-y:auto;"></div>
+        </div>
+
+        <div id="unassigned-view" class="view-content hidden">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Unassigned Feature List</h2>
+            <div id="unassigned-list"></div>
+        </div>
     </div>
-    <div id="feed" style="max-height:220px; overflow-y:auto;"></div>
-  </div>
 
-  <!-- Modal for Add/Edit Task -->
-  <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white p-8 rounded shadow-lg w-[350px]">
-      <h3 id="modal-title" class="font-bold mb-2"></h3>
-      <input id="task-name" type="text" class="border p-2 rounded w-full mb-2" placeholder="Task Name">
-      <input id="task-responsible" type="text" class="border p-2 rounded w-full mb-2" placeholder="Responsible (Who)">
-      <button onclick="saveTask()" class="bg-indigo-600 text-white px-4 py-2 rounded w-full mb-2">Save</button>
-      <button onclick="closeModal()" class="px-4 py-2 w-full">Cancel</button>
-      <input type="hidden" id="edit-id" value="">
+    <!-- Modal for Add/Edit Task -->
+    <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
+            <h3 id="modal-title" class="text-xl font-bold mb-4 text-gray-800"></h3>
+            
+            <label for="task-name" class="block text-sm font-medium text-gray-700 mb-1">Task Name</label>
+            <input id="task-name" type="text" class="border border-gray-300 p-3 rounded-lg w-full mb-4 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Implement new user profile page">
+            
+            <!-- UPDATED: Replaced input with select field for Assigned To -->
+            <label for="task-assignedTo" class="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+            <select id="task-assignedTo" class="border border-gray-300 p-3 rounded-lg w-full mb-4 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">Unassigned Feature</option>
+                <option value="Allan">Allan</option>
+                <option value="Fortune">Fortune</option>
+            </select>
+            <!-- END UPDATED BLOCK -->
+            
+            <label for="task-description" class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+            <textarea id="task-description" class="border border-gray-300 p-3 rounded-lg w-full mb-6 focus:ring-indigo-500 focus:border-indigo-500" placeholder="A brief summary of what this task entails..."></textarea>
+
+            <button onclick="saveTask()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg w-full mb-3 font-semibold shadow-md transition duration-150 ease-in-out">
+                Save Task
+            </button>
+            <button onclick="closeModal('task-modal')" class="text-gray-600 hover:text-gray-800 px-4 py-2 w-full transition duration-150 ease-in-out">
+                Cancel
+            </button>
+            <input type="hidden" id="edit-id" value="">
+        </div>
     </div>
-  </div>
+    
+    <!-- Custom Delete Confirmation Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm transform transition-all text-center">
+            <p class="text-lg font-semibold mb-6">Are you sure you want to delete this?</p>
+            <div class="flex justify-center space-x-4">
+                <button id="confirm-delete-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition duration-150">Delete</button>
+                <button onclick="closeModal('confirm-modal')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg transition duration-150">Cancel</button>
+            </div>
+        </div>
+    </div>
 
-  <script>
-    let tasks = JSON.parse(localStorage.getItem('tasks') || '[]'),
-        feed = JSON.parse(localStorage.getItem('feed') || '[]');
-    function saveState() {
-      localStorage.setItem('tasks',JSON.stringify(tasks));
-      localStorage.setItem('feed',JSON.stringify(feed));
-    }
+    <script type="module">
+        // --- Local Storage Initialization and Utility ---
+        
+        let currentTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+        // Feed is now a structured array of objects for easier rendering/filtering
+        let currentFeed = JSON.parse(localStorage.getItem('feed') || '[]');
+        let currentView = 'dashboard';
 
-    // GROUP task cards by Responsible, sort tasks: current → future → completed (5 at a time per card, scroll)
-    function renderTasks() {
-      if (!tasks.length) {
-        document.getElementById('task-list').innerHTML = '<div class="text-gray-500">No tasks yet.</div>';
-        return;
-      }
-      // Group by responsible
-      let groups = {};
-      tasks.forEach(t => {
-        let r = t.responsible ? t.responsible.trim() : 'Unassigned';
-        if (!groups[r]) groups[r] = [];
-        groups[r].push(t);
-      });
-      // Status order mapping
-      const statusOrder = { 'CURRENT': 1, 'FUTURE': 2, 'COMPLETED': 3 };
-      let html = Object.keys(groups).sort().map(responsible => {
-        // Sort tasks within group by status
-        let sortedTasks = groups[responsible].slice().sort((a, b) => {
-          return statusOrder[a.status] - statusOrder[b.status];
-        });
-        return `
-          <div class="group-card">
-            <div class="text-lg font-bold text-blue-900 mb-4">${responsible}</div>
-            <div class="task-scroll">
-              ${sortedTasks.map(t => `
-                <div class="mb-4 border-b pb-3 last:border-0 last:pb-0 flex justify-between items-center ${t.status === 'COMPLETED' ? 'bg-green-50' : ''}">
-                  <div>
-                    <span class="font-semibold">${t.name}</span><br/>
-                    <span>Status:
-                      <button class="status-btn current ${t.status==='CURRENT'?'ring-2 ring-blue-400':''}" onclick="updateStatus('${t.id}', 'CURRENT')">CURRENT</button>
-                      <button class="status-btn future ${t.status==='FUTURE'?'ring-2 ring-indigo-400':''}" onclick="updateStatus('${t.id}', 'FUTURE')">FUTURE</button>
-                      <button class="status-btn completed ${t.status==='COMPLETED'?'ring-2 ring-green-400':''}" onclick="updateStatus('${t.id}', 'COMPLETED')">COMPLETED</button>
-                    </span>
-                  </div>
-                  <div>
-                    <button onclick="editTask('${t.id}')" class="text-blue-500 mr-2">Edit</button>
-                    <button onclick="deleteTask('${t.id}')" class="text-red-500">Delete</button>
-                  </div>
+        // Expose functions globally (required for inline event handlers)
+        window.saveTask = saveTask;
+        window.updateStatus = updateStatus;
+        window.editTask = editTask;
+        window.deleteTask = deleteTask;
+        window.showTaskForm = showTaskForm;
+        window.closeModal = closeModal;
+        window.changeView = changeView;
+        window.filterFeed = filterFeed;
+
+        function saveState() {
+            localStorage.setItem('tasks', JSON.stringify(currentTasks));
+            localStorage.setItem('feed', JSON.stringify(currentFeed));
+        }
+
+        function addToFeed(message, taskName, type) {
+            const time = new Date().toLocaleString();
+            currentFeed.unshift({ message, taskName, type, time: Date.now() });
+            saveState();
+            renderFeed();
+        }
+
+        // --- Utility & UI Functions ---
+
+        function changeView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`${view}-view`).classList.remove('hidden');
+
+            document.getElementById('tab-dashboard').classList.remove('tab-active', 'text-gray-500');
+            document.getElementById('tab-features').classList.remove('tab-active', 'text-gray-500');
+            document.getElementById('tab-dashboard').classList.add(view === 'dashboard' ? 'tab-active' : 'text-gray-500');
+            document.getElementById('tab-features').classList.add(view === 'unassigned' ? 'tab-active' : 'text-gray-500');
+        }
+
+        function renderAllViews() {
+            renderTasks();
+            renderUnassignedFeatures();
+        }
+
+        function showTaskForm(editId = '') {
+            const modal = document.getElementById('task-modal');
+            const isEditing = !!editId;
+
+            document.getElementById('modal-title').textContent = isEditing ? 'Edit Task' : 'Add New Task/Feature';
+            document.getElementById('edit-id').value = editId;
+
+            if (isEditing) {
+                const t = currentTasks.find(x => x.id === editId);
+                if (t) {
+                    document.getElementById('task-name').value = t.name || '';
+                    // Sets the value of the select box
+                    document.getElementById('task-assignedTo').value = t.assignedTo || '';
+                    document.getElementById('task-description').value = t.description || '';
+                }
+            } else {
+                document.getElementById('task-name').value = '';
+                // Default to 'Unassigned Feature' (value="")
+                document.getElementById('task-assignedTo').value = ''; 
+                document.getElementById('task-description').value = '';
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // --- CRUD Operations (Local Storage) ---
+        function saveTask() {
+            const name = document.getElementById('task-name').value.trim();
+            // Reads from the select box, which outputs "" or "Allan" or "Fortune"
+            const assignedTo = document.getElementById('task-assignedTo').value.trim(); 
+            const description = document.getElementById('task-description').value.trim(); 
+            const id = document.getElementById('edit-id').value;
+
+            if (!name) { 
+                // We use an internal message here since we replaced the external alert()
+                console.error('Task name cannot be empty.'); 
+                return; 
+            }
+
+            closeModal('task-modal');
+
+            if (id) {
+                // Update existing task
+                const t = currentTasks.find(x => x.id === id);
+                if (!t) return;
+                
+                const oldAssignedTo = t.assignedTo || 'Unassigned';
+
+                t.name = name;
+                t.assignedTo = assignedTo;
+                t.description = description;
+
+                addToFeed(`Task name/assignment updated. Assigned To changed from "${oldAssignedTo}" to "${assignedTo || 'Unassigned'}"`, name, 'UPDATE');
+
+            } else {
+                // Add new task
+                const newTask = {
+                    id: 't' + Date.now() + Math.random().toString(36).substring(2, 9),
+                    name,
+                    assignedTo,
+                    description,
+                    status: "CURRENT",
+                    createdAt: Date.now()
+                };
+                currentTasks.unshift(newTask);
+                addToFeed(`New task/feature added. Assigned To: ${assignedTo || 'Unassigned'}`, name, 'ADD');
+            }
+
+            saveState(); 
+            renderAllViews();
+        }
+
+        function editTask(id) { showTaskForm(id); }
+        
+        let taskToDeleteId = null;
+
+        function deleteTask(id) {
+            const t = currentTasks.find(x => x.id === id);
+            if (!t) return;
+            
+            // Show confirmation modal
+            document.getElementById('confirm-modal').style.display = 'flex';
+            taskToDeleteId = id;
+
+            // Update the button action temporarily
+            const confirmBtn = document.getElementById('confirm-delete-btn');
+            confirmBtn.onclick = () => {
+                closeModal('confirm-modal');
+                if (taskToDeleteId) {
+                    const t = currentTasks.find(x => x.id === taskToDeleteId);
+                    if (!t) return;
+
+                    currentTasks = currentTasks.filter(x => x.id !== taskToDeleteId);
+                    addToFeed(`Task/Feature was deleted.`, t.name, 'DELETE');
+                    
+                    saveState(); 
+                    renderAllViews();
+                    taskToDeleteId = null;
+                }
+            };
+        }
+
+        function updateStatus(id, status) {
+            let t = currentTasks.find(x => x.id === id);
+            if (!t || t.status === status) return;
+            
+            t.status = status;
+            
+            let extra = status === 'COMPLETED' ? ' 🎉' : '';
+            addToFeed(`Status set to ${status}.${extra}`, t.name, 'STATUS');
+            
+            saveState();
+            renderAllViews();
+        }
+
+        // --- Rendering Logic ---
+
+        // Render Assigned Tasks (Team Dashboard)
+        function renderTasks() {
+            const assignedTasks = currentTasks.filter(t => t.assignedTo && t.assignedTo.trim() !== '');
+            const taskListEl = document.getElementById('task-list');
+
+            if (!assignedTasks.length) {
+                taskListEl.innerHTML = '<div class="text-gray-500 p-4 bg-gray-100 rounded-xl">No assigned tasks yet. Add a new task and assign a person.</div>';
+                return;
+            }
+
+            let groups = {};
+            assignedTasks.forEach(t => {
+                let a = t.assignedTo.trim();
+                if (!groups[a]) groups[a] = [];
+                groups[a].push(t);
+            });
+
+            const statusOrder = { 'CURRENT': 1, 'FUTURE': 2, 'COMPLETED': 3 };
+            let html = Object.keys(groups).sort().map(assignedTo => {
+                let sortedTasks = groups[assignedTo].slice().sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+                
+                return `
+                    <div class="group-card">
+                        <div class="text-lg font-extrabold text-blue-900 mb-4 flex justify-between items-center">
+                            ${assignedTo}
+                            <span class="text-xs font-normal bg-blue-200 text-blue-900 px-2 py-1 rounded-full">${sortedTasks.length} Tasks</span>
+                        </div>
+                        <div class="task-scroll">
+                            ${sortedTasks.map(t => `
+                                <div class="mb-4 border-b pb-3 last:border-0 last:pb-0 flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 rounded-lg transition-all ${t.status === 'COMPLETED' ? 'bg-green-50' : 'hover:bg-blue-100/50'}">
+                                    <div class="flex-1 min-w-0">
+                                        <span class="font-semibold text-gray-800 break-words">${t.name}</span>
+                                        ${t.description ? `<p class="text-xs text-gray-500 mt-0.5 max-w-[90%] truncate">${t.description}</p>` : ''}
+                                        <div class="mt-2 text-xs text-gray-600">
+                                            Status:
+                                            <button class="status-btn current ${t.status==='CURRENT'?'ring-2 ring-blue-400':''}" onclick="updateStatus('${t.id}', 'CURRENT')">CURRENT</button>
+                                            <button class="status-btn future ${t.status==='FUTURE'?'ring-2 ring-indigo-400':''}" onclick="updateStatus('${t.id}', 'FUTURE')">FUTURE</button>
+                                            <button class="status-btn completed ${t.status==='COMPLETED'?'ring-2 ring-green-400':''}" onclick="updateStatus('${t.id}', 'COMPLETED')">COMPLETED</button>
+                                        </div>
+                                    </div>
+                                    <div class="flex-shrink-0 mt-2 sm:mt-0">
+                                        <button onclick="editTask('${t.id}')" class="text-blue-600 hover:text-blue-800 mr-2 text-sm transition duration-150">Edit</button>
+                                        <button onclick="deleteTask('${t.id}')" class="text-red-600 hover:text-red-800 text-sm transition duration-150">Delete</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            taskListEl.innerHTML = html;
+        }
+
+        // Render Unassigned Features
+        function renderUnassignedFeatures() {
+            const unassigned = currentTasks.filter(t => !t.assignedTo || t.assignedTo.trim() === '');
+            const unassignedListEl = document.getElementById('unassigned-list');
+
+            if (!unassigned.length) {
+                unassignedListEl.innerHTML = '<div class="text-gray-500 p-4 bg-gray-100 rounded-xl">No unassigned features. Add new tasks without an assigned person to see them here.</div>';
+                return;
+            }
+
+            let html = unassigned.map(t => `
+                <div class="mb-3 border-b pb-3 last:border-0 last:pb-0 flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex-1 min-w-0">
+                        <span class="font-bold text-gray-800 break-words">${t.name}</span>
+                        ${t.description ? `<p class="text-xs text-gray-500 mt-0.5 max-w-[90%] truncate">${t.description}</p>` : ''}
+                        <div class="text-sm text-yellow-600 font-semibold mt-1">Status: ${t.status} (Unassigned)</div>
+                    </div>
+                    <div class="flex-shrink-0 mt-2 sm:mt-0">
+                        <button onclick="editTask('${t.id}')" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm transition duration-150">Assign / Edit</button>
+                        <button onclick="deleteTask('${t.id}')" class="text-red-600 hover:text-red-800 ml-2 text-sm transition duration-150">Delete</button>
+                    </div>
                 </div>
-              `).join('')}
-            </div>
-          </div>
-        `;
-      }).join('');
-      document.getElementById('task-list').innerHTML = html;
-    }
+            `).join('');
+            unassignedListEl.innerHTML = html;
+        }
 
-    // Render Activity Feed: only 5 most recent logs, scrollable
-    function renderFeed(filtered = feed) {
-      let view = filtered.slice(0,5); // show only 5 logs at a time
-      document.getElementById('feed').innerHTML = view.length ?
-        view.map(f => {
-          let txt = f.replace(/\s*\(([^)]+)\)\s*$/,''), time = (f.match(/\(([^)]+)\)/) || [])[1] || '',
-            add = txt.startsWith("New task"),
-            upd = txt.indexOf("updated")>-1,
-            del = txt.indexOf("deleted")>-1,
-            comp = txt.indexOf("set to COMPLETED")>-1;
-          return `<div class="feed-box rounded px-4 py-3 mb-3 shadow-sm flex items-center">
-            <span class="feed-icon ${add?'feed-add':upd?'feed-update':del?'feed-delete':comp?'feed-complete':''}">${
-              add?'✦':upd?'⟳':del?'✖':comp?'✔':'✦'
-            }</span>
-            <div class="flex-1">
-              <span class="font-semibold ${add?'feed-add':upd?'feed-update':del?'feed-delete':comp?'feed-complete':''}">
-                ${add?'Task Added:':upd?'Task Updated:':comp?'Task Completed:':del?'Task Deleted:':'Activity:'}
-              </span>
-              ${txt.replace(/^(New task|Task|Status of) /,'')}
-            </div>
-            <span class="feed-time">${time}</span>
-          </div>`;
-        }).join('') : '<div class="text-gray-400">Nothing to display.</div>';
-    }
 
-    // CRUD Modal Logic
-    function showTaskForm(editId='') {
-      document.getElementById('task-modal').style.display = 'flex';
-      document.getElementById('modal-title').textContent = editId?'Edit Task':'Add New Task';
-      if (editId) {
-        let t = tasks.find(x=>x.id===editId);
-        document.getElementById('task-name').value = t.name;
-        document.getElementById('task-responsible').value = t.responsible;
-      } else {
-        document.getElementById('task-name').value = '';
-        document.getElementById('task-responsible').value = '';
-      }
-      document.getElementById('edit-id').value = editId;
-    }
-    function closeModal() { document.getElementById('task-modal').style.display = 'none'; }
-    function saveTask() {
-      let name=document.getElementById('task-name').value.trim(),
-          resp=document.getElementById('task-responsible').value.trim(),
-          id=document.getElementById('edit-id').value;
-      if (!name||!resp) return alert('Fill out all fields');
-      if (id) {
-        let t=tasks.find(x=>x.id===id), oldname=t.name, oldresp=t.responsible;
-        t.name=name; t.responsible=resp;
-        feed.unshift(`Task "${oldname}" updated to "${name}" [Responsible: ${resp}] (${new Date().toLocaleString()})`);
-      } else {
-        let tid='t'+Date.now();
-        tasks.unshift({id:tid,name:name,responsible:resp,status:"CURRENT"});
-        feed.unshift(`New task "${name}" [Responsible: ${resp}] added. (${new Date().toLocaleString()})`);
-      }
-      saveState(); renderTasks(); renderFeed(); closeModal();
-    }
-    function editTask(id) { showTaskForm(id); }
-    function deleteTask(id) {
-      let t=tasks.find(x=>x.id===id);
-      if(confirm(`Delete "${t.name}"?`)) {
-        tasks = tasks.filter(x=>x.id!==id);
-        feed.unshift(`Task "${t.name}" was deleted. (${new Date().toLocaleString()})`);
-        saveState(); renderTasks(); renderFeed();
-      }
-    }
-    function updateStatus(id, status) {
-      let t=tasks.find(x=>x.id===id);
-      if(t.status!==status) {
-        t.status=status;
-        let extra=status==='COMPLETED' ? ' 🎉' : '';
-        feed.unshift(`Status of "${t.name}" set to ${status}.${extra} (${new Date().toLocaleString()})`);
-        saveState(); renderTasks(); renderFeed();
-      }
-    }
-    function filterFeed(type) {
-      let now=new Date(), out=feed;
-      if(type==='week') {
-        let startOfWeek=new Date(now.getDate() - now.getDay() + 1 ? now.setDate(now.getDate() - now.getDay() + 1) : now); startOfWeek.setHours(0,0,0,0);
-        out = feed.filter(f=>new Date(f.match(/\(([^)]+)\)/)[1])>=startOfWeek);
-      }
-      if(type==='month') {
-        let startOfMonth=new Date(now.getFullYear(),now.getMonth(),1); startOfMonth.setHours(0,0,0,0);
-        out = feed.filter(f=>new Date(f.match(/\(([^)]+)\)/)[1])>=startOfMonth);
-      }
-      renderFeed(out);
-    }
-    // Initial load
-    renderTasks(); renderFeed();
-  </script>
+        // Render Activity Feed
+        function renderFeed(filteredFeed = currentFeed) {
+            // Sort feed by timestamp (descending) in memory
+            const sortedFeed = filteredFeed.sort((a, b) => b.time - a.time);
+            const view = sortedFeed; 
+            const feedEl = document.getElementById('feed');
+            
+            feedEl.innerHTML = view.length ?
+                view.map(f => {
+                    const date = new Date(f.time).toLocaleString();
+                    const name = f.taskName || 'Unknown Task';
+                    
+                    let icon, iconClass, prefixText;
+                    switch (f.type) {
+                        case 'ADD': icon = '✦'; iconClass = 'feed-add'; prefixText = 'Task Added:'; break;
+                        case 'UPDATE': icon = '⟳'; iconClass = 'feed-update'; prefixText = 'Task Updated:'; break;
+                        case 'DELETE': icon = '✖'; iconClass = 'feed-delete'; prefixText = 'Task Deleted:'; break;
+                        case 'STATUS': icon = '✔'; iconClass = 'feed-complete'; prefixText = 'Status Change:'; break;
+                        default: icon = '✦'; iconClass = ''; prefixText = 'Activity:';
+                    }
+
+                    return `<div class="feed-box rounded-xl px-4 py-3 mb-3 shadow-sm flex items-center">
+                        <span class="feed-icon ${iconClass}">${icon}</span>
+                        <div class="flex-1 min-w-0 truncate">
+                            <span class="font-semibold ${iconClass}">${prefixText}</span>
+                            <span class="text-gray-700">${f.message}</span>
+                        </div>
+                        <span class="feed-time whitespace-nowrap">${date}</span>
+                    </div>`;
+                }).join('') : '<div class="text-gray-400 p-4 bg-gray-100 rounded-xl">Nothing to display for this period.</div>';
+        }
+
+        // Filter Feed by Time
+        function filterFeed(type) {
+            let out = currentFeed;
+            const now = Date.now();
+
+            if (type === 'week') {
+                const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
+                out = currentFeed.filter(f => f.time >= oneWeekAgo);
+            }
+            if (type === 'month') {
+                const oneMonthAgo = now - (30 * 24 * 60 * 60 * 1000); // Approximation
+                out = currentFeed.filter(f => f.time >= oneMonthAgo);
+            }
+            
+            // Note: For simplicity, button active state styling is not implemented here.
+            
+            renderFeed(out);
+        }
+
+        // Initial load
+        renderAllViews();
+        renderFeed();
+    </script>
 </body>
 </html>
