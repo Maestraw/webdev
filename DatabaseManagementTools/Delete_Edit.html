@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fast DB Manager</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            background: #f1f3f4;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.2);
+            border: 1px solid #dadce0;
+            padding: 16px 24px 18px;
+            width: 890px;
+        }
+
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .card-header { margin-bottom: 4px; }
+        .card-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+            color: #202124;
+        }
+        .card-subtitle {
+            margin: 4px 0 0;
+            font-size: 12px;
+            color: #5f6368;
+        }
+
+        /* DB mode switch */
+        .db-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #5f6368;
+            user-select: none;
+        }
+        .db-switch-label {
+            font-weight: 500;
+            color: #202124;
+        }
+        .db-pill {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            padding: 2px;
+            border-radius: 999px;
+            background: #e8eaed;
+            min-width: 130px;
+            height: 24px;
+            font-size: 11px;
+        }
+        .db-pill-option {
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            z-index: 1;
+        }
+        .db-pill-thumb {
+            position: absolute;
+            top: 2px;
+            bottom: 2px;
+            width: 50%;
+            border-radius: 999px;
+            background: #1a73e8;
+            box-shadow: 0 1px 3px rgba(0,0,0,.3);
+            transition: transform 0.18s ease;
+        }
+        .db-pill-thumb.test {
+            transform: translateX(0%);
+        }
+        .db-pill-thumb.live {
+            transform: translateX(100%);
+        }
+        .db-pill-option.test-active {
+            color: #fff;
+            font-weight: 600;
+        }
+        .db-pill-option.live-active {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .sheet-container {
+            margin-top: 10px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #dadce0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th {
+            background: #f8f9fa;
+            padding: 6px 8px;
+            text-align: left;
+            font-weight: 500;
+            color: #5f6368;
+            border-bottom: 1px solid #dadce0;
+            border-right: 1px solid #e8eaed;
+        }
+        th:last-child { border-right: none; }
+        td {
+            padding: 4px 6px;
+            border-bottom: 1px solid #f1f3f4;
+            border-right: 1px solid #f1f3f4;
+            height: 32px;
+        }
+        td:last-child { border-right: none; }
+
+        input {
+            width: 100%;
+            height: 26px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+        input:focus {
+            outline: none;
+            border-color: #4285f4;
+            box-shadow: 0 0 0 1px rgba(66,133,244,.35);
+            background: #fafbfc;
+        }
+        .cell-id   { width: 140px; }
+        .cell-table{ width: 120px; }
+        .cell-field{ width: 120px; }
+        .cell-value{ width: 180px; }
+
+        .actions {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-start;
+        }
+        button {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            height: 24px;
+        }
+        .update-btn { background: #34a853; color: #fff; }
+        .delete-btn { background: #ea4335; color: #fff; }
+        button:disabled { opacity: .5; cursor: not-allowed; }
+
+        .status {
+            margin-top: 8px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: none;
+        }
+        .status.success {
+            background: #e8f5e8;
+            color: #137333;
+            border: 1px solid #34a853;
+        }
+        .status.error {
+            background: #fce8e6;
+            color: #d93025;
+            border: 1px solid #ea4335;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .overlay-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,.35);
+        }
+
+        .modal {
+            position: relative;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.35);
+            padding: 18px 20px 14px;
+            width: 360px;
+            max-width: 90%;
+            z-index: 1001;
+        }
+        .modal-title {
+            margin: 0 0 6px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #202124;
+        }
+        .modal-body {
+            font-size: 13px;
+            color: #5f6368;
+            margin-bottom: 14px;
+            white-space: pre-line;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        .btn-text {
+            background: transparent;
+            color: #5f6368;
+        }
+        .btn-primary {
+            background: #1a73e8;
+            color: #fff;
+        }
+
+        .loading-box {
+            position: relative;
+            background: #fff;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            box-shadow: 0 4px 16px rgba(0,0,0,.35);
+            z-index: 1001;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="card-top">
+        <div class="card-header">
+            <h1 class="card-title">Lite DB Manager</h1>
+            <p class="card-subtitle">
+                IDs support multiple values (e.g. 1,2,3). Enter then press Enter (update) or Ctrl+Enter (delete).
+            </p>
+        </div>
+
+        <!-- DB mode switch -->
+        <div class="db-switch">
+            <span class="db-switch-label">Database</span>
+            <div class="db-pill" id="dbPill">
+                <div class="db-pill-thumb test" id="dbThumb"></div>
+                <div class="db-pill-option test-active" id="dbTest">Test</div>
+                <div class="db-pill-option" id="dbLive">Live</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sheet-container">
+        <table>
+            <thead>
+            <tr>
+                <th class="cell-id">IDs</th>
+                <th class="cell-table">Table</th>
+                <th class="cell-field">Field</th>
+                <th class="cell-value">New Value</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td class="cell-id">
+                    <input type="text" id="id" placeholder="1,2,3" autofocus>
+                </td>
+                <td class="cell-table">
+                    <input type="text" id="table" placeholder="users">
+                </td>
+                <td class="cell-field">
+                    <input type="text" id="field" placeholder="email">
+                </td>
+                <td class="cell-value">
+                    <input type="text" id="newValue" placeholder="value">
+                </td>
+                <td class="actions">
+                    <button class="update-btn" id="updateBtn">Update</button>
+                    <button class="delete-btn" id="deleteBtn">Delete</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="status" class="status"></div>
+</div>
+
+<!-- Confirm modal -->
+<div id="confirmOverlay" class="overlay">
+    <div class="overlay-backdrop"></div>
+    <div class="modal">
+        <h2 class="modal-title" id="confirmTitle">Confirm action</h2>
+        <div class="modal-body" id="confirmMessage"></div>
+        <div class="modal-actions">
+            <button class="btn-text" id="confirmCancel">Cancel</button>
+            <button class="btn-primary" id="confirmOk">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="overlay">
+    <div class="overlay-backdrop"></div>
+    <div class="loading-box" id="loadingText">Working…</div>
+</div>
+
+<script>
+    const idInput      = document.getElementById('id');
+    const tableInput   = document.getElementById('table');
+    const fieldInput   = document.getElementById('field');
+    const valueInput   = document.getElementById('newValue');
+    const statusEl     = document.getElementById('status');
+
+    const confirmOverlay  = document.getElementById('confirmOverlay');
+    const confirmTitleEl  = document.getElementById('confirmTitle');
+    const confirmMsgEl    = document.getElementById('confirmMessage');
+    const confirmCancel   = document.getElementById('confirmCancel');
+    const confirmOk       = document.getElementById('confirmOk');
+
+    const loadingOverlay  = document.getElementById('loadingOverlay');
+    const loadingText     = document.getElementById('loadingText');
+
+    // DB mode elements
+    const dbThumb = document.getElementById('dbThumb');
+    const dbTest  = document.getElementById('dbTest');
+    const dbLive  = document.getElementById('dbLive');
+    let currentDbMode = 'test'; // 'test' or 'live'
+
+    document.getElementById('updateBtn').addEventListener('click', handleUpdateClick);
+    document.getElementById('deleteBtn').addEventListener('click', handleDeleteClick);
+
+    // DB mode switch handlers
+    dbTest.addEventListener('click', () => setDbMode('test'));
+    dbLive.addEventListener('click', () => setDbMode('live'));
+
+    function setDbMode(mode) {
+        currentDbMode = mode;
+        if (mode === 'test') {
+            dbThumb.classList.remove('live');
+            dbThumb.classList.add('test');
+            dbTest.classList.add('test-active');
+            dbLive.classList.remove('live-active');
+        } else {
+            dbThumb.classList.remove('test');
+            dbThumb.classList.add('live');
+            dbLive.classList.add('live-active');
+            dbTest.classList.remove('test-active');
+        }
+        showStatus(`Switched to ${mode.toUpperCase()} database.`, mode === 'live');
+    }
+
+    // Enter = update, Ctrl+Enter = delete
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                handleDeleteClick();
+            } else {
+                e.preventDefault();
+                handleUpdateClick();
+            }
+        }
+    });
+
+    function parseIds(raw) {
+        if (!raw) return [];
+        return raw
+            .split(/[^0-9]+/)
+            .filter(Boolean)
+            .map(Number)
+            .filter(n => !Number.isNaN(n));
+    }
+
+    function showStatus(msg, error = false) {
+        statusEl.textContent = msg;
+        statusEl.className = 'status ' + (error ? 'error' : 'success');
+        statusEl.style.display = 'block';
+        clearTimeout(statusEl._timer);
+        statusEl._timer = setTimeout(() => statusEl.style.display = 'none', 4000);
+    }
+
+    function toggleButtons(disabled) {
+        document.querySelectorAll('button').forEach(b => b.disabled = disabled);
+    }
+
+    function showLoading(text) {
+        loadingText.textContent = text || 'Working…';
+        loadingOverlay.style.display = 'flex';
+        toggleButtons(true);
+    }
+
+    function hideLoading() {
+        loadingOverlay.style.display = 'none';
+        toggleButtons(false);
+    }
+
+    function showConfirm({ title, message }) {
+        return new Promise((resolve) => {
+            confirmTitleEl.textContent = title || 'Confirm action';
+            confirmMsgEl.textContent = message || '';
+            confirmOverlay.style.display = 'flex';
+
+            const onCancel = () => {
+                cleanup();
+                resolve(false);
+            };
+            const onOk = () => {
+                cleanup();
+                resolve(true);
+            };
+
+            function cleanup() {
+                confirmOverlay.style.display = 'none';
+                confirmCancel.removeEventListener('click', onCancel);
+                confirmOk.removeEventListener('click', onOk);
+            }
+
+            confirmCancel.addEventListener('click', onCancel);
+            confirmOk.addEventListener('click', onOk);
+        });
+    }
+
+    async function handleUpdateClick() {
+        const rawIds = idInput.value.trim();
+        const table  = tableInput.value.trim();
+        const field  = fieldInput.value.trim();
+        const value  = valueInput.value;
+
+        const ids = parseIds(rawIds);
+
+        if (!ids.length || !table || !field) {
+            showStatus('At least one ID plus table and field are required.', true);
+            return;
+        }
+
+        const ok = await showConfirm({
+            title: 'Confirm update',
+            message: `Database: ${currentDbMode.toUpperCase()}\nUpdate ${table}.${field} to:\n"${value || 'NULL'}"\nfor IDs: ${ids.join(', ')}?`
+        });
+        if (!ok) return;
+
+        await performUpdate({ ids, table, field, value, dbMode: currentDbMode });
+    }
+
+    async function handleDeleteClick() {
+        const rawIds = idInput.value.trim();
+        const table  = tableInput.value.trim();
+
+        const ids = parseIds(rawIds);
+
+        if (!ids.length || !table) {
+            showStatus('At least one ID and table are required for delete.', true);
+            return;
+        }
+
+        const ok = await showConfirm({
+            title: 'Confirm delete',
+            message: `Database: ${currentDbMode.toUpperCase()}\nDelete records with IDs: ${ids.join(', ')}\nfrom table "${table}"?`
+        });
+        if (!ok) return;
+
+        await performDelete({ ids, table, dbMode: currentDbMode });
+    }
+
+    async function performUpdate({ ids, table, field, value, dbMode }) {
+        showLoading('Updating…');
+        try {
+            const res = await fetch('/api/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids, table, field, value, dbMode })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'Update failed');
+            showStatus(`Update OK (${dbMode.toUpperCase()})`);
+        } catch (err) {
+            showStatus(err.message, true);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function performDelete({ ids, table, dbMode }) {
+        showLoading('Deleting…');
+        try {
+            const res = await fetch('/api/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids, table, dbMode })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'Delete failed');
+            showStatus(`Delete OK (${dbMode.toUpperCase()})`);
+        } catch (err) {
+            showStatus(err.message, true);
+        } finally {
+            hideLoading();
+        }
+    }
+</script>
+</body>
+</html>

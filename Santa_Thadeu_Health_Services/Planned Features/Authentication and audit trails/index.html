@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Moderation Dashboard (Local Storage)</title>
+    <style>
+        /* --- CSS STYLING --- */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .dashboard-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2 {
+            color: #004d99;
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: #e0e0e0;
+            margin: 30px 0;
+        }
+
+        /* User List and Cards */
+        .user-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .user-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-radius: 6px;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        /* Specific styling for pending and approved */
+        .user-card.pending {
+            border-left: 5px solid #ff9900; /* Orange for Pending */
+            background-color: #fff9e6;
+        }
+
+        .user-card.approved {
+            border-left: 5px solid #28a745; /* Green for Approved */
+        }
+
+        .user-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.1em;
+        }
+
+        .user-info p {
+            margin: 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .user-status {
+            font-size: 0.8em;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: white;
+        }
+
+        .user-status.pending-status {
+            background-color: #ff9900;
+        }
+        
+        .user-status.approved-status {
+            background-color: #28a745;
+        }
+
+        /* Action Buttons */
+        .user-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .approve-btn {
+            background-color: #007bff; /* Blue */
+            color: white;
+        }
+
+        .approve-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .disapprove-btn {
+            background-color: #6c757d; /* Gray */
+            color: white;
+        }
+
+        .disapprove-btn:hover {
+            background-color: #5a6268;
+        }
+
+        .delete-btn {
+            background-color: #dc3545; /* Red */
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <h1>User Management Interface</h1>
+        <p>Manage pending approval requests and existing users. (Data persisted in Local Storage)</p>
+
+        <section class="user-group pending-group">
+            <h2 id="pending-count-header">Waiting to be Approved (<span id="pending-count">0</span>)</h2>
+            <div id="pending-users-list" class="user-list">
+                </div>
+        </section>
+
+        <hr>
+
+        <section class="user-group approved-group">
+            <h2 id="approved-count-header">Approved Users (<span id="approved-count">0</span>)</h2>
+            <div id="approved-users-list" class="user-list">
+                </div>
+        </section>
+
+    </div>
+
+    <script>
+        const PENDING_KEY = 'moderationPendingUsers';
+        const APPROVED_KEY = 'moderationApprovedUsers';
+
+        // --- Data Persistence Functions ---
+
+        /** Fetches data from Local Storage or returns a default array. */
+        const loadUsers = (key) => {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : [];
+            } catch (error) {
+                console.error("Error loading data from localStorage:", error);
+                return [];
+            }
+        };
+
+        /** Saves data to Local Storage. */
+        const saveUsers = (key, users) => {
+            try {
+                localStorage.setItem(key, JSON.stringify(users));
+            } catch (error) {
+                console.error("Error saving data to localStorage:", error);
+            }
+        };
+
+        // --- Initial Mock Data ---
+        const initialPending = [
+            { id: 101, name: "Alice Johnson", email: "alice.j@example.com" },
+            { id: 102, name: "Bob Smith", email: "bob.s@example.com" }
+        ];
+        const initialApproved = [
+            { id: 201, name: "Charlie Brown", email: "charlie.b@example.com" },
+            { id: 202, name: "Dana White", email: "dana.w@example.com" }
+        ];
+
+
+        // --- UI Rendering Functions ---
+
+        /** Creates the HTML for a single user card. */
+        const createUserCard = (user, status) => {
+            const isPending = status === 'pending';
+            
+            let actionButtons = '';
+            if (isPending) {
+                actionButtons = `
+                    <button class="action-btn approve-btn" data-id="${user.id}" data-action="approve">Approve</button>
+                    <button class="action-btn disapprove-btn" data-id="${user.id}" data-action="disapprove">Disapprove</button>
+                `;
+            } else {
+                actionButtons = `
+                    <button class="action-btn disapprove-btn" data-id="${user.id}" data-action="disapprove">Disapprove</button>
+                `;
+            }
+            
+            actionButtons += `<button class="action-btn delete-btn" data-id="${user.id}" data-action="delete">Delete</button>`;
+
+
+            return `
+                <div class="user-card ${status}" data-user-id="${user.id}">
+                    <div class="user-info">
+                        <h3>${user.name}</h3>
+                        <p>${user.email}</p>
+                        <span class="user-status ${status}-status">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
+                    </div>
+                    <div class="user-actions">
+                        ${actionButtons}
+                    </div>
+                </div>
+            `;
+        };
+
+        /** Renders all users to the appropriate lists. */
+        const renderUsers = () => {
+            let pendingUsers = loadUsers(PENDING_KEY);
+            let approvedUsers = loadUsers(APPROVED_KEY);
+
+            // If storage is empty, initialize with mock data
+            if (pendingUsers.length === 0 && approvedUsers.length === 0) {
+                pendingUsers = initialPending;
+                approvedUsers = initialApproved;
+                saveUsers(PENDING_KEY, pendingUsers);
+                saveUsers(APPROVED_KEY, approvedUsers);
+            }
+
+            const pendingList = document.getElementById('pending-users-list');
+            const approvedList = document.getElementById('approved-users-list');
+            const pendingCount = document.getElementById('pending-count');
+            const approvedCount = document.getElementById('approved-count');
+
+            // 1. Render Pending List
+            pendingList.innerHTML = pendingUsers.map(user => createUserCard(user, 'pending')).join('');
+            pendingCount.textContent = pendingUsers.length;
+
+            // 2. Render Approved List
+            approvedList.innerHTML = approvedUsers.map(user => createUserCard(user, 'approved')).join('');
+            approvedCount.textContent = approvedUsers.length;
+        };
+
+        // --- Action Handlers ---
+        
+        /** Primary function to handle all button clicks. */
+        const handleAction = (event) => {
+            const button = event.target.closest('.action-btn');
+            if (!button) return; // Not an action button
+
+            const userId = parseInt(button.dataset.id);
+            const action = button.dataset.action;
+
+            let pendingUsers = loadUsers(PENDING_KEY);
+            let approvedUsers = loadUsers(APPROVED_KEY);
+
+            let user;
+            
+            // Log the action for debugging
+            console.log(`Action: ${action}, User ID: ${userId}`);
+
+            switch (action) {
+                case 'approve':
+                    user = pendingUsers.find(u => u.id === userId);
+                    if (user) {
+                        // Move user from pending to approved list
+                        pendingUsers = pendingUsers.filter(u => u.id !== userId);
+                        approvedUsers.push(user);
+                    }
+                    break;
+
+                case 'disapprove':
+                    // User can be disapproved from either pending or approved list
+                    user = approvedUsers.find(u => u.id === userId);
+                    if (user) {
+                        // Move user from approved to pending list
+                        approvedUsers = approvedUsers.filter(u => u.id !== userId);
+                        pendingUsers.push(user);
+                    } else {
+                        // If they were pending, just remove them from pending
+                        pendingUsers = pendingUsers.filter(u => u.id !== userId);
+                    }
+                    break;
+
+                case 'delete':
+                    // Remove from whichever list they are in
+                    pendingUsers = pendingUsers.filter(u => u.id !== userId);
+                    approvedUsers = approvedUsers.filter(u => u.id !== userId);
+                    break;
+            }
+
+            // Save the updated state and re-render the UI
+            saveUsers(PENDING_KEY, pendingUsers);
+            saveUsers(APPROVED_KEY, approvedUsers);
+            renderUsers(); // Rerender to show the change
+        };
+
+        // --- Initialization ---
+
+        // 1. Initial render when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            renderUsers();
+            
+            // 2. Attach the global event listener for all button clicks
+            document.querySelector('.dashboard-container').addEventListener('click', handleAction);
+        });
+    </script>
+</body>
+</html>
