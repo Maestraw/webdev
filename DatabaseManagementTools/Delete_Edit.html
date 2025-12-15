@@ -323,6 +323,9 @@
 </div>
 
 <script>
+   //API ENDPOINTS
+    const test="https://uniapi-7sg46ktp7q-uc.a.run.app/";
+    const live="https://uniapi-vflmf6m4iq-uc.a.run.app";
     const idInput      = document.getElementById('id');
     const tableInput   = document.getElementById('table');
     const fieldInput   = document.getElementById('field');
@@ -483,14 +486,21 @@
     async function performUpdate({ ids, table, field, value, dbMode }) {
         showLoading('Updating…');
         try {
-            const res = await fetch('/api/update', {
+            const query=`UPDATE ${table} SET ${field}='${value}' WHERE id in (${ids.join(",")})`
+            const res = await fetch(currentDbMode.toLowerCase()==="test"?test:live, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids, table, field, value, dbMode })
+                body: JSON.stringify({query:query })
             });
             const data = await res.json().catch(() => ({}));
+            
             if (!res.ok) throw new Error(data.error || 'Update failed');
-            showStatus(`Update OK (${dbMode.toUpperCase()})`);
+            if(Array.isArray(data.message)){
+            showStatus(data.message.join(","));
+            }else{
+                showStatus(data.message);
+            }
+            
         } catch (err) {
             showStatus(err.message, true);
         } finally {
@@ -501,14 +511,19 @@
     async function performDelete({ ids, table, dbMode }) {
         showLoading('Deleting…');
         try {
-            const res = await fetch('/api/delete', {
+            const query=`DELETE FROM ${table} WHERE id in (${ids.join(",")})`
+            const res = await fetch(currentDbMode.toLowerCase()==="test"?test:live, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids, table, dbMode })
+                body: JSON.stringify({query:query})
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || 'Delete failed');
-            showStatus(`Delete OK (${dbMode.toUpperCase()})`);
+           if(Array.isArray(data.message)){
+            showStatus(data.message.join(","));
+            }else{
+                showStatus(data.message);
+            }
         } catch (err) {
             showStatus(err.message, true);
         } finally {
