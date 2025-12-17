@@ -8,7 +8,7 @@
       {
         "id": "sub-lpsfj",
         "description": "CUSTOMER_ANALYTICS_ADJUSTMENTS",
-        "completed": false
+        "completed": true
       },
       {
         "id": "sub-p7fl8",
@@ -18,6 +18,21 @@
       {
         "id": "sub-wxaf0",
         "description": "ACTIVE_VISITS_USER_FLOW",
+        "completed": false
+      },
+      {
+        "id": "sub-0jj77",
+        "description": "BUG ON CREATE BOOKING FOR NEW CUSTOMER",
+        "completed": false
+      },
+      {
+        "id": "sub-o46ln",
+        "description": "DISPLAY CUSTOMER  META DATA",
+        "completed": false
+      },
+      {
+        "id": "sub-k7dig",
+        "description": "SEEMLESS INTEGRATION BETWEEN LEADS AND CUSTOMERS",
         "completed": false
       }
     ],
