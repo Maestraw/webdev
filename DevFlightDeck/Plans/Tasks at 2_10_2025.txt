@@ -1,180 +1,27 @@
 [
   {
-    "id": "mggtns3agh4",
-    "name": "build finger print scanner driver and api.[on the 5 project]",
+    "id": "mj9s83rjise",
+    "name": "USERFLOW_ADJUSTMENTS",
     "priority": "High",
     "estimate": 4,
     "subtasks": [
       {
-        "id": "sub-i5w5m",
-        "description": "Planning",
+        "id": "sub-lpsfj",
+        "description": "CUSTOMER_ANALYTICS_ADJUSTMENTS",
+        "completed": false
+      },
+      {
+        "id": "sub-p7fl8",
+        "description": "CASH_FUNDED_VISITS_USER_FLOW",
+        "completed": false
+      },
+      {
+        "id": "sub-wxaf0",
+        "description": "ACTIVE_VISITS_USER_FLOW",
         "completed": false
       }
     ],
     "status": "PLANNED",
-    "createdAt": "2025-10-07T17:16:44.662Z"
-  },
-  {
-    "id": "mha9ik16uko",
-    "name": "bugs on search fields [Customer Name fields [auto complete fields]]",
-    "priority": "High",
-    "estimate": 4,
-    "subtasks": [],
-    "status": "PLANNED",
-    "createdAt": "2025-10-28T07:45:53.898Z"
-  },
-  {
-    "id": "mgahxvgkl4b",
-    "name": "Fix Member Look up For exisiting customer autocomplete field ",
-    "priority": "Medium",
-    "estimate": 2,
-    "subtasks": [
-      {
-        "id": "sub-dsec0",
-        "description": "Create branch and check out",
-        "completed": false
-      },
-      {
-        "id": "sub-jg2fs",
-        "description": "Examine code and trace bug source and fix",
-        "completed": false
-      },
-      {
-        "id": "sub-q79mv",
-        "description": "run tests locally,test env and live env",
-        "completed": false
-      },
-      {
-        "id": "sub-7mxov",
-        "description": "merge branch",
-        "completed": false
-      },
-      {
-        "id": "sub-9nrzb",
-        "description": "notify team and advise them to pull",
-        "completed": false
-      },
-      {
-        "id": "sub-5wim4",
-        "description": "notify users about the fix",
-        "completed": false
-      }
-    ],
-    "status": "PLANNED",
-    "createdAt": "2025-10-03T07:02:03.140Z"
-  },
-  {
-    "id": "mggtjz6hwgu",
-    "name": "Auto submit offline claims [via email]",
-    "priority": "Medium",
-    "estimate": 4,
-    "subtasks": [
-      {
-        "id": "sub-563em",
-        "description": "Planning",
-        "completed": false
-      }
-    ],
-    "status": "PLANNED",
-    "createdAt": "2025-10-07T17:13:47.225Z"
-  },
-  {
-    "id": "mggtkgvdq5g",
-    "name": "Auto Generate 360 Check up certificates",
-    "priority": "Medium",
-    "estimate": 4,
-    "subtasks": [
-      {
-        "id": "sub-v00yj",
-        "description": "plan",
-        "completed": false
-      }
-    ],
-    "status": "PLANNED",
-    "createdAt": "2025-10-07T17:14:10.153Z"
-  },
-  {
-    "id": "mh1t4tnmuoa",
-    "name": "BUILD SOCIAL MEDIA MANAGER TOOL (CUSTOMER ENGAGEMENT)",
-    "priority": "Medium",
-    "estimate": 4,
-    "subtasks": [
-      {
-        "id": "sub-cye6d",
-        "description": "plan the steps",
-        "completed": false
-      }
-    ],
-    "status": "PLANNED",
-    "createdAt": "2025-10-22T09:45:09.922Z"
-  },
-  {
-    "id": "mha9k4wappk",
-    "name": "New Health Api Not returning Responses ",
-    "priority": "Medium",
-    "estimate": 4,
-    "subtasks": [
-      {
-        "id": "sub-ncihh",
-        "description": "return appropriate responses and allow user to continue",
-        "completed": false
-      }
-    ],
-    "status": "PLANNED",
-    "createdAt": "2025-10-28T07:47:07.594Z"
-  },
-  {
-    "id": "mgqmtc9vd7h",
-    "name": "Add Ecocash and Swipe transactions to daily sales",
-    "priority": "Medium",
-    "estimate": 4,
-    "subtasks": [
-      {
-        "id": "sub-xujka",
-        "description": "Create Branches and Check out",
-        "completed": true
-      },
-      {
-        "id": "sub-s3x2y",
-        "description": "build and run tests",
-        "completed": true
-      },
-      {
-        "id": "sub-7xn8d",
-        "description": "merge with master and advise team to pull",
-        "completed": true
-      },
-      {
-        "id": "sub-jpofo",
-        "description": "train users/staff where neccessary",
-        "completed": true
-      }
-    ],
-    "status": "COMPLETED",
-    "createdAt": "2025-10-14T14:02:48.547Z"
-  },
-  {
-    "id": "mgrxo2eirhv",
-    "name": "SECURING_UNI_API[AUTHENTICATION AND TOKENS]",
-    "priority": "Medium",
-    "estimate": 4,
-    "subtasks": [
-      {
-        "id": "sub-g65zs",
-        "description": "AFTER 5 JOB",
-        "completed": false
-      }
-    ],
-    "status": "COMPLETED",
-    "createdAt": "2025-10-15T11:54:24.426Z"
-  },
-  {
-    "id": "mhahncaalbv",
-    "name": "add leads page [the add new lead option [reposition it to a friendly position]]",
-    "priority": "Medium",
-    "estimate": 4,
-    "subtasks": [],
-    "status": "PLANNED",
-    "createdAt": "2025-10-28T11:33:34.066Z"
+    "createdAt": "2025-12-17T09:01:17.455Z"
   }
 ]
