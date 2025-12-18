@@ -3,7 +3,7 @@
     "id": "mj9s83rjise",
     "name": "USERFLOW_ADJUSTMENTS",
     "priority": "High",
-    "estimate": 4,
+    "estimate": 72,
     "subtasks": [
       {
         "id": "sub-lpsfj",
@@ -13,12 +13,12 @@
       {
         "id": "sub-p7fl8",
         "description": "CASH_FUNDED_VISITS_USER_FLOW",
-        "completed": false
+        "completed": true
       },
       {
         "id": "sub-wxaf0",
         "description": "ACTIVE_VISITS_USER_FLOW",
-        "completed": false
+        "completed": true
       },
       {
         "id": "sub-0jj77",
@@ -33,6 +33,11 @@
       {
         "id": "sub-k7dig",
         "description": "SEEMLESS INTEGRATION BETWEEN LEADS AND CUSTOMERS",
+        "completed": false
+      },
+      {
+        "id": "sub-x29ab",
+        "description": "CASH_VOLUMES_ON_DAILY_SALES",
         "completed": false
       }
     ],
