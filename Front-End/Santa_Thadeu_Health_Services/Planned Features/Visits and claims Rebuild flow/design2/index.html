@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Stage Patient Flow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        
+        .step { display: none; }
+        .step.active { display: block; animation: fade .25s ease; }
+
+        @keyframes fade {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; }
+        }
+
+        .aiBox {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+        }
+
+        .suggestion { padding: 14px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s; }
+        .suggestion:hover { background: #f8fafc; }
+
+        .tag { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; }
+        .medical { background: #ecfdf5; color: #065f46; }
+        .dental { background: #eff6ff; color: #1e40af; }
+        .psychology { background: #faf5ff; color: #6b21a8; }
+        
+        .active-pill { background: #fff7ed; color: #9a3412; border: 1px solid #ffedd5; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="max-w-xl mx-auto mt-12 px-6 pb-20">
+
+    <!-- Dashboard / Active Visits -->
+    <div id="dashboard" class="mb-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Active Visits</h2>
+            <span id="activeCount" class="bg-slate-200 text-slate-600 px-2 py-0.5 rounded text-xs font-bold">0</span>
+        </div>
+        <div id="waitingRoom" class="space-y-3">
+            <!-- Active sessions appear here -->
+            <div class="text-center py-6 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 text-sm">
+                No Active Visits
+            </div>
+        </div>
+    </div>
+
+    <div id="progress" class="text-xs font-bold text-blue-600 mb-4 uppercase tracking-widest">
+        New Registration
+    </div>
+
+    <!-- STEP 1: Patient Search -->
+    <div id="s1" class="step active">
+        <div class="aiBox">
+            <h2 class="text-2xl font-bold mb-1">Create Visit</h2>
+            <p class="text-slate-500 mb-6 text-sm">Find customer or register for today's visit</p>
+            
+            <div class="relative">
+                <input id="patientSearch" oninput="searchPatient(this.value)" placeholder="Search name or card..." 
+                       class="w-full p-4 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-50 outline-none transition-all">
+                <div id="patientResults" class="hidden absolute w-full bg-white border border-slate-200 rounded-2xl mt-2 overflow-hidden shadow-xl z-50"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 2: Payment -->
+    <div id="s2" class="step">
+        <div class="aiBox">
+            <h2 class="text-2xl font-bold mb-1">Payment</h2>
+            <p class="text-slate-500 mb-6 text-sm">How will this visit be funded?</p>
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="choosePayment('Medical Aid')" class="p-5 border-2 border-slate-100 hover:border-blue-500 rounded-2xl text-left font-bold transition-all flex justify-between items-center group">
+                    Medical Aid <span class="text-slate-300 group-hover:text-blue-500">→</span>
+                </button>
+                <button onclick="choosePayment('Direct')" class="p-5 border-2 border-slate-100 hover:border-blue-500 rounded-2xl text-left font-bold transition-all flex justify-between items-center group">
+                    Direct / Cash <span class="text-slate-300 group-hover:text-blue-500">→</span>
+                </button>
+            </div>
+            <button onclick="next(1)" class="mt-6 text-slate-400 text-xs font-bold w-full text-center">BACK TO SEARCH</button>
+        </div>
+    </div>
+
+    <!-- STEP 3: Products / Clinical Items -->
+    <div id="s3" class="step">
+        <div class="aiBox">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold mb-1" id="activePatientHeader">Patient Name</h2>
+                    <span class="active-pill" id="activePaymentHeader">Medical Aid</span>
+                </div>
+                <button onclick="saveAndExit()" class="bg-amber-50 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-amber-100">
+                    SAVE & PAUSE
+                </button>
+            </div>
+
+            <div class="relative mb-6">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Add Items (Medical, Dental, or Psych)</label>
+                <input oninput="searchTariff(this.value)" id="tariffInput" placeholder="Search code or procedure..." 
+                       class="w-full p-4 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-50 outline-none">
+                <div id="tariffResults" class="hidden absolute w-full bg-white border border-slate-200 rounded-2xl mt-1 overflow-hidden shadow-xl z-50 max-h-64 overflow-y-auto"></div>
+            </div>
+
+            <div id="groups" class="space-y-6">
+                <!-- Grouped items -->
+            </div>
+
+            <button onclick="next(4)" class="mt-10 w-full bg-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
+                Submit Claim
+            </button>
+        </div>
+    </div>
+
+    <!-- STEP 4: Summary -->
+    <div id="s4" class="step">
+        <div class="aiBox">
+            <h2 class="text-2xl font-bold mb-6">Final Review</h2>
+            <div id="summary" class="space-y-4 text-sm bg-slate-50 p-6 rounded-2xl border border-slate-100"></div>
+            
+            <div class="flex gap-3 mt-8">
+                <button onclick="next(3)" class="flex-1 bg-slate-100 text-slate-600 p-5 rounded-2xl font-bold">EDIT</button>
+                <button onclick="submit()" class="flex-[2] bg-black text-white p-5 rounded-2xl font-bold shadow-xl">SUBMIT TO PORTALS</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let step = 1;
+    let patient = null;
+    let payment = null;
+    let items = [];
+    let activeSessions = []; // To store sessions "paused" for later procedures
+
+    const patients = [
+        {name:"Abel Chabvuta", card:"CIMAS001"},
+        {name:"John Banda", card:"PSMAS220"},
+        {name:"Sarah Moyo", card:"GEN100"}
+    ];
+
+    const tariffs = [
+        {name:"Consultation", price:15, stream:"Medical"},
+        {name:"Paracetamol", price:2, stream:"Medical"},
+        {name:"Scaling & Polishing", price:35, stream:"Dental"},
+        {name:"Extraction", price:45, stream:"Dental"},
+        {name:"Counseling Session", price:50, stream:"Psychology"}
+    ];
+
+    function next(n) {
+        document.getElementById("s" + step).classList.remove("active");
+        step = n;
+        document.getElementById("s" + step).classList.add("active");
+        
+        const labels = ["Check-in", "Payment", "Clinical Items", "Final Review"];
+        document.getElementById("progress").innerText = labels[n-1];
+        
+        if(n === 3) {
+            document.getElementById('activePatientHeader').innerText = patient.name;
+            document.getElementById('activePaymentHeader').innerText = payment;
+            renderGroups();
+        }
+        if(n === 4) renderSummary();
+        window.scrollTo(0,0);
+    }
+
+    function searchPatient(v) {
+        let r = document.getElementById("patientResults");
+        if(v.length < 1) { r.classList.add("hidden"); return; }
+        
+        let html = "";
+        patients.filter(p => p.name.toLowerCase().includes(v.toLowerCase())).forEach(p => {
+            html += `<div class="suggestion" onclick="selectPatient('${p.name}','${p.card}')">
+                        <div class="font-bold">${p.name}</div>
+                        <div class="text-xs text-slate-400">${p.card}</div>
+                    </div>`;
+        });
+
+        html += `<div class="suggestion text-blue-600 font-bold text-sm" onclick="selectPatient('${v}','NEW')">+ Register "${v}"</div>`;
+        r.innerHTML = html;
+        r.classList.remove("hidden");
+    }
+
+    function selectPatient(name, card) {
+        patient = { name, card };
+        document.getElementById("patientResults").classList.add("hidden");
+        document.getElementById("patientSearch").value = "";
+        next(2);
+    }
+
+    function choosePayment(p) {
+        payment = p;
+        next(3);
+    }
+
+    function searchTariff(v) {
+        let r = document.getElementById("tariffResults");
+        if(v.length < 1) { r.classList.add("hidden"); return; }
+        
+        let html = "";
+        tariffs.filter(t => t.name.toLowerCase().includes(v.toLowerCase())).forEach(t => {
+            html += `<div class="suggestion flex justify-between items-center" onclick="addItem('${t.name}',${t.price},'${t.stream}')">
+                        <div>
+                            <div class="text-sm font-semibold">${t.name}</div>
+                            <span class="tag ${t.stream.toLowerCase()}">${t.stream}</span>
+                        </div>
+                        <span class="font-bold text-slate-900">$${t.price}</span>
+                    </div>`;
+        });
+        r.innerHTML = html;
+        r.classList.remove("hidden");
+    }
+
+    function addItem(name, price, stream) {
+        items.push({ name, price, stream });
+        document.getElementById("tariffResults").classList.add("hidden");
+        document.getElementById("tariffInput").value = "";
+        renderGroups();
+    }
+
+    function renderGroups() {
+        let html = "";
+        let total = 0;
+        const streams = ["Medical", "Dental", "Psychology"];
+
+        streams.forEach(s => {
+            let group = items.filter(i => i.stream == s);
+            let subtotal = 0;
+            html += `<div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">${s} Portal</span>
+                            <div class="flex-1 h-px bg-slate-100"></div>
+                        </div>`;
+            
+            if(group.length === 0) {
+                html += `<div class="text-slate-300 text-xs italic italic p-2 italic">Awaiting procedures...</div>`;
+            }
+
+            group.forEach(g => {
+                subtotal += g.price;
+                total += g.price;
+                html += `<div class="flex justify-between bg-white border border-slate-100 p-3 rounded-xl shadow-sm text-sm">
+                            <span class="font-medium">${g.name}</span>
+                            <span class="font-bold">$${g.price}</span>
+                        </div>`;
+            });
+
+            if(group.length > 0) {
+                html += `<div class="text-right text-[10px] font-bold text-slate-500 uppercase">${s} Subtotal: $${subtotal}</div>`;
+            }
+            html += `</div>`;
+        });
+
+        html += `<div class="pt-4 mt-6 border-t-2 border-slate-100 flex justify-between items-center">
+                    <span class="font-bold text-slate-400 uppercase text-xs">Consolidated Total</span>
+                    <span class="text-2xl font-black text-slate-900">$${total}</span>
+                </div>`;
+        document.getElementById("groups").innerHTML = html;
+    }
+
+    // Logic for "Handling multiple steps/customers"
+    function saveAndExit() {
+        // Save current session to the "Waiting Room"
+        const sessionId = Date.now();
+        activeSessions.push({
+            id: sessionId,
+            patient: {...patient},
+            payment: payment,
+            items: [...items]
+        });
+        resetWorkflow();
+    }
+
+    function resetWorkflow() {
+        patient = null;
+        payment = null;
+        items = [];
+        step = 1;
+        document.getElementById("s1").classList.add("active");
+        document.getElementById("s2").classList.remove("active");
+        document.getElementById("s3").classList.remove("active");
+        document.getElementById("s4").classList.remove("active");
+        document.getElementById("progress").innerText = "New Registration";
+        renderWaitingRoom();
+    }
+
+    function renderWaitingRoom() {
+        const wr = document.getElementById("waitingRoom");
+        document.getElementById("activeCount").innerText = activeSessions.length;
+        
+        if(activeSessions.length === 0) {
+            wr.innerHTML = `<div class="text-center py-6 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 text-sm">No Active Visits</div>`;
+            return;
+        }
+
+        wr.innerHTML = activeSessions.map((s, idx) => `
+            <div class="bg-white border border-slate-200 p-4 rounded-2xl flex justify-between items-center shadow-sm">
+                <div>
+                    <div class="font-bold">${s.patient.name}</div>
+                    <div class="text-[10px] text-slate-400 font-bold uppercase">${s.payment} • ${s.items.length} items added</div>
+                </div>
+                <button onclick="resumeSession(${idx})" class="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg">
+                    RESUME
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function resumeSession(idx) {
+        const s = activeSessions[idx];
+        patient = s.patient;
+        payment = s.payment;
+        items = s.items;
+        activeSessions.splice(idx, 1);
+        next(3);
+    }
+
+    function renderSummary() {
+        let total = items.reduce((t, i) => t + i.price, 0);
+        document.getElementById("summary").innerHTML = `
+            <div class="flex justify-between"><span>Patient</span><span class="font-bold">${patient.name}</span></div>
+            <div class="flex justify-between"><span>Method</span><span class="font-bold">${payment}</span></div>
+            <div class="flex justify-between"><span>Tariffs</span><span class="font-bold">${items.length}</span></div>
+            <div class="pt-2 border-t flex justify-between text-lg"><span class="font-bold">Total</span><span class="font-bold text-blue-600">$${total}</span></div>
+        `;
+    }
+
+    function submit() {
+        const streams = [...new Set(items.map(i => i.stream))];
+        alert(`BOT ACTION: Submitting to ${streams.join(', ')} portals.`);
+        resetWorkflow();
+    }
+</script>
+
+</body>
+</html>

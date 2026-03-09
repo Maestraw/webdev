@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Attendance & Availability</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&family=Roboto:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #ffffff;
+            color: #3c4043;
+        }
+
+        h1, h2, h3, h4, button {
+            font-family: 'Google Sans', sans-serif;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0;
+            border-top: 1px solid #dadce0;
+            border-left: 1px solid #dadce0;
+        }
+
+        .calendar-day {
+            background-color: white;
+            min-height: 140px;
+            padding: 8px;
+            border-right: 1px solid #dadce0;
+            border-bottom: 1px solid #dadce0;
+            transition: background-color 0.1s;
+        }
+
+        .calendar-day:hover {
+            background-color: #f8f9fa;
+        }
+
+        .calendar-day.other-month {
+            background-color: #ffffff;
+            color: #70757a;
+            opacity: 0.5;
+        }
+
+        .leave-pill {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid transparent;
+        }
+
+        /* Google Palette Inspired */
+        .pill-annual { background: #e6f4ea; color: #137333; }
+        .pill-sick { background: #fce8e6; color: #c5221f; }
+        .pill-off { background: #e8f0fe; color: #1967d2; }
+        .pill-study { background: #fef7e0; color: #ea8600; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(32, 33, 36, 0.6);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active { display: flex; }
+
+        .sidebar-item {
+            border-radius: 0 24px 24px 0;
+            margin-right: 8px;
+        }
+
+        .sidebar-item.active {
+            background-color: #e8f0fe;
+            color: #1967d2;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 4px; }
+        
+        .btn-google {
+            transition: box-shadow 0.2s;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+        }
+        .btn-google:hover {
+            box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+        }
+
+        .availability-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            border-bottom: 1px solid #dadce0;
+        }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white flex flex-col shrink-0 py-4">
+        <div class="px-6 mb-8 text-indigo-600 font-medium">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center text-white">
+                    <i class="fa-solid fa-users-viewfinder"></i>
+                </div>
+                <span class="text-xl font-medium text-[#5f6368]">TeamSync</span>
+            </div>
+        </div>
+
+        <div class="mb-6 px-4">
+            <button onclick="openModal('notificationModal')" class="flex items-center gap-3 px-6 py-4 rounded-full bg-white btn-google text-sm font-medium text-slate-700 hover:bg-slate-50 transition-all">
+                <svg width="24" height="24" viewBox="0 0 36 36"><path fill="#34A853" d="M16 16v14h4V20z"/><path fill="#4285F4" d="M30 16H20l-4 4h14z"/><path fill="#FBBC05" d="M6 16v4h10l4-4z"/><path fill="#EA4335" d="M20 16V6h-4v14z"/><path fill="none" d="M0 0h36v36H0z"/></svg>
+                Log Time Off
+            </button>
+        </div>
+
+        <nav class="flex-grow space-y-1">
+            <button onclick="switchTab('calendar')" id="btn-calendar" class="sidebar-item w-full flex items-center gap-4 px-6 py-3 text-sm font-medium transition active">
+                <i class="fa-solid fa-calendar-day w-5 text-center"></i> Main Calendar
+            </button>
+            <button onclick="switchTab('availability')" id="btn-availability" class="sidebar-item w-full flex items-center gap-4 px-6 py-3 text-sm font-medium transition text-[#3c4043] hover:bg-gray-100">
+                <i class="fa-solid fa-layer-group w-5 text-center"></i> Planning View
+            </button>
+            <button onclick="switchTab('staff')" id="btn-staff" class="sidebar-item w-full flex items-center gap-4 px-6 py-3 text-sm font-medium transition text-[#3c4043] hover:bg-gray-100">
+                <i class="fa-solid fa-chart-pie w-5 text-center"></i> Usage Stats
+            </button>
+        </nav>
+        
+        <div class="px-6 py-4 border-t border-[#dadce0]">
+            <p class="text-[10px] text-[#70757a] uppercase font-bold tracking-wider">No Rules Policy</p>
+            <p class="text-[11px] text-[#5f6368] mt-1">Unlimited leave. Just notify and sync with the team.</p>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col overflow-hidden border-l border-[#dadce0]">
+        <!-- Header -->
+        <header class="h-16 bg-white border-b border-[#dadce0] flex items-center justify-between px-6 shrink-0">
+            <div class="flex items-center gap-8">
+                <h2 id="viewTitle" class="text-lg font-normal text-[#3c4043] min-w-[200px]">March 2025</h2>
+                <div class="flex items-center gap-1">
+                    <button onclick="moveMonth(-1)" class="p-2 hover:bg-gray-100 rounded-full transition"><i class="fa-solid fa-chevron-left text-sm"></i></button>
+                    <button onclick="moveMonth(1)" class="p-2 hover:bg-gray-100 rounded-full transition"><i class="fa-solid fa-chevron-right text-sm"></i></button>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex items-center bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-medium text-[#5f6368]">
+                    <span class="mr-2">Status:</span>
+                    <span class="text-green-600 flex items-center gap-1"><i class="fa-solid fa-circle text-[8px]"></i> 3 Available Today</span>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-medium">M</div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div id="contentContainer" class="flex-grow overflow-y-auto custom-scrollbar">
+            <!-- Calendar Tab -->
+            <div id="tab-calendar" class="h-full">
+                <div class="grid grid-cols-7 border-b border-[#dadce0]">
+                    <div class="py-2 text-center text-[11px] font-medium text-[#70757a] uppercase">Sun</div>
+                    <div class="py-2 text-center text-[11px] font-medium text-[#70757a] uppercase">Mon</div>
+                    <div class="py-2 text-center text-[11px] font-medium text-[#70757a] uppercase">Tue</div>
+                    <div class="py-2 text-center text-[11px] font-medium text-[#70757a] uppercase">Wed</div>
+                    <div class="py-2 text-center text-[11px] font-medium text-[#70757a] uppercase">Thu</div>
+                    <div class="py-2 text-center text-[11px] font-medium text-[#70757a] uppercase">Fri</div>
+                    <div class="py-2 text-center text-[11px] font-medium text-[#70757a] uppercase">Sat</div>
+                </div>
+                <div id="calendarGrid" class="calendar-grid"></div>
+            </div>
+
+            <!-- Availability Tab (Manager Planning View) -->
+            <div id="tab-availability" class="hidden">
+                <div class="p-6">
+                    <div class="bg-white border border-[#dadce0] rounded-lg overflow-hidden">
+                        <div class="availability-row bg-gray-50 border-b border-[#dadce0]">
+                            <div class="p-4 font-medium text-sm text-[#5f6368]">Team Member</div>
+                            <div class="p-4 font-medium text-sm text-[#5f6368] border-l border-[#dadce0]">Timeline (Current Month)</div>
+                        </div>
+                        <div id="availabilityList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Staff Stats Tab -->
+            <div id="tab-staff" class="hidden p-8 max-w-6xl mx-auto space-y-6">
+                <h3 class="text-2xl font-normal text-[#202124]">Usage Overview</h3>
+                <p class="text-sm text-[#70757a]">Monitoring days taken to ensure nobody is burning out or carrying too much load.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="staffGrid"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Notification Modal (Log Time Off) -->
+    <div id="notificationModal" class="modal">
+        <div class="bg-white rounded-lg w-full max-w-md shadow-2xl overflow-hidden">
+            <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-b border-[#dadce0]">
+                <h3 class="text-sm font-medium text-[#202124]">Log your time off</h3>
+                <button onclick="closeModal('notificationModal')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="logForm" class="p-6 space-y-6">
+                <div class="flex gap-4">
+                    <div class="flex-1 space-y-1">
+                        <label class="text-[11px] font-bold text-[#5f6368] uppercase">From</label>
+                        <input type="date" id="logStart" required class="w-full px-3 py-2 border-b-2 border-gray-200 focus:border-indigo-600 outline-none bg-gray-50 transition">
+                    </div>
+                    <div class="flex-1 space-y-1">
+                        <label class="text-[11px] font-bold text-[#5f6368] uppercase">Until</label>
+                        <input type="date" id="logEnd" required class="w-full px-3 py-2 border-b-2 border-gray-200 focus:border-indigo-600 outline-none bg-gray-50 transition">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[11px] font-bold text-[#5f6368] uppercase">Reason (Optional)</label>
+                    <select id="logType" class="w-full px-3 py-2 border-b-2 border-gray-200 focus:border-indigo-600 outline-none bg-gray-50 transition text-sm">
+                        <option value="annual">Time Away</option>
+                        <option value="sick">Medical</option>
+                        <option value="off">Specific Off-Day</option>
+                        <option value="study">Personal Growth</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <textarea id="logReason" placeholder="Team Sync: e.g. 'I'll be out for hiking, Sarah has my back for the API tasks.'" class="w-full px-3 py-2 border-b-2 border-gray-200 focus:border-indigo-600 outline-none bg-gray-50 transition h-20 resize-none text-sm"></textarea>
+                </div>
+
+                <div class="bg-indigo-50 p-3 rounded text-[11px] text-indigo-700">
+                    <i class="fa-solid fa-info-circle mr-1"></i> Your log is visible to everyone instantly. No approval needed.
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('notificationModal')" class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded transition">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 transition shadow-sm">Notify Team</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let staff = [
+            { id: 1, name: "Sarah Jenkins", role: "Lead Dev", taken: 22, avatar: "S" },
+            { id: 2, name: "David Mbeki", role: "Product Designer", taken: 15, avatar: "D" },
+            { id: 3, name: "Linda Moyo", role: "HR Operations", taken: 12, avatar: "L" },
+            { id: 4, name: "James Bond", role: "Security Lead", taken: 30, avatar: "J" }
+        ];
+
+        // All entries are now implicitly "approved" because there is no request cycle
+        let leaves = [
+            { id: 101, staffId: 1, type: "annual", start: "2025-03-10", end: "2025-03-12", reason: "Family Holiday" },
+            { id: 102, staffId: 2, type: "sick", start: "2025-03-05", end: "2025-03-05", reason: "Flu" },
+            { id: 103, staffId: 3, type: "off", start: "2025-03-24", end: "2025-03-24", reason: "Personal errands" },
+            { id: 104, staffId: 4, type: "study", start: "2025-03-17", end: "2025-03-19", reason: "Final Exams" }
+        ];
+
+        let currentTab = 'calendar';
+        let viewDate = new Date(2025, 2, 1);
+
+        function renderApp() {
+            renderHeader();
+            renderCalendar();
+            renderAvailability();
+            renderStaff();
+        }
+
+        function renderHeader() {
+            const titleElement = document.getElementById('viewTitle');
+            if (currentTab === 'calendar') {
+                titleElement.innerText = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(viewDate);
+            } else if (currentTab === 'availability') {
+                titleElement.innerText = "Planning View";
+            } else {
+                titleElement.innerText = "Team Stats";
+            }
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            const year = viewDate.getFullYear();
+            const month = viewDate.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+
+            // Prev month
+            for (let i = firstDay - 1; i >= 0; i--) {
+                grid.innerHTML += `<div class="calendar-day other-month font-medium text-xs">${prevMonthDays - i}</div>`;
+            }
+
+            // Current month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day';
+                dayDiv.innerHTML = `<span class="text-xs font-medium text-[#70757a] mb-2 block text-center">${day}</span>`;
+
+                leaves.filter(l => dateStr >= l.start && dateStr <= l.end).forEach(l => {
+                    const s = staff.find(x => x.id === l.staffId);
+                    const pill = document.createElement('div');
+                    pill.className = `leave-pill pill-${l.type}`;
+                    pill.innerHTML = `<span class="truncate">${s.name}</span>`;
+                    dayDiv.appendChild(pill);
+                });
+
+                grid.appendChild(dayDiv);
+            }
+        }
+
+        function renderAvailability() {
+            const container = document.getElementById('availabilityList');
+            container.innerHTML = '';
+
+            const year = viewDate.getFullYear();
+            const month = viewDate.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            staff.forEach(s => {
+                const row = document.createElement('div');
+                row.className = 'availability-row hover:bg-gray-50';
+                
+                const timeline = document.createElement('div');
+                timeline.className = 'p-0 border-l border-[#dadce0] relative h-16 flex items-center overflow-x-hidden';
+                
+                // Create a day-based visual timeline
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const isOnLeave = leaves.some(l => l.staffId === s.id && dateStr >= l.start && dateStr <= l.end);
+                    
+                    const dayMarker = document.createElement('div');
+                    dayMarker.className = `flex-1 h-full border-r border-gray-100 flex items-center justify-center text-[9px] ${isOnLeave ? 'bg-indigo-50' : ''}`;
+                    if (isOnLeave) {
+                        dayMarker.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-indigo-600"></div>`;
+                    }
+                    timeline.appendChild(dayMarker);
+                }
+
+                row.innerHTML = `
+                    <div class="p-4 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs">${s.avatar}</div>
+                        <div>
+                            <p class="text-sm font-medium">${s.name}</p>
+                            <p class="text-[10px] text-[#70757a]">Available Today</p>
+                        </div>
+                    </div>
+                `;
+                row.appendChild(timeline);
+                container.appendChild(row);
+            });
+        }
+
+        function renderStaff() {
+            const grid = document.getElementById('staffGrid');
+            grid.innerHTML = '';
+
+            staff.forEach(s => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-5 rounded-lg border border-[#dadce0] hover:shadow-sm transition-shadow";
+                card.innerHTML = `
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-medium">${s.avatar}</div>
+                        <div>
+                            <h4 class="font-medium text-[#202124]">${s.name}</h4>
+                            <p class="text-xs text-[#70757a]">${s.role}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-xs text-[#5f6368]">Total usage this year</p>
+                        <div class="flex items-end gap-2">
+                             <span class="text-2xl font-normal text-[#202124]">${s.taken}</span>
+                             <span class="text-xs text-[#70757a] mb-1">days taken</span>
+                        </div>
+                        <div class="w-full bg-gray-100 h-1.5 rounded-full mt-2">
+                            <div class="bg-indigo-600 h-1.5 rounded-full" style="width: ${Math.min(100, (s.taken/35)*100)}%"></div>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-1">Average team usage is 18 days</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.sidebar-item').forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-50', 'text-blue-700');
+                btn.classList.add('text-[#3c4043]', 'hover:bg-gray-100');
+            });
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            activeBtn.classList.add('active', 'bg-blue-50', 'text-blue-700');
+            activeBtn.classList.remove('text-[#3c4043]', 'hover:bg-gray-100');
+
+            document.getElementById('tab-calendar').classList.add('hidden');
+            document.getElementById('tab-availability').classList.add('hidden');
+            document.getElementById('tab-staff').classList.add('hidden');
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            
+            renderApp();
+        }
+
+        function moveMonth(delta) {
+            viewDate.setMonth(viewDate.getMonth() + delta);
+            renderApp();
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        document.getElementById('logForm').onsubmit = function(e) {
+            e.preventDefault();
+            const start = document.getElementById('logStart').value;
+            const end = document.getElementById('logEnd').value;
+            const diffTime = Math.abs(new Date(end) - new Date(start));
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+            leaves.push({
+                id: Date.now(),
+                staffId: 1, // Simulated as current user
+                type: document.getElementById('logType').value,
+                start: start,
+                end: end,
+                reason: document.getElementById('logReason').value
+            });
+            
+            // Update stats
+            staff[0].taken += diffDays;
+
+            closeModal('notificationModal');
+            this.reset();
+            renderApp();
+        };
+
+        renderApp();
+    </script>
+</body>
+</html>

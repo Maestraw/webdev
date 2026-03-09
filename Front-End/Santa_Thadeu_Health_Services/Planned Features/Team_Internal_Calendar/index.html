@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internal Outreach & Events Calendar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            flex-grow: 1;
+            background-color: #e2e8f0;
+            gap: 1px;
+        }
+
+        .calendar-day {
+            background-color: white;
+            padding: 8px;
+            transition: background-color 0.2s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .calendar-day:hover {
+            background-color: #f8fafc;
+        }
+
+        .event-card {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 2px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        .event-card:hover {
+            opacity: 0.8;
+        }
+
+        .type-outreach { background-color: #039be5; color: white; }
+        .type-community { background-color: #f4511e; color: white; }
+        .type-meeting { background-color: #0b8043; color: white; }
+
+        /* Sidebar Styling */
+        .sidebar-item {
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.875rem;
+            color: #3c4043;
+        }
+
+        .sidebar-item:hover {
+            background-color: #f1f3f4;
+        }
+
+        .mini-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            font-size: 0.7rem;
+            text-align: center;
+        }
+
+        .mini-day {
+            padding: 4px 0;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .mini-day:hover {
+            background-color: #f1f3f4;
+        }
+
+        .mini-day.active {
+            background-color: #d2e3fc;
+            color: #1a73e8;
+            font-weight: bold;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(32, 33, 36, 0.6);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal.active { display: flex; }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #dadce0;
+            border-radius: 10px;
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar { display: none; }
+        }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="h-16 border-b border-gray-200 flex items-center px-4 justify-between bg-white flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <button class="p-2 hover:bg-gray-100 rounded-full text-gray-600"><i class="fa-solid fa-bars"></i></button>
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-calendar-check text-indigo-600 text-2xl"></i>
+                <h1 class="text-xl text-gray-700 font-medium">Outreach Calendar</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div class="flex items-center bg-gray-100 rounded-lg p-1 mr-4">
+                <button onclick="changeMonth(-1)" class="p-1 px-3 hover:bg-white rounded-md transition text-gray-600"><i class="fa-solid fa-chevron-left"></i></button>
+                <button onclick="currentDate = new Date(); renderCalendar();" class="p-1 px-4 hover:bg-white rounded-md transition text-sm font-medium text-gray-700">Today</button>
+                <button onclick="changeMonth(1)" class="p-1 px-3 hover:bg-white rounded-md transition text-gray-600"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <h2 id="currentMonthYear" class="text-xl font-medium text-gray-700 min-w-[150px]">March 2025</h2>
+            <div class="w-10 h-10 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold">M</div>
+        </div>
+    </header>
+
+    <div class="flex flex-grow overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar w-64 border-r border-gray-200 p-4 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+            <button onclick="openAddModal()" class="flex items-center gap-3 px-6 py-3 rounded-full shadow-md border border-gray-100 hover:shadow-lg transition-shadow text-gray-700 font-medium w-fit bg-white">
+                <svg width="36" height="36" viewBox="0 0 36 36"><path fill="#34A853" d="M16 16v14h4V20z"/><path fill="#4285F4" d="M30 16H20l-4 4h14z"/><path fill="#FBBC05" d="M6 16v4h10l4-4z"/><path fill="#EA4335" d="M20 16V6h-4v14z"/><path fill="none" d="M0 0h36v36H0z"/></svg>
+                Create
+            </button>
+
+            <!-- Small Nav Calendar -->
+            <div class="mt-4">
+                <div id="miniCalendar" class="space-y-2">
+                    <!-- Mini Calendar Header -->
+                    <div class="flex justify-between items-center px-2">
+                        <span id="miniMonthYear" class="text-sm font-medium text-gray-700">March 2025</span>
+                        <div class="flex gap-2">
+                            <button onclick="changeMonth(-1)" class="text-xs text-gray-500 hover:text-black"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button onclick="changeMonth(1)" class="text-xs text-gray-500 hover:text-black"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <!-- Mini Grid -->
+                    <div class="mini-calendar-grid text-gray-400 font-bold mb-1">
+                        <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                    </div>
+                    <div id="miniGrid" class="mini-calendar-grid"></div>
+                </div>
+            </div>
+
+            <!-- Grouped Sections -->
+            <div class="space-y-6 mt-2">
+                <section>
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest px-2 mb-2">This Week</h3>
+                    <div id="thisWeekEvents" class="space-y-1"></div>
+                </section>
+
+                <section>
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest px-2 mb-2">Next Month</h3>
+                    <div id="nextMonthEvents" class="space-y-1"></div>
+                </section>
+
+                <section>
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest px-2 mb-2">Upcoming Outreaches</h3>
+                    <div id="upcomingOutreaches" class="space-y-1"></div>
+                </section>
+            </div>
+        </aside>
+
+        <!-- Main Calendar Area -->
+        <main class="flex-grow flex flex-col bg-white">
+            <div class="grid grid-cols-7 border-b border-gray-200 text-center py-2 text-xs font-medium text-gray-500 uppercase">
+                <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            </div>
+            <div id="calendarDays" class="calendar-grid"></div>
+        </main>
+    </div>
+
+    <!-- Modals (Kept from previous version) -->
+    <div id="eventModal" class="modal">
+        <div class="bg-white rounded-lg w-full max-w-md overflow-hidden shadow-2xl mx-4">
+            <div id="modalHeader" class="p-4 flex justify-between items-center text-white bg-indigo-600">
+                <h3 id="modalTitle" class="font-medium text-lg">Event Details</h3>
+                <button onclick="closeModal()" class="p-1 hover:bg-white/20 rounded-full"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="flex gap-4">
+                    <i class="fa-solid fa-clock text-gray-400 mt-1"></i>
+                    <div>
+                        <p id="modalDate" class="text-gray-700 font-medium"></p>
+                        <p id="modalCategory" class="text-sm text-gray-500 capitalize"></p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <i class="fa-solid fa-location-dot text-gray-400 mt-1"></i>
+                    <p id="modalVenue" class="text-gray-700"></p>
+                </div>
+                <div class="flex gap-4 border-t pt-4">
+                    <i class="fa-solid fa-users text-gray-400 mt-1"></i>
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase mb-1">Team assigned</p>
+                        <p id="modalTeam" class="text-gray-700 text-sm"></p>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button id="deleteBtn" class="px-4 py-2 text-red-600 hover:bg-red-50 rounded text-sm font-medium">Delete</button>
+                    <button onclick="closeModal()" class="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm font-medium shadow-sm">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="addModal" class="modal">
+        <div class="bg-white rounded-lg w-full max-w-md p-6 shadow-2xl mx-4">
+            <h3 class="text-xl font-medium text-gray-800 mb-6">Create Event</h3>
+            <form id="eventForm" class="space-y-4">
+                <input type="text" id="eventTitle" required placeholder="Add title" class="w-full text-xl border-b border-gray-200 p-2 focus:border-indigo-600 outline-none transition mb-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="date" id="eventDate" required class="border rounded p-2 text-sm text-gray-600 outline-none">
+                    <select id="eventType" class="border rounded p-2 text-sm text-gray-600 outline-none">
+                        <option value="outreach">Outreach</option>
+                        <option value="community">Community Event</option>
+                        <option value="meeting">Team Meeting</option>
+                    </select>
+                </div>
+                <input type="text" id="eventVenue" placeholder="Add location" class="w-full border rounded p-2 text-sm text-gray-600 outline-none">
+                <textarea id="eventTeam" placeholder="Add team members" class="w-full border rounded p-2 text-sm text-gray-600 outline-none h-20"></textarea>
+                <div class="flex justify-end gap-2 pt-4">
+                    <button type="button" onclick="closeAddModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded text-sm font-medium">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm font-medium">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let events = [
+            { id: 1, title: "Min of Public Service", venue: "Branches", date: "2025-03-13", type: "outreach", team: "Core Outreach Team (Sarah, David, Linda)" },
+            { id: 2, title: "Mazowe Jumbo Mine", venue: "Mazowe", date: "2025-03-17", type: "outreach", team: "Team Alpha (James, Peter, Mercy)" },
+            { id: 3, title: "Min of Youth", venue: "Branches", date: "2025-03-20", type: "outreach", team: "Team Beta (Tariro, Simba, Grace)" },
+            { id: 4, title: "EFZ (Jubilee Centre)", venue: "Milton Park", date: "2025-03-24", type: "outreach", team: "Core Outreach Team" },
+            { id: 5, title: "Min of Tourism", venue: "Moffat House", date: "2025-03-26", type: "outreach", team: "Admin Team + Lead" },
+            { id: 6, title: "Hota Outreach", venue: "Mvurwi", date: "2025-03-31", type: "outreach", team: "North Division Team" },
+            { id: 100, title: "Strategy Alignment", venue: "HQ Boardroom", date: "2025-03-15", type: "meeting", team: "Branch Managers Only" },
+            { id: 101, title: "Community Clean Up", venue: "Market Square", date: "2025-03-22", type: "community", team: "All Staff Available" }
+        ];
+
+        let currentDate = new Date(2025, 2, 1); // Focused on March 2025
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            const monthName = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentDate);
+            document.getElementById('currentMonthYear').innerText = monthName;
+            document.getElementById('miniMonthYear').innerText = monthName;
+
+            renderMainGrid(year, month);
+            renderMiniGrid(year, month);
+            renderSidebarGroups();
+        }
+
+        function renderMainGrid(year, month) {
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const calendarDays = document.getElementById('calendarDays');
+            calendarDays.innerHTML = '';
+
+            for (let i = 0; i < firstDay; i++) {
+                calendarDays.innerHTML += `<div class="calendar-day bg-gray-50/50"></div>`;
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayBox = document.createElement('div');
+                dayBox.className = 'calendar-day border-b border-r border-gray-100';
+                
+                const isToday = new Date().toISOString().split('T')[0] === dateStr;
+                dayBox.innerHTML = `<span class="text-xs font-semibold self-center mb-1 ${isToday ? 'bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center' : 'text-gray-500'}">${day}</span>`;
+
+                events.filter(e => e.date === dateStr).forEach(event => {
+                    const ev = document.createElement('div');
+                    ev.className = `event-card type-${event.type}`;
+                    ev.innerText = event.title;
+                    ev.onclick = (e) => { e.stopPropagation(); showEventDetails(event); };
+                    dayBox.appendChild(ev);
+                });
+
+                calendarDays.appendChild(dayBox);
+            }
+        }
+
+        function renderMiniGrid(year, month) {
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const grid = document.getElementById('miniGrid');
+            grid.innerHTML = '';
+
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
+            for (let d = 1; d <= daysInMonth; d++) {
+                grid.innerHTML += `<div class="mini-day text-gray-700">${d}</div>`;
+            }
+        }
+
+        function renderSidebarGroups() {
+            const now = new Date();
+            const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            
+            // This Week Logic (approx)
+            const thisWeek = events.filter(e => {
+                const ed = new Date(e.date);
+                return ed >= now && ed <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            });
+
+            // Next Month Logic
+            const nextMonthEvs = events.filter(e => {
+                const ed = new Date(e.date);
+                return ed.getMonth() === nextMonth.getMonth() && ed.getFullYear() === nextMonth.getFullYear();
+            });
+
+            // All Upcoming Outreaches
+            const upcomingOut = events.filter(e => e.type === 'outreach' && new Date(e.date) >= now)
+                .sort((a,b) => new Date(a.date) - new Date(b.date));
+
+            const populate = (id, list) => {
+                const container = document.getElementById(id);
+                container.innerHTML = list.length ? '' : '<p class="text-[10px] text-gray-400 px-2 italic">No events found</p>';
+                list.slice(0, 4).forEach(e => {
+                    const item = document.createElement('div');
+                    item.className = 'sidebar-item hover:bg-gray-100';
+                    item.innerHTML = `
+                        <span class="w-2 h-2 rounded-full ${e.type === 'outreach' ? 'bg-blue-500' : e.type === 'meeting' ? 'bg-green-600' : 'bg-orange-500'}"></span>
+                        <div class="overflow-hidden">
+                            <p class="truncate font-medium">${e.title}</p>
+                            <p class="text-[10px] text-gray-500">${new Date(e.date).toLocaleDateString()}</p>
+                        </div>
+                    `;
+                    item.onclick = () => showEventDetails(e);
+                    container.appendChild(item);
+                });
+            };
+
+            populate('thisWeekEvents', thisWeek);
+            populate('nextMonthEvents', nextMonthEvs);
+            populate('upcomingOutreaches', upcomingOut);
+        }
+
+        function showEventDetails(event) {
+            const modal = document.getElementById('eventModal');
+            document.getElementById('modalTitle').innerText = event.title;
+            document.getElementById('modalVenue').innerText = event.venue || 'No location set';
+            document.getElementById('modalCategory').innerText = event.type.replace('-', ' ');
+            document.getElementById('modalDate').innerText = new Date(event.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            document.getElementById('modalTeam').innerText = event.team || 'None assigned';
+            
+            const colors = { outreach: '#039be5', community: '#f4511e', meeting: '#0b8043' };
+            document.getElementById('modalHeader').style.backgroundColor = colors[event.type];
+
+            document.getElementById('deleteBtn').onclick = () => {
+                events = events.filter(e => e.id !== event.id);
+                closeModal(); renderCalendar();
+            };
+            modal.classList.add('active');
+        }
+
+        function closeModal() { document.getElementById('eventModal').classList.remove('active'); }
+        function openAddModal() { document.getElementById('addModal').classList.add('active'); }
+        function closeAddModal() { document.getElementById('addModal').classList.remove('active'); }
+        function changeMonth(delta) { currentDate.setMonth(currentDate.getMonth() + delta); renderCalendar(); }
+
+        document.getElementById('eventForm').onsubmit = function(e) {
+            e.preventDefault();
+            events.push({
+                id: Date.now(),
+                title: document.getElementById('eventTitle').value,
+                date: document.getElementById('eventDate').value,
+                type: document.getElementById('eventType').value,
+                venue: document.getElementById('eventVenue').value,
+                team: document.getElementById('eventTeam').value
+            });
+            renderCalendar(); closeAddModal(); this.reset();
+        };
+
+        renderCalendar();
+    </script>
+</body>
+</html>

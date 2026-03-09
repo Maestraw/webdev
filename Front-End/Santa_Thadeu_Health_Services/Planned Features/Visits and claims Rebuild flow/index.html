@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Patient Flow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #1e293b; }
+        .hidden-section { display: none; }
+        .fade-in { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+        .stream-tag { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .stream-dental { background: #eff6ff; color: #1d4ed8; }
+        .stream-medical { background: #f0fdf4; color: #15803d; }
+        .stream-psychology { background: #faf5ff; color: #7e22ce; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen pb-20">
+
+    <!-- Simple Progress Header -->
+    <nav class="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center space-x-4">
+            <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold shadow-lg shadow-blue-200">K</div>
+            <h1 id="flowLabel" class="text-sm font-bold text-gray-500 uppercase tracking-widest">New Visit</h1>
+        </div>
+        <div id="stepIndicator" class="flex space-x-2">
+            <div id="step1Dot" class="w-2 h-2 rounded-full bg-blue-600"></div>
+            <div id="step2Dot" class="w-2 h-2 rounded-full bg-gray-200"></div>
+        </div>
+    </nav>
+
+    <main class="max-w-2xl mx-auto pt-12 px-6">
+        
+        <!-- STEP 1: FIND & VERIFY -->
+        <div id="step1" class="fade-in space-y-8">
+            <div class="text-center space-y-2">
+                
+                <p class="text-slate-500">Search member database or register new</p>
+            </div>
+
+            <!-- Search Area -->
+            <div class="relative group">
+                <div class="flex gap-2">
+                    <div class="relative flex-1">
+                        <input type="text" id="pSearch" oninput="handleSearch(this.value)" placeholder="Search Name, ID or Card..." 
+                            class="w-full text-xl p-6 bg-white border-2 border-gray-100 rounded-2xl shadow-sm focus:border-blue-500 outline-none transition-all group-hover:shadow-md">
+                    </div>
+                </div>
+                
+                <div id="pResults" class="hidden absolute w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl z-30 overflow-hidden">
+                    <div onclick="selectPatient('Abel Chabvuta', 'CIMAS-9981-01', 'Medical Aid')" class="p-4 hover:bg-blue-50 cursor-pointer flex justify-between items-center border-b border-gray-50">
+                        <div>
+                            <p class="font-bold">Abel Chabvuta</p>
+                            <p class="text-xs text-gray-400">Card: CIMAS-9981-01</p>
+                        </div>
+                        <span class="text-blue-600 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded">EXISTING</span>
+                    </div>
+                    <div onclick="openNewCustomerForm()" class="p-4 hover:bg-green-50 cursor-pointer flex items-center space-x-3 text-green-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span class="font-bold text-sm">Create New Customer Profile</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verification & Payment Setup -->
+            <div id="pPreview" class="hidden-section bg-white border border-gray-200 rounded-3xl p-8 shadow-sm fade-in space-y-8">
+                <div class="flex justify-between items-start">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-bold text-xl" id="avatarInitials">?</div>
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900" id="prevName">New Patient</h3>
+                            <p class="text-slate-500 text-sm" id="prevID">Draft Profile</p>
+                        </div>
+                    </div>
+                    <button onclick="resetSearch()" class="text-xs font-bold text-slate-400 hover:text-slate-600">RESET</button>
+                </div>
+
+                <!-- Payment Method Toggle -->
+                <div class="space-y-3">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Payment Method</label>
+                    <div class="flex p-1 bg-slate-100 rounded-xl">
+                        <button id="payMedical" onclick="setPayment('Medical Aid')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-white shadow-sm text-blue-600">MEDICAL AID</button>
+                        <button id="payDirect" onclick="setPayment('Direct')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-500">DIRECT (CASH/ELECTRONIC)</button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-6">
+                    <div id="aidField">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Society</label>
+                        <select class="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500/20">
+                            <option>CIMAS</option>
+                            <option>PSMAS</option>
+                            <option>Generation Health</option>
+                        </select>
+                    </div>
+                    <div id="directField" class="hidden-section">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Payment Channel</label>
+                        <select class="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500/20">
+                            <option>Cash (USD)</option>
+                            <option>Swipe / Zig</option>
+                            <option>EcoCash</option>
+                            <option>SSB</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Primary Stream</label>
+                        <select id="primaryStreamSelect" class="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500/20">
+                            <option value="Medical">Medical Flow</option>
+                            <option value="Dental">Dental Flow</option>
+                            <option value="Psychology">Psychology Flow</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="goLive()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all">
+                    ACTIVATE SESSION
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 2: CONSULTATION & TARIFFS -->
+        <div id="step2" class="hidden-section fade-in space-y-6">
+            <div class="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm space-y-8">
+                <div class="flex items-center justify-between pb-6 border-b border-gray-50">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center font-bold text-xl" id="dashInitials">AC</div>
+                        <div>
+                            <h2 class="font-bold text-lg" id="activeName">Abel Chabvuta</h2>
+                            <p class="text-[10px] font-bold text-blue-500 uppercase tracking-tighter" id="activePayment">MEDICAL AID: CIMAS</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Bot Readiness</p>
+                        <p id="botStatus" class="text-xs font-bold text-amber-500 uppercase">Awaiting Data</p>
+                    </div>
+                </div>
+
+                <!-- Observations -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">Clinical Findings</label>
+                    <textarea id="notes" placeholder="Detailed clinical findings for the bot to parse..." 
+                        class="w-full h-32 p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500/20 outline-none text-slate-700 leading-relaxed"></textarea>
+                </div>
+
+                <!-- Tariffs / Products -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">Add consumed items (Grouped by Portal)</label>
+                    <div class="relative">
+                        <input type="text" id="tSearch" oninput="handleTariffSearch(this.value)" placeholder="Search Code, Item or Category..." 
+                            class="w-full p-4 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-blue-200 outline-none text-sm transition-all">
+                        
+                        <div id="tResults" class="hidden absolute w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-30 max-h-60 overflow-y-auto">
+                            <!-- Category Header -->
+                            <div class="px-4 py-2 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Medical Items</div>
+                            <div onclick="addTariff('Consultation Fee', '15.00', 'Medical')" class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between text-sm">
+                                <span>Consultation Fee (GEN001)</span>
+                                <span class="font-bold">$15.00</span>
+                            </div>
+                            <div onclick="addTariff('Paracetamol 500mg', '2.00', 'Medical')" class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between text-sm">
+                                <span>Paracetamol 500mg</span>
+                                <span class="font-bold">$2.00</span>
+                            </div>
+                            <!-- Category Header -->
+                            <div class="px-4 py-2 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Dental Items</div>
+                            <div onclick="addTariff('Scaling & Polishing', '35.00', 'Dental')" class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between text-sm">
+                                <span>Scaling & Polishing (DTL01)</span>
+                                <span class="font-bold">$35.00</span>
+                            </div>
+                            <div onclick="addTariff('Single Extraction', '45.00', 'Dental')" class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between text-sm">
+                                <span>Single Extraction (DTL04)</span>
+                                <span class="font-bold">$45.00</span>
+                            </div>
+                            <!-- Category Header -->
+                            <div class="px-4 py-2 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Psychology Items</div>
+                            <div onclick="addTariff('Counseling Session', '50.00', 'Psychology')" class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between text-sm">
+                                <span>Individual Counseling (PSY01)</span>
+                                <span class="font-bold">$50.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stream Grouping Display -->
+                    <div id="streamGroups" class="space-y-6 pt-2">
+                        <!-- Grouped items will appear here -->
+                    </div>
+                </div>
+                
+                <div class="pt-6 border-t border-gray-50 flex items-center justify-between">
+                    <div class="text-slate-400">
+                        <p class="text-[10px] font-bold uppercase">Consolidated Total</p>
+                        <p class="text-xl font-bold text-slate-900" id="totalAmount">$0.00</p>
+                    </div>
+                    <button onclick="finish()" class="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold hover:bg-black hover:shadow-lg transition-all">
+                        SUBMIT FOR PORTAL BOT
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        let currentPatient = null;
+        let selectedItems = [];
+        let currentPaymentMethod = 'Medical Aid';
+        let currentStream = 'Medical';
+
+        function handleSearch(val) {
+            const results = document.getElementById('pResults');
+            if (val.length > 1) results.classList.remove('hidden');
+            else results.classList.add('hidden');
+        }
+
+        function openNewCustomerForm() {
+            const name = document.getElementById('pSearch').value || "New Patient";
+            selectPatient(name, "New Profile", "Direct");
+        }
+
+        function selectPatient(name, id, method) {
+            currentPatient = { name, id };
+            document.getElementById('pSearch').parentElement.classList.add('hidden-section');
+            document.getElementById('pResults').classList.add('hidden');
+            
+            document.getElementById('prevName').innerText = name;
+            document.getElementById('prevID').innerText = id;
+            document.getElementById('avatarInitials').innerText = name.substring(0,2).toUpperCase();
+            document.getElementById('pPreview').classList.remove('hidden-section');
+            setPayment(method);
+        }
+
+        function setPayment(method) {
+            currentPaymentMethod = method;
+            const medBtn = document.getElementById('payMedical');
+            const dirBtn = document.getElementById('payDirect');
+            const aidField = document.getElementById('aidField');
+            const directField = document.getElementById('directField');
+
+            if(method === 'Medical Aid') {
+                medBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-white shadow-sm text-blue-600";
+                dirBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-500";
+                aidField.classList.remove('hidden-section');
+                directField.classList.add('hidden-section');
+            } else {
+                dirBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-white shadow-sm text-blue-600";
+                medBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-500";
+                aidField.classList.add('hidden-section');
+                directField.classList.remove('hidden-section');
+            }
+        }
+
+        function handleTariffSearch(val) {
+            const results = document.getElementById('tResults');
+            if (val.length > 0) results.classList.remove('hidden');
+            else results.classList.add('hidden');
+        }
+
+        function addTariff(name, price, stream) {
+            selectedItems.push({ name, price: parseFloat(price), stream });
+            document.getElementById('tSearch').value = "";
+            document.getElementById('tResults').classList.add('hidden');
+            renderGroups();
+        }
+
+        function renderGroups() {
+            const container = document.getElementById('streamGroups');
+            const streams = ['Medical', 'Dental', 'Psychology'];
+            let html = '';
+            let grandTotal = 0;
+
+            streams.forEach(stream => {
+                const filtered = selectedItems.filter(i => i.stream === stream);
+                if(filtered.length > 0) {
+                    let streamTotal = 0;
+                    html += `
+                        <div class="space-y-2 fade-in">
+                            <div class="flex items-center space-x-2">
+                                <span class="stream-tag stream-${stream.toLowerCase()}">${stream} Portal Flow</span>
+                                <div class="flex-1 border-t border-slate-100"></div>
+                            </div>
+                            <div class="bg-white border border-slate-100 rounded-2xl overflow-hidden">
+                                ${filtered.map((item, idx) => {
+                                    streamTotal += item.price;
+                                    grandTotal += item.price;
+                                    const actualIdx = selectedItems.indexOf(item);
+                                    return `
+                                        <div class="flex justify-between items-center p-3 hover:bg-slate-50 transition-colors border-b last:border-0 border-slate-50">
+                                            <span class="text-sm font-medium text-slate-700">${item.name}</span>
+                                            <div class="flex items-center space-x-3">
+                                                <span class="text-xs font-bold text-slate-900">$${item.price.toFixed(2)}</span>
+                                                <button onclick="removeItem(${actualIdx})" class="text-slate-300 hover:text-red-500 p-1">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                                <div class="bg-slate-50/50 p-2 px-3 text-right">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase mr-2">${stream} Subtotal:</span>
+                                    <span class="text-xs font-bold text-slate-700">$${streamTotal.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            container.innerHTML = html || `<div class="p-8 text-center border-2 border-dashed border-slate-100 rounded-2xl text-slate-300 text-xs font-medium">Add items to generate portal submission groups</div>`;
+            document.getElementById('totalAmount').innerText = `$${grandTotal.toFixed(2)}`;
+            
+            // Update bot status
+            const status = document.getElementById('botStatus');
+            if(grandTotal > 0) {
+                status.innerText = "READY FOR PORTALS";
+                status.classList.replace('text-amber-500', 'text-green-500');
+            } else {
+                status.innerText = "AWAITING DATA";
+                status.classList.replace('text-green-500', 'text-amber-500');
+            }
+        }
+
+        function removeItem(idx) {
+            selectedItems.splice(idx, 1);
+            renderGroups();
+        }
+
+        function resetSearch() {
+            location.reload();
+        }
+
+        function goLive() {
+            currentStream = document.getElementById('primaryStreamSelect').value;
+            document.getElementById('step1').classList.add('hidden-section');
+            document.getElementById('step2').classList.remove('hidden-section');
+            
+            document.getElementById('activeName').innerText = currentPatient.name;
+            document.getElementById('activePayment').innerText = `${currentPaymentMethod} | Primary: ${currentStream}`;
+            document.getElementById('dashInitials').innerText = currentPatient.name.substring(0,2).toUpperCase();
+            document.getElementById('flowLabel').innerText = "Live Visit Workspace";
+            document.getElementById('step2Dot').classList.replace('bg-gray-200', 'bg-blue-600');
+            renderGroups();
+            window.scrollTo(0,0);
+        }
+
+        function finish() {
+            if(selectedItems.length === 0) {
+                alert("Please add at least one item before submitting.");
+                return;
+            }
+            const streams = [...new Set(selectedItems.map(i => i.stream))];
+            if(confirm(`Ready to submit to the following portals via Bot?\n- ${streams.join('\n- ')}`)) {
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
