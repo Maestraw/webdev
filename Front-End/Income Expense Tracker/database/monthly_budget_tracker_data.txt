@@ -1,0 +1,52 @@
+[
+  {
+    "id": "mj9s83rjise",
+    "name": "USERFLOW_ADJUSTMENTS",
+    "priority": "High",
+    "estimate": 72,
+    "subtasks": [
+      {
+        "id": "sub-lpsfj",
+        "description": "CUSTOMER_ANALYTICS_ADJUSTMENTS",
+        "completed": true
+      },
+      {
+        "id": "sub-p7fl8",
+        "description": "CASH_FUNDED_VISITS_USER_FLOW",
+        "completed": true
+      },
+      {
+        "id": "sub-wxaf0",
+        "description": "ACTIVE_VISITS_USER_FLOW",
+        "completed": true
+      },
+      {
+        "id": "sub-0jj77",
+        "description": "BUG ON CREATE BOOKING FOR NEW CUSTOMER",
+        "completed": false
+      },
+      {
+        "id": "sub-o46ln",
+        "description": "DISPLAY CUSTOMER  META DATA",
+        "completed": false
+      },
+      {
+        "id": "sub-k7dig",
+        "description": "SEEMLESS INTEGRATION BETWEEN LEADS AND CUSTOMERS",
+        "completed": false
+      },
+      {
+        "id": "sub-x29ab",
+        "description": "CASH_VOLUMES_ON_DAILY_SALES",
+        "completed": false
+      },
+      {
+        "id": "sub-d4f4c",
+        "description": "HANDLING_BANK_TRANSFER_VISITS_TRANSACTIONS",
+        "completed": false
+      }
+    ],
+    "status": "PLANNED",
+    "createdAt": "2025-12-17T09:01:17.455Z"
+  }
+]

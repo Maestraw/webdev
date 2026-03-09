@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decision Framework | Strategic Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; scroll-behavior: smooth; }
+        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); }
+        .progress-bar { transition: width 0.5s ease-in-out; }
+        .step-content { display: none; }
+        .step-content.active { display: block; }
+        input[type="checkbox"]:checked + label { text-decoration: line-through; color: #94a3b8; }
+    </style>
+</head>
+<body class="text-slate-800 pb-20">
+
+    <!-- HEADER & PROGRESS -->
+    <header class="glass sticky top-0 z-50 border-b border-slate-200 px-6 py-4">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-slate-900 text-white p-2 rounded-lg">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight">DecisionMatrix</h1>
+            </div>
+            <div class="w-full md:w-64">
+                <div class="flex justify-between text-xs font-bold mb-1 uppercase tracking-wider text-slate-500">
+                    <span>Process Progress</span>
+                    <span id="progress-text">0%</span>
+                </div>
+                <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-indigo-600 progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-6 mt-4">
+        
+        <!-- STEP NAVIGATION (VERTICAL ON MOBILE, HORIZONTAL ON DESKTOP) -->
+        <nav class="flex overflow-x-auto space-x-4 mb-8 pb-2 scrollbar-hide no-scrollbar">
+            <button onclick="goToStep(1)" class="step-nav-btn active whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold bg-slate-900 text-white" id="nav-1">1. Define</button>
+            <button onclick="goToStep(2)" class="step-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold bg-white border border-slate-200" id="nav-2">2. Gather</button>
+            <button onclick="goToStep(3)" class="step-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold bg-white border border-slate-200" id="nav-3">3. Perspectives</button>
+            <button onclick="goToStep(4)" class="step-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold bg-white border border-slate-200" id="nav-4">4. Pro/Con</button>
+            <button onclick="goToStep(5)" class="step-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold bg-white border border-slate-200" id="nav-5">5. Impact</button>
+            <button onclick="goToStep(6)" class="step-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold bg-white border border-slate-200" id="nav-6">6. Decide</button>
+            <button onclick="goToStep(7)" class="step-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold bg-white border border-slate-200" id="nav-7">7. Action</button>
+        </nav>
+
+        <!-- 1. DEFINE THE DECISION -->
+        <div id="step-1" class="step-content active space-y-6">
+            <h2 class="text-3xl font-bold text-slate-900">1. Define the Decision</h2>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-600 mb-2">What exactly is the decision? (One sentence)</label>
+                    <textarea class="w-full p-4 bg-slate-50 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="e.g. Should I pivot the product to airtime-only payouts?"></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-600 mb-2">Desired Outcome</label>
+                        <input type="text" class="w-full p-4 bg-slate-50 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="e.g. 50% reduction in churn">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-600 mb-2">Deadline</label>
+                        <input type="date" class="w-full p-4 bg-slate-50 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="goToStep(2)" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition">Next: Gather Info</button>
+            </div>
+        </div>
+
+        <!-- 2. GATHER INFORMATION -->
+        <div id="step-2" class="step-content space-y-6">
+            <h2 class="text-3xl font-bold text-slate-900">2. Gather Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                    <h3 class="font-bold text-indigo-600 mb-4 flex items-center"><i class="fas fa-check-circle mr-2"></i> Known Facts</h3>
+                    <textarea rows="4" class="w-full p-3 bg-slate-50 rounded-lg text-sm border-none outline-none focus:ring-1 focus:ring-indigo-500" placeholder="List data points you already have..."></textarea>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                    <h3 class="font-bold text-amber-600 mb-4 flex items-center"><i class="fas fa-question-circle mr-2"></i> Assumptions</h3>
+                    <textarea rows="4" class="w-full p-3 bg-slate-50 rounded-lg text-sm border-none outline-none focus:ring-1 focus:ring-amber-500" placeholder="What are you taking for granted?"></textarea>
+                </div>
+            </div>
+            <div class="bg-indigo-50 p-6 rounded-2xl border border-indigo-100 space-y-4">
+                <h3 class="font-bold">Information Checklist</h3>
+                <div class="space-y-3">
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" class="w-5 h-5 rounded text-indigo-600 border-slate-300" onchange="updateProgress()">
+                        <span class="text-sm font-medium">I have validated the core data/input</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" class="w-5 h-5 rounded text-indigo-600 border-slate-300" onchange="updateProgress()">
+                        <span class="text-sm font-medium">I have consulted at least one outside perspective</span>
+                    </label>
+                </div>
+            </div>
+            <div class="flex justify-between">
+                <button onclick="goToStep(1)" class="text-slate-500 font-bold px-6 py-3">Back</button>
+                <button onclick="goToStep(3)" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition">Next: Perspectives</button>
+            </div>
+        </div>
+
+        <!-- 3. CONSIDER PERSPECTIVES (THE LENSES) -->
+        <div id="step-3" class="step-content space-y-6">
+            <h2 class="text-3xl font-bold text-slate-900">3. Consider Perspectives</h2>
+            <p class="text-slate-500">View the decision through these 5 critical lenses:</p>
+            
+            <div class="grid grid-cols-1 gap-4">
+                <!-- LENS: TECHNICAL -->
+                <details class="group bg-white rounded-2xl border border-slate-200" open>
+                    <summary class="flex justify-between items-center p-6 cursor-pointer list-none">
+                        <div class="flex items-center space-x-4">
+                            <div class="bg-blue-100 text-blue-600 p-3 rounded-xl"><i class="fas fa-tools"></i></div>
+                            <div>
+                                <h4 class="font-bold text-lg">Practical / Technical</h4>
+                                <p class="text-xs text-slate-400 font-medium">Can this be done? Risks & Constraints.</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down text-slate-300 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <div class="p-6 pt-0 border-t border-slate-50">
+                        <textarea class="w-full p-4 bg-slate-50 rounded-xl text-sm border-none outline-none" placeholder="Note resources needed, time constraints, and potential blockers..."></textarea>
+                    </div>
+                </details>
+
+                <!-- LENS: STRATEGIC -->
+                <details class="group bg-white rounded-2xl border border-slate-200">
+                    <summary class="flex justify-between items-center p-6 cursor-pointer list-none">
+                        <div class="flex items-center space-x-4">
+                            <div class="bg-indigo-100 text-indigo-600 p-3 rounded-xl"><i class="fas fa-chess-knight"></i></div>
+                            <div>
+                                <h4 class="font-bold text-lg">Strategic / Entrepreneurial</h4>
+                                <p class="text-xs text-slate-400 font-medium">ROI, Long-term goals, Who benefits?</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down text-slate-300 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <div class="p-6 pt-0 border-t border-slate-50">
+                        <textarea class="w-full p-4 bg-slate-50 rounded-xl text-sm border-none outline-none" placeholder="How does this move the needle for your mission?"></textarea>
+                    </div>
+                </details>
+
+                <!-- LENS: EMOTIONAL -->
+                <details class="group bg-white rounded-2xl border border-slate-200">
+                    <summary class="flex justify-between items-center p-6 cursor-pointer list-none">
+                        <div class="flex items-center space-x-4">
+                            <div class="bg-rose-100 text-rose-600 p-3 rounded-xl"><i class="fas fa-heart"></i></div>
+                            <div>
+                                <h4 class="font-bold text-lg">Emotional / Intuitive</h4>
+                                <p class="text-xs text-slate-400 font-medium">Excitement, Anxiety, Indifference?</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down text-slate-300 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <div class="p-6 pt-0 border-t border-slate-50">
+                        <textarea class="w-full p-4 bg-slate-50 rounded-xl text-sm border-none outline-none" placeholder="What is your gut telling you?"></textarea>
+                    </div>
+                </details>
+            </div>
+
+            <div class="flex justify-between">
+                <button onclick="goToStep(2)" class="text-slate-500 font-bold px-6 py-3">Back</button>
+                <button onclick="goToStep(4)" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition">Next: Pros & Cons</button>
+            </div>
+        </div>
+
+        <!-- 4. LIST PROS & CONS -->
+        <div id="step-4" class="step-content space-y-6">
+            <h2 class="text-3xl font-bold text-slate-900">4. Pros & Cons</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                    <h3 class="font-bold text-green-600 uppercase text-xs tracking-widest">Pros (The Upside)</h3>
+                    <div id="pros-list" class="space-y-2">
+                        <input type="text" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-sm" placeholder="1. High growth potential">
+                        <input type="text" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-sm" placeholder="2. Low execution cost">
+                        <input type="text" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-sm" placeholder="3. Immediate cashflow">
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <h3 class="font-bold text-red-600 uppercase text-xs tracking-widest">Cons (The Downside)</h3>
+                    <div id="cons-list" class="space-y-2">
+                        <input type="text" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-sm" placeholder="1. Possible brand dilution">
+                        <input type="text" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-sm" placeholder="2. High manual overhead">
+                        <input type="text" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-sm" placeholder="3. Complex regulatory path">
+                    </div>
+                </div>
+            </div>
+            <div class="bg-red-50 p-6 rounded-2xl border border-red-100">
+                <h3 class="font-bold text-red-900 mb-2">Deal Breakers?</h3>
+                <p class="text-sm text-red-700 mb-4 italic">Is there an absolute no-go scenario identified here?</p>
+                <input type="text" class="w-full p-3 bg-white border border-red-200 rounded-xl text-sm" placeholder="e.g. If the cost exceeds $5k, it's a no.">
+            </div>
+            <div class="flex justify-between">
+                <button onclick="goToStep(3)" class="text-slate-500 font-bold px-6 py-3">Back</button>
+                <button onclick="goToStep(5)" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition">Next: Impact</button>
+            </div>
+        </div>
+
+        <!-- 5. EVALUATE IMPACT & RISK -->
+        <div id="step-5" class="step-content space-y-6">
+            <h2 class="text-3xl font-bold text-slate-900">5. Impact & Risk</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                    <h4 class="font-bold mb-3">Short Term (1 month)</h4>
+                    <textarea class="w-full p-3 bg-slate-50 rounded-xl text-sm border-none outline-none" rows="2"></textarea>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                    <h4 class="font-bold mb-3">Long Term (12 months)</h4>
+                    <textarea class="w-full p-3 bg-slate-50 rounded-xl text-sm border-none outline-none" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                <h4 class="font-bold mb-4">Risk Evaluation</h4>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">Likelihood of failure</span>
+                        <input type="range" class="w-1/2 accent-indigo-600">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">Reversibility</span>
+                        <select class="bg-slate-50 border-none text-sm font-bold rounded-lg p-2">
+                            <option>Highly Reversible (Low Risk)</option>
+                            <option>One-way Door (High Risk)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-between">
+                <button onclick="goToStep(4)" class="text-slate-500 font-bold px-6 py-3">Back</button>
+                <button onclick="goToStep(6)" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition">Next: Decide</button>
+            </div>
+        </div>
+
+        <!-- 6. DECIDE & DOCUMENT -->
+        <div id="step-6" class="step-content space-y-6">
+            <h2 class="text-3xl font-bold text-slate-900">6. Decide & Document</h2>
+            <div class="bg-indigo-900 text-white p-8 rounded-3xl space-y-6">
+                <div>
+                    <h4 class="font-bold text-indigo-300 uppercase text-xs tracking-widest mb-4">Final Choice</h4>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="selectOption('A')" id="opt-A" class="option-btn border-2 border-indigo-700 rounded-xl py-4 font-bold hover:bg-indigo-800">Option A</button>
+                        <button onclick="selectOption('B')" id="opt-B" class="option-btn border-2 border-indigo-700 rounded-xl py-4 font-bold hover:bg-indigo-800">Option B</button>
+                        <button onclick="selectOption('H')" id="opt-H" class="option-btn border-2 border-indigo-700 rounded-xl py-4 font-bold hover:bg-indigo-800">Hybrid</button>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-bold text-indigo-300 uppercase text-xs tracking-widest mb-4">The "Why"</h4>
+                    <textarea class="w-full p-4 bg-indigo-800 rounded-2xl text-white outline-none placeholder-indigo-400 border-none" rows="3" placeholder="Document the rationale..."></textarea>
+                </div>
+            </div>
+            <div class="flex justify-between">
+                <button onclick="goToStep(5)" class="text-slate-500 font-bold px-6 py-3">Back</button>
+                <button onclick="goToStep(7)" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition">Next: Action Plan</button>
+            </div>
+        </div>
+
+        <!-- 7. ACTION PLAN -->
+        <div id="step-7" class="step-content space-y-6">
+            <h2 class="text-3xl font-bold text-slate-900">7. Action Plan</h2>
+            <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-xl shadow-indigo-50 space-y-6">
+                <div>
+                    <h4 class="font-bold mb-2">Immediate Next Step</h4>
+                    <input type="text" class="w-full p-4 bg-slate-50 rounded-xl border border-slate-200 font-medium" placeholder="Specific, actionable item...">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="font-bold mb-2 text-sm">Owner</h4>
+                        <input type="text" class="w-full p-3 bg-slate-50 rounded-lg border-none" placeholder="Who is responsible?">
+                    </div>
+                    <div>
+                        <h4 class="font-bold mb-2 text-sm">Review Date</h4>
+                        <input type="date" class="w-full p-3 bg-slate-50 rounded-lg border-none">
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-2 text-sm">Success Metrics</h4>
+                    <input type="text" class="w-full p-3 bg-slate-50 rounded-lg border-none" placeholder="What does victory look like?">
+                </div>
+            </div>
+            
+            <div class="bg-green-600 text-white p-6 rounded-2xl text-center">
+                <button onclick="finishProcess()" class="text-xl font-bold flex items-center justify-center w-full">
+                    <i class="fas fa-check-double mr-3"></i> Finish & Commit
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FLOATING REVIEW BUTTON -->
+    <div class="fixed bottom-6 right-6">
+        <button onclick="window.print()" class="bg-white p-4 rounded-full shadow-2xl border border-slate-100 hover:scale-110 transition group">
+            <i class="fas fa-file-pdf text-slate-800"></i>
+            <span class="absolute right-16 top-3 bg-slate-900 text-white px-3 py-1 rounded-lg text-xs opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Save Decision Log</span>
+        </button>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 7;
+
+        function updateProgress() {
+            // Count all checkboxes and inputs across steps
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const checked = document.querySelectorAll('input[type="checkbox"]:checked');
+            
+            // Simplified progress: Step completion + Checkboxes
+            const baseProgress = ((currentStep - 1) / totalSteps) * 100;
+            const checkboxProgress = checkboxes.length ? (checked.length / checkboxes.length) * 10 : 0;
+            
+            const finalProgress = Math.min(Math.round(baseProgress + checkboxProgress), 100);
+            
+            document.getElementById('progress-bar').style.width = finalProgress + '%';
+            document.getElementById('progress-text').innerText = finalProgress + '%';
+        }
+
+        function goToStep(step) {
+            // Hide current
+            document.getElementById(`step-${currentStep}`).classList.remove('active');
+            document.getElementById(`nav-${currentStep}`).classList.remove('bg-slate-900', 'text-white');
+            document.getElementById(`nav-${currentStep}`).classList.add('bg-white', 'text-slate-800');
+
+            // Show new
+            document.getElementById(`step-${step}`).classList.add('active');
+            document.getElementById(`nav-${step}`).classList.add('bg-slate-900', 'text-white');
+            document.getElementById(`nav-${step}`).classList.remove('bg-white', 'text-slate-800');
+            
+            currentStep = step;
+            window.scrollTo(0, 0);
+            updateProgress();
+        }
+
+        function selectOption(opt) {
+            // Reset all
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-500', 'border-white');
+                btn.classList.add('border-indigo-700');
+            });
+            // Highlight selected
+            const active = document.getElementById(`opt-${opt}`);
+            active.classList.add('bg-indigo-500', 'border-white');
+            active.classList.remove('border-indigo-700');
+        }
+
+        function finishProcess() {
+            confettiAnimation();
+            alert("Decision finalized and documented. You have an action plan!");
+        }
+
+        function confettiAnimation() {
+            // Simple visual feedback simulation
+            const header = document.querySelector('header');
+            header.style.backgroundColor = '#dcfce7';
+            setTimeout(() => header.style.backgroundColor = '', 2000);
+        }
+
+        // Initialize progress
+        updateProgress();
+    </script>
+</body>
+</html>

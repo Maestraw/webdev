@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Calendar Booking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background-color: #e5e7eb;
+            border: 1px solid #e5e7eb;
+        }
+
+        .calendar-day {
+            min-height: 120px;
+            background-color: white;
+            transition: background-color 0.2s;
+        }
+
+        .calendar-day:hover {
+            background-color: #f3f4f6;
+        }
+
+        .calendar-day.today {
+            background-color: #eff6ff;
+        }
+
+        .appointment-badge {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            margin-top: 2px;
+            border-radius: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(2px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-8">
+            <h1 class="text-xl font-bold text-blue-600 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+               Bookings
+            </h1>
+            <div class="flex items-center gap-4">
+                <button onclick="changeMonth(-1)" class="p-2 hover:bg-gray-100 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                </button>
+                <h2 id="currentMonthDisplay" class="text-lg font-semibold min-w-[150px] text-center">Month Year</h2>
+                <button onclick="changeMonth(1)" class="p-2 hover:bg-gray-100 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                </button>
+                <button onclick="goToToday()" class="px-4 py-1.5 border border-gray-300 rounded text-sm font-medium hover:bg-gray-50">Today</button>
+            </div>
+        </div>
+        <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+            Create
+        </button>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r p-6 hidden md:block overflow-y-auto">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Upcoming Appointments</h3>
+            <div id="upcomingList" class="space-y-3">
+                <!-- Upcoming items injected here -->
+                <p class="text-sm text-gray-400 italic">No upcoming bookings</p>
+            </div>
+        </aside>
+
+        <!-- Main Calendar -->
+        <main class="flex-1 flex flex-col bg-white overflow-hidden">
+            <!-- Day headers -->
+            <div class="grid grid-cols-7 border-b bg-gray-50">
+                <div class="py-2 text-center text-xs font-semibold text-gray-500 border-r">SUN</div>
+                <div class="py-2 text-center text-xs font-semibold text-gray-500 border-r">MON</div>
+                <div class="py-2 text-center text-xs font-semibold text-gray-500 border-r">TUE</div>
+                <div class="py-2 text-center text-xs font-semibold text-gray-500 border-r">WED</div>
+                <div class="py-2 text-center text-xs font-semibold text-gray-500 border-r">THU</div>
+                <div class="py-2 text-center text-xs font-semibold text-gray-500 border-r">FRI</div>
+                <div class="py-2 text-center text-xs font-semibold text-gray-500">SAT</div>
+            </div>
+            
+            <div id="calendarGrid" class="calendar-grid flex-1 overflow-y-auto">
+                <!-- Days injected here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="bookingModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-800">New Appointment</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form id="appointmentForm" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input type="text" id="apptTitle" required placeholder="e.g. Design Review" 
+                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" id="apptDate" required 
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" id="apptTime" required 
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Color Category</label>
+                    <div class="flex gap-3 mt-1">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="color" value="bg-blue-100 text-blue-700 border-blue-200" checked class="hidden peer">
+                            <div class="w-8 h-8 rounded-full bg-blue-500 peer-checked:ring-2 ring-offset-2 ring-blue-500"></div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="color" value="bg-green-100 text-green-700 border-green-200" class="hidden peer">
+                            <div class="w-8 h-8 rounded-full bg-green-500 peer-checked:ring-2 ring-offset-2 ring-green-500"></div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="color" value="bg-purple-100 text-purple-700 border-purple-200" class="hidden peer">
+                            <div class="w-8 h-8 rounded-full bg-purple-500 peer-checked:ring-2 ring-offset-2 ring-purple-500"></div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="color" value="bg-orange-100 text-orange-700 border-orange-200" class="hidden peer">
+                            <div class="w-8 h-8 rounded-full bg-orange-500 peer-checked:ring-2 ring-offset-2 ring-orange-500"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                        Save Appointment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Appointment Modal -->
+    <div id="viewModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+            <div id="viewHeader" class="px-6 py-4 border-b flex justify-between items-center">
+                <h3 id="viewTitle" class="font-bold text-lg"></h3>
+                <button onclick="closeViewModal()" class="text-gray-400 hover:text-gray-600">&times;</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="flex items-center gap-3 text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span id="viewDate"></span>
+                </div>
+                <div class="flex items-center gap-3 text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span id="viewTime"></span>
+                </div>
+                <button id="deleteBtn" class="w-full mt-4 text-red-600 hover:bg-red-50 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Delete Appointment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentYear, currentMonth;
+        let appointments = JSON.parse(localStorage.getItem('bookit_appts')) || [];
+        
+        const calendarGrid = document.getElementById('calendarGrid');
+        const currentMonthDisplay = document.getElementById('currentMonthDisplay');
+        const bookingModal = document.getElementById('bookingModal');
+        const viewModal = document.getElementById('viewModal');
+        const appointmentForm = document.getElementById('appointmentForm');
+
+        function init() {
+            const today = new Date();
+            currentYear = today.getFullYear();
+            currentMonth = today.getMonth();
+            renderCalendar();
+            updateSidebar();
+        }
+
+        function renderCalendar() {
+            calendarGrid.innerHTML = '';
+            
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            
+            currentMonthDisplay.innerText = `${monthNames[currentMonth]} ${currentYear}`;
+
+            // Padding for previous month
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'calendar-day bg-gray-50';
+                calendarGrid.appendChild(emptyDiv);
+            }
+
+            // Days of month
+            const today = new Date();
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement('div');
+                const isToday = today.getDate() === day && today.getMonth() === currentMonth && today.getFullYear() === currentYear;
+                dayDiv.className = `calendar-day p-2 border-r border-b relative group ${isToday ? 'today' : ''}`;
+                dayDiv.onclick = (e) => {
+                    if (e.target === dayDiv || e.target.tagName === 'SPAN') {
+                        const formattedDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        openModal(formattedDate);
+                    }
+                };
+
+                const dateNum = document.createElement('span');
+                dateNum.className = `inline-flex items-center justify-center w-7 h-7 text-sm font-medium rounded-full mb-1 ${isToday ? 'bg-blue-600 text-white' : 'text-gray-700'}`;
+                dateNum.innerText = day;
+                dayDiv.appendChild(dateNum);
+
+                // Add plus button for hover
+                const plusBtn = document.createElement('button');
+                plusBtn.className = 'absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-600 transition-opacity';
+                plusBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-5v3a1 1 0 11-2 0v-3H5a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" /></svg>';
+                dayDiv.appendChild(plusBtn);
+
+                // Appointments for this day
+                const dayString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayAppts = appointments.filter(a => a.date === dayString);
+                
+                // Sort by time
+                dayAppts.sort((a, b) => a.time.localeCompare(b.time));
+
+                dayAppts.forEach(appt => {
+                    const apptDiv = document.createElement('div');
+                    apptDiv.className = `appointment-badge border ${appt.color}`;
+                    apptDiv.innerText = `${appt.time} ${appt.title}`;
+                    apptDiv.onclick = (e) => {
+                        e.stopPropagation();
+                        showApptDetails(appt);
+                    };
+                    dayDiv.appendChild(apptDiv);
+                });
+
+                calendarGrid.appendChild(dayDiv);
+            }
+
+            // Padding for next month to complete the grid (up to 42 cells)
+            const totalCells = firstDay + daysInMonth;
+            const remaining = (7 - (totalCells % 7)) % 7;
+            for (let i = 0; i < remaining; i++) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'calendar-day bg-gray-50';
+                calendarGrid.appendChild(emptyDiv);
+            }
+        }
+
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            } else if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar();
+        }
+
+        function goToToday() {
+            const today = new Date();
+            currentYear = today.getFullYear();
+            currentMonth = today.getMonth();
+            renderCalendar();
+        }
+
+        function openModal(date = null) {
+            if (date) {
+                document.getElementById('apptDate').value = date;
+            } else {
+                const now = new Date();
+                document.getElementById('apptDate').value = now.toISOString().split('T')[0];
+            }
+            bookingModal.classList.remove('hidden');
+            document.getElementById('apptTitle').focus();
+        }
+
+        function closeModal() {
+            bookingModal.classList.add('hidden');
+            appointmentForm.reset();
+        }
+
+        function closeViewModal() {
+            viewModal.classList.add('hidden');
+        }
+
+        function showApptDetails(appt) {
+            document.getElementById('viewTitle').innerText = appt.title;
+            document.getElementById('viewDate').innerText = new Date(appt.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('viewTime').innerText = appt.time;
+            
+            const deleteBtn = document.getElementById('deleteBtn');
+            deleteBtn.onclick = () => {
+                appointments = appointments.filter(a => a.id !== appt.id);
+                saveAndRefresh();
+                closeViewModal();
+            };
+            
+            viewModal.classList.remove('hidden');
+        }
+
+        appointmentForm.onsubmit = (e) => {
+            e.preventDefault();
+            const newAppt = {
+                id: Date.now(),
+                title: document.getElementById('apptTitle').value,
+                date: document.getElementById('apptDate').value,
+                time: document.getElementById('apptTime').value,
+                color: document.querySelector('input[name="color"]:checked').value
+            };
+            
+            appointments.push(newAppt);
+            saveAndRefresh();
+            closeModal();
+        };
+
+        function saveAndRefresh() {
+            localStorage.setItem('bookit_appts', JSON.stringify(appointments));
+            renderCalendar();
+            updateSidebar();
+        }
+
+        function updateSidebar() {
+            const upcomingList = document.getElementById('upcomingList');
+            upcomingList.innerHTML = '';
+            
+            const today = new Date().toISOString().split('T')[0];
+            const upcoming = appointments
+                .filter(a => a.date >= today)
+                .sort((a, b) => {
+                    if (a.date !== b.date) return a.date.localeCompare(b.date);
+                    return a.time.localeCompare(b.time);
+                })
+                .slice(0, 5);
+
+            if (upcoming.length === 0) {
+                upcomingList.innerHTML = '<p class="text-sm text-gray-400 italic">No upcoming bookings</p>';
+                return;
+            }
+
+            upcoming.forEach(appt => {
+                const item = document.createElement('div');
+                item.className = 'p-3 border rounded-lg hover:shadow-sm cursor-pointer transition-shadow bg-white';
+                item.onclick = () => showApptDetails(appt);
+                
+                const dateObj = new Date(appt.date);
+                const day = dateObj.toLocaleDateString('en-US', { day: 'numeric' });
+                const mon = dateObj.toLocaleDateString('en-US', { month: 'short' });
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="text-center bg-gray-50 rounded px-2 py-1 min-w-[40px]">
+                            <div class="text-[10px] uppercase font-bold text-gray-500">${mon}</div>
+                            <div class="text-sm font-bold text-gray-800">${day}</div>
+                        </div>
+                        <div class="overflow-hidden">
+                            <div class="text-sm font-semibold truncate text-gray-800">${appt.title}</div>
+                            <div class="text-xs text-gray-500">${appt.time}</div>
+                        </div>
+                    </div>
+                `;
+                upcomingList.appendChild(item);
+            });
+        }
+
+        // Close modals on overlay click
+        window.onclick = (e) => {
+            if (e.target === bookingModal) closeModal();
+            if (e.target === viewModal) closeViewModal();
+        };
+
+        init();
+    </script>
+</body>
+</html>

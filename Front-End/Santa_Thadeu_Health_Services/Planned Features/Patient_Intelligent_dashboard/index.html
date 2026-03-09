@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Patient Interaction Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .timeline-line { 
+            width: 2px; 
+            background: #e5e7eb; 
+            position: absolute; 
+            top: 0; 
+            bottom: 0; 
+            left: 15px; 
+            z-index: 0; 
+        }
+        .event-dot { 
+            width: 12px; 
+            height: 12px; 
+            background: #3b82f6; 
+            border-radius: 50%; 
+            position: relative; 
+            z-index: 10; 
+            margin-right: 15px; 
+        }
+        .event-dot.complaint-dot {
+            background: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 md:p-8 font-sans">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 tracking-tight">AI Event Capture</h1>
+                <p class="text-gray-600">Smart timeline for patient observations, feedback, and complaints.</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-1">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 sticky top-8">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Natural Input
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div class="relative">
+                            <textarea id="aiInput" rows="6" 
+                                class="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition text-sm leading-relaxed resize-none bg-gray-50/50" 
+                                placeholder="Describe the observation, feedback, or complaint here..."></textarea>
+                            <div id="loader" class="hidden absolute inset-0 bg-white/90 rounded-xl flex flex-col items-center justify-center space-y-2">
+                                <div class="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                                <span class="text-[10px] font-black text-purple-700 uppercase tracking-[0.2em]">Analyzing Context</span>
+                            </div>
+                        </div>
+
+                        <button type="button" onclick="processWithAI()" id="processBtn" 
+                            class="w-full bg-gray-900 text-white font-bold py-4 px-4 rounded-xl hover:bg-black active:scale-[0.98] transition-all shadow-xl flex items-center justify-center">
+                            Process Observation
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 min-h-[600px] flex flex-col">
+                    <div class="flex justify-between items-center mb-8 border-b border-gray-50 pb-4">
+                        <h2 class="text-[11px] font-bold uppercase tracking-[0.15em] text-gray-400">Timeline Stream</h2>
+                        <button onclick="clearTimeline()" class="text-[10px] text-red-400 font-bold hover:text-red-600 uppercase tracking-tighter">Clear All</button>
+                    </div>
+                    
+                    <div class="relative flex-grow" id="timeline-container">
+                        <div class="timeline-line"></div>
+                        <div id="event-list" class="space-y-6">
+                            <!-- Events inject here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set your Gemini API key here
+        const apiKey = "AIzaSyC51n9dyihgMa262Y1tx5ZZ-vAjUgXB2Ss"; 
+
+        async function processWithAI() {
+            const userInput = document.getElementById('aiInput').value.trim();
+            if (!userInput) return;
+
+            setLoading(true);
+
+            const systemPrompt = `You are a clinical observation assistant. 
+            Analyze the input. 
+            Categorize as: [Social Context, Symptom, Medication, Billing, Scheduling, Preference, Feedback, Complaint].
+            Note: "Complaint" should be used for any negative experience or dissatisfaction.
+            Write a professional 1-2 sentence summary.
+            JSON Format: {"type": "category", "summary": "summary"}`;
+
+            try {
+                const response = await fetchWithRetry(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: userInput }] }],
+                            systemInstruction: { parts: [{ text: systemPrompt }] },
+                            generationConfig: { responseMimeType: "application/json" }
+                        })
+                    }
+                );
+
+                const result = await response.json();
+                const aiData = JSON.parse(result.candidates[0].content.parts[0].text);
+                addEventToTimeline(aiData.type, aiData.summary);
+                document.getElementById('aiInput').value = '';
+            } catch (err) {
+                console.error(err);
+                addEventToTimeline("Note", userInput);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        async function fetchWithRetry(url, options, retries = 5, backoff = 1000) {
+            const res = await fetch(url, options);
+            if (res.status === 429 && retries > 0) {
+                await new Promise(r => setTimeout(r, backoff));
+                return fetchWithRetry(url, options, retries - 1, backoff * 2);
+            }
+            if (!res.ok) throw new Error("API Error");
+            return res;
+        }
+
+        function addEventToTimeline(type, summary) {
+            const list = document.getElementById('event-list');
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const isComplaint = type.toLowerCase() === 'complaint';
+            
+            const item = document.createElement('div');
+            item.className = "flex items-start relative animate-in fade-in slide-in-from-right duration-500";
+            
+            // Dynamic styling based on type
+            const dotClass = isComplaint ? "event-dot complaint-dot" : "event-dot";
+            const cardClass = isComplaint 
+                ? "bg-red-50 border border-red-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex-grow" 
+                : "bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex-grow";
+            const chipClass = isComplaint
+                ? "px-2 py-0.5 bg-red-600 text-white text-[9px] font-black rounded uppercase tracking-widest"
+                : "px-2 py-0.5 bg-gray-100 text-gray-600 text-[9px] font-black rounded uppercase tracking-widest border border-gray-200";
+
+            item.innerHTML = `
+                <div class="${dotClass} mt-1.5 shadow-sm ring-4 ring-white"></div>
+                <div class="${cardClass}">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="${chipClass}">
+                            ${type}
+                        </span>
+                        <span class="text-[10px] text-gray-400 font-mono">${time}</span>
+                    </div>
+                    <p class="${isComplaint ? 'text-red-900' : 'text-gray-700'} text-sm leading-relaxed">${summary}</p>
+                </div>
+            `;
+            list.prepend(item);
+        }
+
+        function setLoading(state) {
+            const loader = document.getElementById('loader');
+            const btn = document.getElementById('processBtn');
+            if (loader) loader.classList.toggle('hidden', !state);
+            if (btn) btn.disabled = state;
+        }
+
+        function clearTimeline() {
+            document.getElementById('event-list').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

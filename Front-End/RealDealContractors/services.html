@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Deal Contractors</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .slideshow-bg {
+            background-size: cover;
+            background-position: center;
+            transition: background-image 1s ease-in-out;
+        }
+        .ui-panel {
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Slideshow container with dynamic AI-generated images -->
+    <div id="slideshow-container" class="slideshow-bg fixed inset-0">
+        <!-- Loading spinner overlay -->
+        <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-20">
+            <svg class="animate-spin h-12 w-12 text-[#f39c12]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
+    </div>
+
+    <!-- UI Overlay for content, contact details, and social icons -->
+    <div class="fixed inset-0 flex flex-col justify-between p-6 md:p-10 z-10 pointer-events-none">
+        <!-- Main UI panel for dynamic text -->
+        <div class="mt-8 md:mt-16 w-full max-w-lg mx-auto ui-panel rounded-3xl p-6 md:p-8 shadow-2xl pointer-events-auto">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-[#2c3e50] tracking-tight mb-1">REAL DEAL</h1>
+                <h2 class="text-xl font-light text-[#2c3e50] tracking-wide">CONTRACTORS</h2>
+            </div>
+            <hr class="my-4 border-gray-200">
+            <div class="text-center">
+                <h3 id="service-title" class="text-2xl font-bold text-[#f39c12] mb-2"></h3>
+                <p id="service-description" class="text-sm text-gray-700"></p>
+            </div>
+        </div>
+
+        <!-- Contact & Social Panel -->
+        <div class="mb-8 md:mb-16 w-full max-w-sm mx-auto ui-panel rounded-3xl p-6 md:p-8 shadow-2xl pointer-events-auto text-center space-y-4">
+            <div>
+                <h3 class="text-lg font-bold text-[#2c3e50] mb-2">CONTACT DETAILS</h3>
+                <p class="text-sm font-light text-gray-700">No 13163 Madokero Gardens</p>
+                <p class="text-base font-bold text-[#2c3e50]">+263 779 427 144</p>
+                <p class="text-base font-bold text-[#2c3e50]">+263 773 795 328</p>
+                <p class="text-base font-bold text-[#2c3e50]">+263 782 190 062</p>
+            </div>
+            <div class="flex justify-center space-x-4">
+                <a href="#" class="text-2xl text-gray-600 hover:text-blue-600 transition-colors">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="#" class="text-2xl text-gray-600 hover:text-blue-400 transition-colors">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="#" class="text-2xl text-gray-600 hover:text-pink-600 transition-colors">
+                    <i class="fab fa-instagram"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function () {
+            const services = [
+                {
+                    title: "BRICK LAYING",
+                    description: "Our skilled masons create durable, beautiful brickwork and structures.",
+                    imagePrompt: "An AI-generated image of a wall being built with red bricks and mortar, professional and clean."
+                },
+                {
+                    title: "SKIMMING",
+                    description: "We achieve perfectly smooth, flawless wall finishes for any interior.",
+                    imagePrompt: "An AI-generated image of a person applying plaster to a wall with a trowel, creating a smooth surface."
+                },
+                {
+                    title: "TILING",
+                    description: "Precision tiling for stunning and durable floors, bathrooms, and surfaces.",
+                    imagePrompt: "An AI-generated image of a floor being laid with intricate blue and white tiles, geometric pattern."
+                },
+                {
+                    title: "DRIVEWAYS",
+                    description: "Constructing strong and long-lasting driveways that enhance your property.",
+                    imagePrompt: "An AI-generated image of a freshly poured asphalt driveway with construction equipment nearby."
+                },
+                {
+                    title: "CEILING DESIGN",
+                    description: "Bringing elegant and modern ceiling designs to life with intricate craftsmanship.",
+                    imagePrompt: "An AI-generated image of an elegant, modern ceiling with a complex lighting fixture, minimalist style."
+                },
+                {
+                    title: "SUPERSTRUCTURE",
+                    description: "Building the core steel framework for your entire commercial or residential project.",
+                    imagePrompt: "An AI-generated image of a steel frame of a large commercial building under construction at sunrise."
+                }
+            ];
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+            const slideshowContainer = document.getElementById('slideshow-container');
+            const serviceTitleEl = document.getElementById('service-title');
+            const serviceDescEl = document.getElementById('service-description');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            let currentSlide = 0;
+
+            function showLoader() {
+                loadingSpinner.style.display = 'flex';
+            }
+
+            function hideLoader() {
+                loadingSpinner.style.display = 'none';
+            }
+
+            function fetchWithExponentialBackoff(url, options, maxRetries = 5, retryCount = 0) {
+                return new Promise((resolve, reject) => {
+                    fetch(url, options)
+                        .then(response => {
+                            if (response.status === 429 && retryCount < maxRetries) {
+                                const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 1000;
+                                setTimeout(() => {
+                                    resolve(fetchWithExponentialBackoff(url, options, maxRetries, retryCount + 1));
+                                }, delay);
+                            } else {
+                                resolve(response);
+                            }
+                        })
+                        .catch(error => {
+                            if (retryCount < maxRetries) {
+                                const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 1000;
+                                setTimeout(() => {
+                                    resolve(fetchWithExponentialBackoff(url, options, maxRetries, retryCount + 1));
+                                }, delay);
+                            } else {
+                                reject(error);
+                            }
+                        });
+                });
+            }
+
+            async function generateAndDisplayImage(prompt) {
+                showLoader();
+                try {
+                    const response = await fetchWithExponentialBackoff(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            instances: [{ prompt: prompt }],
+                            parameters: { "sampleCount": 1 }
+                        })
+                    });
+                    const result = await response.json();
+                    if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+                        const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                        slideshowContainer.style.backgroundImage = `url('${imageUrl}')`;
+                    } else {
+                        console.error('API did not return a valid image.');
+                    }
+                } catch (error) {
+                    console.error('Failed to generate image:', error);
+                } finally {
+                    hideLoader();
+                }
+            }
+
+            function updateSlideshow() {
+                const service = services[currentSlide];
+                serviceTitleEl.innerText = service.title;
+                serviceDescEl.innerText = service.description;
+                generateAndDisplayImage(service.imagePrompt);
+                currentSlide = (currentSlide + 1) % services.length;
+            }
+
+            updateSlideshow(); // Initial call
+            setInterval(updateSlideshow, 5000);
+        };
+    </script>
+</body>
+</html>

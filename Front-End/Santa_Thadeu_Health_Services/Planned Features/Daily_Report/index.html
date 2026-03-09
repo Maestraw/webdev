@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stepped Data Entry</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font - Inter -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            color: #1a202c; /* Dark text */
+        }
+        .data-card {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease-in-out;
+        }
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 9999px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            z-index: 200;
+        }
+        /* New styles for horizontal scrolling and snapping */
+        .horizontal-scroll {
+            display: flex;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch; /* for smooth scrolling on iOS */
+            gap: 1.5rem; /* Space between cards */
+            padding-bottom: 1rem; /* Padding to prevent scrollbar from hiding content */
+            scroll-snap-type: x mandatory; /* Enable mandatory snapping on the x-axis */
+            scroll-behavior: smooth; /* Enable smooth scrolling for programmatic and manual scrolls */
+        }
+        .horizontal-scroll > div {
+            min-width: 280px; /* Minimum width for each card */
+            flex-shrink: 0; /* Prevents cards from shrinking */
+            scroll-snap-align: start; /* Snap to the start of each card */
+        }
+        /* Active class to trigger the animation */
+        .horizontal-scroll > div.is-active {
+            animation: fall-in-card 0.6s ease-out forwards;
+        }
+        /* Custom scrollbar styles */
+        .horizontal-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+        .horizontal-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1; /* Gray-300 */
+            border-radius: 4px;
+        }
+        .horizontal-scroll::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+        /* The "falling in" keyframe animation */
+        @keyframes fall-in-card {
+            from {
+                opacity: 0.5;
+                transform: translateY(-20px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</head>
+<body class="p-6 md:p-10 lg:p-16 flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-3xl">
+        <div class="data-card p-8 lg:p-12">
+
+            <!-- Header and General Information -->
+            <header class="mb-10 pb-6 border-b-2 border-gray-100">
+                <h1 class="text-4xl font-extrabold text-gray-900">Kundai Santa</h1>
+                <p class="text-gray-500 mt-2 text-base">Thursday 25/09/25 • Queensdale Branch</p>
+            </header>
+
+            <!-- "New Entry" button to open the dialog -->
+            <div class="mb-8 flex justify-end">
+                <button id="open-modal-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition duration-300 transform hover:scale-105">
+                    New Entry
+                </button>
+            </div>
+
+            <!-- Services Overview with Horizontal Scroll -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Service Breakdown</h2>
+                <div id="card-container" class="horizontal-scroll">
+                    <!-- Free Vitals Card -->
+                    <div class="bg-gray-50 rounded-lg p-5">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Free Vitals</h3>
+                        <p class="text-lg text-gray-700">
+                            <span class="font-semibold">Volume:</span> <span id="vital-volume">0</span>
+                        </p>
+                    </div>
+                    
+                    <!-- Dental Card -->
+                    <div class="bg-gray-50 rounded-lg p-5">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Dental</h3>
+                        <div class="space-y-2 text-gray-600">
+                            <p><span class="font-medium">Volume:</span> <span id="dental-volume">0</span></p>
+                            <p><span class="font-medium">Cash:</span> <span id="dental-cash">$0</span></p>
+                            <p><span class="font-medium">USD M/Aid:</span> <span id="dental-usd">$0</span></p>
+                            <p><span class="font-medium">ZiG M/Aid:</span> <span id="dental-zig">ZWG 0</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Medical Card -->
+                    <div class="bg-gray-50 rounded-lg p-5">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Medical</h3>
+                        <div class="space-y-2 text-gray-600">
+                            <p><span class="font-medium">Volume:</span> <span id="medical-volume">0</span></p>
+                            <p><span class="font-medium">Cash:</span> <span id="medical-cash">$0</span></p>
+                            <p><span class="font-medium">USD M/Aid:</span> <span id="medical-usd">$0</span></p>
+                            <p><span class="font-medium">ZiG M/Aid:</span> <span id="medical-zig">ZWG 0</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Psychologist Card -->
+                    <div class="bg-gray-50 rounded-lg p-5">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Psychologist</h3>
+                        <div class="space-y-2 text-gray-600">
+                            <p><span class="font-medium">Volume:</span> <span id="psych-volume">0</span></p>
+                            <p><span class="font-medium">Cash:</span> <span id="psych-cash">$0</span></p>
+                            <p><span class="font-medium">USD M/Aid:</span> <span id="psych-usd">$0</span></p>
+                            <p><span class="font-medium">ZiG M/Aid:</span> <span id="psych-zig">ZWG 0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Totals Section -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Totals</h2>
+                <div class="bg-blue-50 rounded-lg p-5 border-l-4 border-blue-500">
+                    <div class="space-y-2 text-gray-700">
+                        <p><span class="font-medium">Total USD Cash:</span> <span id="total-usd-cash">$0</span></p>
+                        <p><span class="font-medium">Total USD M/Aid:</span> <span id="total-usd-maid">$0</span></p>
+                        <p class="font-bold text-blue-800">
+                            <span class="font-medium">Total M/Aid ZiG:</span> <span id="total-zig-maid">ZWG 0</span>
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sharing Options Section -->
+            <section>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Sharing Options</h2>
+                <div class="data-card p-6 flex flex-col md:flex-row gap-6">
+                    <!-- Share to Phone Block -->
+                    <div class="flex flex-col gap-2 w-full md:flex-1">
+                        <label for="whatsapp-phone-number" class="block text-sm font-medium text-gray-700">Share to Phone</label>
+                        <input type="tel" id="whatsapp-phone-number" value="+263713900051" class="w-full p-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        <button id="share-to-phone-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition duration-300 transform hover:scale-105 w-full">
+                            Share to Phone
+                        </button>
+                    </div>
+                    <!-- Copy & Share to Group Block -->
+                    <div class="flex flex-col gap-2 w-full md:flex-1">
+                        <label for="whatsapp-group-link" class="block text-sm font-medium text-gray-700">Copy & Share to Group</label>
+                        <input type="url" id="whatsapp-group-link" value="https://chat.whatsapp.com/default_link_placeholder" class="w-full p-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        <button id="share-to-group-btn" class="bg-emerald-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-emerald-700 transition duration-300 transform hover:scale-105 w-full">
+                            Copy & Share to Group
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- The Stepper Modal Dialog -->
+    <div id="data-modal" class="modal">
+        <div class="modal-content p-8 w-full max-w-xl">
+            <!-- Stepper Indicator -->
+            <div class="flex justify-center mb-8">
+                <div id="step-1-indicator" class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">1</div>
+                <div class="w-16 h-1 bg-gray-300 self-center mx-2 rounded-full"></div>
+                <div id="step-2-indicator" class="w-8 h-8 rounded-full bg-gray-300 text-gray-500 flex items-center justify-center font-bold">2</div>
+                <div class="w-16 h-1 bg-gray-300 self-center mx-2 rounded-full"></div>
+                <div id="step-3-indicator" class="w-8 h-8 rounded-full bg-gray-300 text-gray-500 flex items-center justify-center font-bold">3</div>
+            </div>
+
+            <h3 class="text-2xl font-bold mb-6 text-gray-900 text-center" id="step-title">Free Vitals</h3>
+            
+            <form id="data-form">
+                <!-- Step 1: Free Vitals -->
+                <div id="step-1" class="step">
+                    <div class="mb-6">
+                        <label for="vitalVolume" class="block text-gray-700 font-medium mb-2">Free Vitals Volume</label>
+                        <input type="number" id="vitalVolume" name="vitalVolume" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- Step 2: Service Breakdown -->
+                <div id="step-2" class="step hidden">
+                    <!-- Dental -->
+                    <div class="mb-6 border-b pb-4">
+                        <h4 class="text-lg font-semibold mb-3">Dental</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="dentalVolume" class="block text-gray-700 font-medium mb-2">Volume</label>
+                                <input type="number" id="dentalVolume" name="dentalVolume" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="dentalCash" class="block text-gray-700 font-medium mb-2">Cash</label>
+                                <input type="number" id="dentalCash" name="dentalCash" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="dentalUsd" class="block text-gray-700 font-medium mb-2">USD M/Aid</label>
+                                <input type="number" id="dentalUsd" name="dentalUsd" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="dentalZig" class="block text-gray-700 font-medium mb-2">ZiG M/Aid</label>
+                                <input type="number" id="dentalZig" name="dentalZig" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Medical -->
+                    <div class="mb-6">
+                        <h4 class="text-lg font-semibold mb-3">Medical</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="medicalVolume" class="block text-gray-700 font-medium mb-2">Volume</label>
+                                <input type="number" id="medicalVolume" name="medicalVolume" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="medicalCash" class="block text-gray-700 font-medium mb-2">Cash</label>
+                                <input type="number" id="medicalCash" name="medicalCash" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="medicalUsd" class="block text-gray-700 font-medium mb-2">USD M/Aid</label>
+                                <input type="number" id="medicalUsd" name="medicalUsd" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="medicalZig" class="block text-gray-700 font-medium mb-2">ZiG M/Aid</label>
+                                <input type="number" id="medicalZig" name="medicalZig" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Psychologist -->
+                <div id="step-3" class="step hidden">
+                    <div class="mb-6">
+                        <h4 class="text-lg font-semibold mb-3">Psychologist</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="psychVolume" class="block text-gray-700 font-medium mb-2">Volume</label>
+                                <input type="number" id="psychVolume" name="psychVolume" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="psychCash" class="block text-gray-700 font-medium mb-2">Cash</label>
+                                <input type="number" id="psychCash" name="psychCash" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="psychUsd" class="block text-gray-700 font-medium mb-2">USD M/Aid</label>
+                                <input type="number" id="psychUsd" name="psychUsd" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="psychZig" class="block text-gray-700 font-medium mb-2">ZiG M/Aid</label>
+                                <input type="number" id="psychZig" name="psychZig" value="0" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stepper Buttons -->
+                <div class="flex justify-between mt-8">
+                    <button type="button" id="prev-btn" class="bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-xl hover:bg-gray-300 transition duration-300 hidden">
+                        Back
+                    </button>
+                    <button type="button" id="next-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition duration-300">
+                        Next
+                    </button>
+                    <button type="submit" id="save-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition duration-300 hidden">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Floating Notification -->
+    <div id="notification-bar" class="notification">
+        Report copied to clipboard!
+    </div>
+
+    <script>
+        const openModalBtn = document.getElementById('open-modal-btn');
+        const dataModal = document.getElementById('data-modal');
+        const dataForm = document.getElementById('data-form');
+        const steps = document.querySelectorAll('.step');
+        const stepIndicators = document.querySelectorAll('[id^="step-"][id$="-indicator"]');
+        const stepTitle = document.getElementById('step-title');
+        const shareToPhoneBtn = document.getElementById('share-to-phone-btn');
+        const shareToGroupBtn = document.getElementById('share-to-group-btn');
+        const whatsappPhoneNumberInput = document.getElementById('whatsapp-phone-number');
+        const whatsappGroupLinkInput = document.getElementById('whatsapp-group-link');
+        const notificationBar = document.getElementById('notification-bar');
+        const cardContainer = document.getElementById('card-container');
+        const cards = cardContainer.children;
+
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const saveBtn = document.getElementById('save-btn');
+
+        let currentStep = 0;
+        let currentCardIndex = 0;
+        const stepTitles = ["Free Vitals", "Service Breakdown", "Psychologist"];
+
+        // Function to show the modal
+        openModalBtn.addEventListener('click', () => {
+            dataModal.style.display = 'flex';
+            currentStep = 0; // Reset to the first step
+            updateStepper();
+        });
+
+        // Function to update the stepper UI
+        function updateStepper() {
+            // Hide all steps and remove active classes from indicators
+            steps.forEach(step => step.classList.add('hidden'));
+            stepIndicators.forEach(indicator => {
+                indicator.classList.remove('bg-blue-600', 'text-white');
+                indicator.classList.add('bg-gray-300', 'text-gray-500');
+            });
+            
+            // Show the current step and set its indicator to active
+            steps[currentStep].classList.remove('hidden');
+            stepIndicators[currentStep].classList.remove('bg-gray-300', 'text-gray-500');
+            stepIndicators[currentStep].classList.add('bg-blue-600', 'text-white');
+
+            // Update button visibility based on the current step
+            prevBtn.classList.toggle('hidden', currentStep === 0);
+            nextBtn.classList.toggle('hidden', currentStep === steps.length - 1);
+            saveBtn.classList.toggle('hidden', currentStep !== steps.length - 1);
+            
+            // Update step title
+            stepTitle.textContent = stepTitles[currentStep];
+        }
+
+        // Event listeners for navigation buttons
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                updateStepper();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                updateStepper();
+            }
+        });
+
+        // Close the modal when clicking outside of it
+        window.addEventListener('click', (event) => {
+            if (event.target === dataModal) {
+                dataModal.style.display = 'none';
+            }
+        });
+        
+        // Handle form submission
+        dataForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            // Get all form data
+            const formData = new FormData(dataForm);
+            const data = Object.fromEntries(formData.entries());
+
+            // Update the display with new values
+            document.getElementById('vital-volume').textContent = data.vitalVolume;
+            
+            document.getElementById('dental-volume').textContent = data.dentalVolume;
+            document.getElementById('dental-cash').textContent = '$' + data.dentalCash;
+            document.getElementById('dental-usd').textContent = '$' + data.dentalUsd;
+            document.getElementById('dental-zig').textContent = 'ZWG ' + data.dentalZig;
+
+            document.getElementById('medical-volume').textContent = data.medicalVolume;
+            document.getElementById('medical-cash').textContent = '$' + data.medicalCash;
+            document.getElementById('medical-usd').textContent = '$' + data.medicalUsd;
+            document.getElementById('medical-zig').textContent = 'ZWG ' + data.medicalZig;
+            
+            document.getElementById('psych-volume').textContent = data.psychVolume;
+            document.getElementById('psych-cash').textContent = '$' + data.psychCash;
+            document.getElementById('psych-usd').textContent = '$' + data.psychUsd;
+            document.getElementById('psych-zig').textContent = 'ZWG ' + data.psychZig;
+
+            // Calculate and update totals
+            const totalUSDCash = parseFloat(data.dentalCash) + parseFloat(data.medicalCash) + parseFloat(data.psychCash);
+            const totalUSDMaid = parseFloat(data.dentalUsd) + parseFloat(data.medicalUsd) + parseFloat(data.psychUsd);
+            const totalZigMaid = parseFloat(data.dentalZig) + parseFloat(data.medicalZig) + parseFloat(data.psychZig);
+
+            document.getElementById('total-usd-cash').textContent = '$' + totalUSDCash.toFixed(2);
+            document.getElementById('total-usd-maid').textContent = '$' + totalUSDMaid.toFixed(2);
+            document.getElementById('total-zig-maid').textContent = 'ZWG ' + totalZigMaid.toFixed(2);
+
+            // Hide the modal after saving
+            dataModal.style.display = 'none';
+        });
+
+        function getReportMessage() {
+            const vitalVolume = document.getElementById('vital-volume').textContent;
+            const dentalVolume = document.getElementById('dental-volume').textContent;
+            const dentalCash = document.getElementById('dental-cash').textContent;
+            const dentalUsd = document.getElementById('dental-usd').textContent;
+            const dentalZig = document.getElementById('dental-zig').textContent;
+            const medicalVolume = document.getElementById('medical-volume').textContent;
+            const medicalCash = document.getElementById('medical-cash').textContent;
+            const medicalUsd = document.getElementById('medical-usd').textContent;
+            const medicalZig = document.getElementById('medical-zig').textContent;
+            const psychVolume = document.getElementById('psych-volume').textContent;
+            const psychCash = document.getElementById('psych-cash').textContent;
+            const psychUsd = document.getElementById('psych-usd').textContent;
+            const psychZig = document.getElementById('psych-zig').textContent;
+            const totalUSDCash = document.getElementById('total-usd-cash').textContent;
+            const totalUSDMaid = document.getElementById('total-usd-maid').textContent;
+            const totalZigMaid = document.getElementById('total-zig-maid').textContent;
+
+            return `Kundai Santa Report - 25/09/25\n\n` +
+                   `*Free Vitals*\nVolume: ${vitalVolume}\n\n` +
+                   `*Service Breakdown*\n` +
+                   `- *Dental*\nVolume: ${dentalVolume}\nCash: ${dentalCash}\nUSD M/Aid: ${dentalUsd}\nZiG M/Aid: ${dentalZig}\n\n` +
+                   `- *Medical*\nVolume: ${medicalVolume}\nCash: ${medicalCash}\nUSD M/Aid: ${medicalUsd}\nZiG M/Aid: ${medicalZig}\n\n` +
+                   `- *Psychologist*\nVolume: ${psychVolume}\nCash: ${psychCash}\nUSD M/Aid: ${psychUsd}\nZiG M/Aid: ${psychZig}\n\n` +
+                   `*Totals*\n` +
+                   `Total USD Cash: ${totalUSDCash}\n` +
+                   `Total USD M/Aid: ${totalUSDMaid}\n` +
+                   `Total M/Aid ZiG: ${totalZigMaid}`;
+        }
+
+        // Handle "Share to Phone"
+        shareToPhoneBtn.addEventListener('click', () => {
+            const message = getReportMessage();
+            const phoneNumber = whatsappPhoneNumberInput.value;
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+            window.open(whatsappUrl, '_blank');
+        });
+
+        // Handle "Copy & Share to Group"
+        shareToGroupBtn.addEventListener('click', () => {
+            const message = getReportMessage();
+            
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = message;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            notificationBar.style.opacity = '1';
+            setTimeout(() => {
+                notificationBar.style.opacity = '0';
+            }, 3000);
+
+            const groupLink = whatsappGroupLinkInput.value;
+            if (groupLink) {
+                window.open(groupLink, '_blank');
+            }
+        });
+
+        // Add 'is-active' class to the first card on load
+        if (cards.length > 0) {
+            cards[0].classList.add('is-active');
+        }
+
+        // Automatic horizontal scrolling
+        setInterval(() => {
+            // Remove the active class from the current card
+            cards[currentCardIndex].classList.remove('is-active');
+
+            // Move to the next card index, or loop back to the start
+            currentCardIndex = (currentCardIndex + 1) % cards.length;
+            
+            // Add the active class to the new card
+            cards[currentCardIndex].classList.add('is-active');
+
+            // Get the width of a single card, including the gap (24px or 1.5rem)
+            const cardWidth = cards[currentCardIndex].offsetWidth + 24;
+            
+            // Calculate the target scroll position and scroll to the next card
+            cardContainer.scrollTo({
+                left: cardWidth * currentCardIndex,
+                behavior: 'smooth'
+            });
+            
+        }, 7000); // 7000 milliseconds = 7 seconds
+    </script>
+
+</body>
+</html>

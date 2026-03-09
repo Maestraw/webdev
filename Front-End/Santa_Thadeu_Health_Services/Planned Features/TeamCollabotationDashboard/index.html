@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santa Thadeu Big Picture Mapping Dashboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter Font -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #eef1f6; /* Cleaner, light background */
+        }
+        .status-button {
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            border-radius: 6px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            line-height: 1;
+        }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Main Application Container -->
+    <div id="app" class="flex flex-col lg:flex-row min-h-screen">
+        
+        <!-- Sidebar / Activity Feed -->
+        <div class="lg:w-1/4 w-full bg-white border-r border-gray-100 p-6 shadow-2xl lg:shadow-md order-2 lg:order-1">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 text-indigo-600"><path d="M12 2l10 5.5v11L12 22 2 17.5v-11L12 2z"/><polyline points="12 2 12 12 2 17.5"/></svg>
+               Santa Thadeu Big Picture Mapping
+            </h2>
+
+            <p id="auth-status" class="text-sm text-gray-600 mb-4 rounded-lg bg-gray-100 p-2 border border-gray-200">Status: Mock API Mode</p>
+            <p id="user-id-display" class="text-xs text-gray-500 mb-6"></p>
+
+            <!-- Announcement Post Form -->
+            <div class="mb-6 p-4 border border-indigo-300 bg-indigo-50 rounded-xl shadow-inner">
+                <h3 class="font-semibold text-indigo-700 mb-2">Post Update</h3>
+                <textarea id="announcement-input" class="w-full p-2 border border-indigo-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Share an announcement or a task (e.g., Task: Complete report)..."></textarea>
+                <div class="flex justify-end mt-2">
+                    <button onclick="postAnnouncement()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-1.5 px-4 rounded-lg transition duration-150 shadow-md hover:shadow-lg">
+                        Post to Team
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="mb-4 flex space-x-2 border-b pb-2">
+                <button onclick="window.filterActivityFeed('all')" id="filter-all" class="filter-button text-sm px-3 py-1 rounded-full shadow-md transition duration-150">All Time</button>
+                <button onclick="window.filterActivityFeed('week')" id="filter-week" class="filter-button text-sm px-3 py-1 rounded-full transition duration-150">This Week</button>
+                <button onclick="window.filterActivityFeed('month')" id="filter-month" class="filter-button text-sm px-3 py-1 rounded-full transition duration-150">This Month</button>
+            </div>
+
+            <!-- Feed Content -->
+            <div id="activity-feed" class="space-y-4 max-h-[60vh] lg:max-h-[75vh] overflow-y-auto pr-2">
+                <!-- Feed items will be loaded here -->
+                <div class="text-center text-gray-400 p-4">Loading feed...</div>
+            </div>
+        </div>
+        
+        <!-- Main Content Area / Progress Board (Based on Image) -->
+        <div class="lg:w-3/4 w-full p-6 lg:p-10 order-1 lg:order-2">
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Key Objectives & Progress</h1>
+            <p class="text-gray-500 mb-8">Track what's critical and justify status changes to maintain team clarity.</p>
+
+            <div id="progress-board" class="space-y-10">
+                <!-- Data will be rendered here -->
+                <div class="text-center text-gray-500 p-8 border-2 border-dashed border-gray-300 rounded-xl">
+                    Progress board will load here.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multipurpose Application Modal -->
+    <div id="app-modal" class="fixed inset-0 hidden modal-overlay flex items-center justify-center">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg mx-4 transform transition-all duration-300 scale-100">
+            
+            <!-- Modal Content Wrapper for switching views -->
+            <div id="modal-content-wrapper">
+                
+                <!-- 1. Status Update Justification Form View -->
+                <div id="modal-form-view" class="hidden">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Status Update Justification</h3>
+                    <p class="text-sm text-gray-600 mb-4">You are changing the status for <span id="modal-title-form" class="font-semibold text-indigo-700"></span>.</p>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label for="modal-feedback-input" class="block text-sm font-medium text-gray-700 mb-1">Feedback/Rationale (Explain the reason for this change)</label>
+                            <textarea id="modal-feedback-input" rows="3" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Summarize the why: what was achieved, what went wrong, or what changed?"></textarea>
+                        </div>
+                        <div>
+                            <label for="modal-actions-input" class="block text-sm font-medium text-gray-700 mb-1">Action Points (What's next?)</label>
+                            <textarea id="modal-actions-input" rows="3" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="List next steps and responsible owners..."></textarea>
+                        </div>
+                    </div>
+
+                    <p id="modal-error-message" class="text-red-500 text-sm mt-3 hidden">Please fill out both fields before confirming the update.</p>
+
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button onclick="window.closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-150">
+                            Cancel
+                        </button>
+                        <button onclick="window.confirmUpdateFromModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-150 shadow-md">
+                            Confirm Status Change
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Objective Detail View (Activity History) -->
+                <div id="modal-detail-view" class="hidden">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h3 class="text-xl font-bold text-gray-800">Activity History</h3>
+                        <button onclick="window.closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                    
+                    <div id="modal-detail-content" class="max-h-[70vh] overflow-y-auto space-y-3 pr-2">
+                        <!-- History items will be dynamically inserted here -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- End Multipurpose Application Modal -->
+
+    <!-- Local App Script -->
+    <script>
+        // --- Global State & Mock Data ---
+        let currentGoals;
+        let activityFeedData = [];
+        let modalContext = null; // Stores context for the modal update
+        const currentUserId = 'MockUser-A1B2C3D4'; // Static mock user ID
+        let currentFilter = 'all'; // Default filter state
+
+        // Initial goals structure (kept for mock data initialization)
+        const initialGoals = {
+            'THEMATIC_GOAL': {
+                title: "THEMATIC GOAL",
+                color: "text-purple-700 border-purple-300",
+                objectives: [
+                    { id: 't1', name: "Break reliance on medical aid societies", status: "ON TRACK" }
+                ]
+            },
+            'DEFINING_OBJECTIVES': {
+                title: "Defining Objectives",
+                color: "text-green-700 border-green-300",
+                objectives: [
+                    { id: 'd1', name: "Launch funding product", status: "ON TRACK" },
+                    { id: 'd2', name: "Do cash based outreaches", status: "WATCH IT" },
+                    { id: 'd3', name: "Launch Optometry", status: "OFF TRACK" }, // Start OFF TRACK for testing
+                    { id: 'd4', name: "Open branches in low medical aid areas", status: "WATCH IT" },
+                    { id: 'd5', name: "Launch pharmacy/dispensary service", status: "OFF TRACK" },
+                    { id: 'd6', name: "Do promotions & specials at branches", status: "ON TRACK" },
+                    { id: 'd7', name: "Train people & standardise operations", status: "ON TRACK" },
+                ]
+            },
+            'STANDARD_OBJECTIVES': {
+                title: "Standard Operating Objectives",
+                color: "text-blue-700 border-blue-300",
+                objectives: [
+                    { id: 's1', name: "Customer satisfaction", status: "ON TRACK" },
+                    { id: 's2', name: "Customer retention", status: "WATCH IT" },
+                    { id: 's3', name: "Financial health", status: "ON TRACK" },
+                    { id: 's4', name: "Customer engagement", status: "OFF TRACK" },
+                    { id: 's5', name: "Stability of technology systems", status: "WATCH IT" },
+                    { id: 's6', name: "Employee morale", status: "ON TRACK" },
+                    { id: 's7', name: "Growth in customer numbers & visits", status: "ON TRACK" },
+                ]
+            }
+        };
+
+        const STATUS_COLORS = {
+            'ON TRACK': 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200',
+            'WATCH IT': 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200',
+            'OFF TRACK': 'bg-red-100 text-red-700 border-red-300 hover:bg-red-200',
+            'default': 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'
+        };
+
+        // --- Date Helpers for Filtering ---
+
+        /** Calculates the start of the current week (Monday, 00:00:00). */
+        function getStartOfWeek() {
+            const d = new Date();
+            const day = d.getDay(); // 0 is Sunday, 1 is Monday...
+            // Adjust to Monday (1). If today is Sunday (0), use -6 to get last Monday. Otherwise, use 1.
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
+            const startOfWeek = new Date(d.setDate(diff));
+            startOfWeek.setHours(0, 0, 0, 0);
+            return startOfWeek;
+        }
+
+        /** Calculates the start of the current month (1st day, 00:00:00). */
+        function getStartOfMonth() {
+            const d = new Date();
+            const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+            startOfMonth.setHours(0, 0, 0, 0);
+            return startOfMonth;
+        }
+
+        // --- Core Application Logic ---
+
+        function renderProgressBoard(goals) {
+            const board = document.getElementById('progress-board');
+            let html = '';
+
+            for (const key in goals) {
+                const group = goals[key];
+                
+                // 1. Group Header (e.g., THEMATIC GOAL)
+                html += `
+                    <div class="mb-4">
+                        <h3 class="text-xl font-bold ${group.color} border-b-2 ${group.color.replace('text-', 'border-')} pb-1">${group.title}</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                `;
+
+                // 2. Objectives within the group
+                group.objectives.forEach(obj => {
+                    const currentStatus = obj.status || 'ON TRACK';
+                    // Make the card itself clickable to show details
+                    html += `
+                        <div 
+                            onclick="window.showObjectiveDetails('${obj.id}', '${obj.name}')"
+                            class="bg-white p-5 rounded-xl shadow-lg hover:shadow-xl transition-shadow border-t-4 cursor-pointer hover:bg-gray-50 ${STATUS_COLORS[currentStatus].replace('bg-', 'border-').replace('-100', '-600').split(' ')[0]}"
+                        >
+                            <p class="font-semibold text-gray-800 mb-3">${obj.name}</p>
+                            <!-- Status buttons are kept inside for quick status change -->
+                            <div class="flex space-x-2" onclick="event.stopPropagation()">
+                                ${['ON TRACK', 'WATCH IT', 'OFF TRACK'].map(status => `
+                                    <button 
+                                        onclick="window.updateObjectiveStatus('${obj.id}', '${status}', '${key}')"
+                                        class="status-button ${status === currentStatus ? STATUS_COLORS[status] : STATUS_COLORS['default']}"
+                                    >
+                                        ${status}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            }
+
+            board.innerHTML = html;
+        }
+        
+        // --- Modal Control Functions ---
+        window.closeModal = () => {
+             document.getElementById('app-modal').classList.add('hidden');
+             document.getElementById('modal-error-message').classList.add('hidden');
+             modalContext = null;
+        };
+
+        window.confirmUpdateFromModal = () => {
+            if (!modalContext) return;
+
+            const feedback = document.getElementById('modal-feedback-input').value.trim();
+            const actions = document.getElementById('modal-actions-input').value.trim();
+            const errorMessage = document.getElementById('modal-error-message');
+
+            if (!feedback || !actions) {
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+            errorMessage.classList.add('hidden');
+
+            // Process the update with the new feedback and actions
+            window.processStatusUpdate(
+                modalContext.objectiveId, 
+                modalContext.newStatus, 
+                modalContext.groupKey, 
+                feedback, 
+                actions
+            );
+            window.closeModal();
+        };
+
+        // --- Status Update Logic (Handles Pre-check) ---
+
+        /**
+         * Simulates an API call to update the objective status.
+         * Checks if the status is changing, and if so, shows the mandatory justification modal.
+         */
+        window.updateObjectiveStatus = (objectiveId, newStatus, groupKey) => {
+            // 1. Find the objective in the local state
+            const objectives = currentGoals[groupKey].objectives;
+            const objective = objectives.find(obj => obj.id === objectiveId);
+            const currentStatus = objective.status;
+
+            // 2. If the user clicks the status the objective is already in, do nothing.
+            if (currentStatus === newStatus) {
+                console.log(`Status for ${objective.name} is already ${newStatus}. No change needed.`);
+                return;
+            }
+
+            // 3. MANDATORY: Store context and show modal (FORM VIEW) for ANY status change.
+            modalContext = { 
+                objectiveId, 
+                newStatus, 
+                groupKey, 
+                objectiveName: objective.name,
+                previousStatus: currentStatus // Store previous status for better logging later
+            };
+            
+            // Update modal title to be generic for any change
+            document.getElementById('modal-title-form').textContent = objective.name;
+            
+            // Clear inputs and error message
+            document.getElementById('modal-feedback-input').value = '';
+            document.getElementById('modal-actions-input').value = '';
+            document.getElementById('modal-error-message').classList.add('hidden');
+            
+            // Ensure form view is shown and detail view is hidden
+            document.getElementById('modal-detail-view').classList.add('hidden');
+            document.getElementById('modal-form-view').classList.remove('hidden');
+            document.getElementById('app-modal').classList.remove('hidden');
+        };
+        
+        /**
+         * Finalizes the status update, updates local state, and posts to feed.
+         */
+        window.processStatusUpdate = (objectiveId, newStatus, groupKey, feedback, actions) => {
+            const objectives = currentGoals[groupKey].objectives;
+            const objectiveIndex = objectives.findIndex(obj => obj.id === objectiveId);
+            
+            if (objectiveIndex !== -1) {
+                const objectiveName = objectives[objectiveIndex].name;
+                const previousStatus = objectives[objectiveIndex].status; // Get status *before* update
+
+                // --- MOCK API WRITE (Update local state) ---
+                objectives[objectiveIndex].status = newStatus;
+                console.log(`[Mock API] Updated status for "${objectiveName}" from ${previousStatus} to ${newStatus}`);
+                
+                // Re-render the board
+                renderProgressBoard(currentGoals);
+                
+                // Simulate posting a structured update to the feed
+                let content = `**"${objectiveName}"** status changed from **${previousStatus}** to **${newStatus}**.
+                <span class="block mt-2 text-xs font-semibold text-gray-800">Rationale/Feedback:</span> ${feedback}
+                <span class="block mt-2 text-xs font-semibold text-gray-800">Action Points:</span> ${actions}`;
+
+                activityFeedData.unshift({
+                    userId: currentUserId,
+                    objectiveId: objectiveId, // <<< Storing the Objective ID for filtering
+                    content: content,
+                    type: 'status_update',
+                    timestamp: new Date()
+                });
+                
+                // Re-filter and re-render the feed to show the new update
+                window.filterActivityFeed(currentFilter);
+            }
+        };
+
+        /**
+         * Renders the activity feed items.
+         */
+        function renderActivityFeed(feedItems, targetElementId = 'activity-feed') {
+            const feedContainer = document.getElementById(targetElementId);
+            if (feedItems.length === 0) {
+                feedContainer.innerHTML = `<p class="text-center text-gray-400 p-4 ${targetElementId === 'modal-detail-content' ? 'bg-gray-50 rounded-lg' : ''}">No recent activity found for this period.</p>`;
+                return;
+            }
+
+            feedContainer.innerHTML = feedItems.map(item => {
+                const timestamp = item.timestamp ? item.timestamp.toLocaleString() : 'Just now';
+                const userTag = item.userId.substring(0, 8);
+                
+                return `
+                    <div class="bg-white p-4 rounded-xl shadow-md border-t-2 border-indigo-200">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs font-bold ${item.type === 'task' ? 'text-red-600 bg-red-100' : (item.type === 'status_update' ? 'text-green-600 bg-green-100' : 'text-indigo-600 bg-indigo-100')} px-2 py-0.5 rounded-full">
+                                ${item.type === 'task' ? 'TASK' : (item.type === 'status_update' ? 'PROGRESS UPDATE' : 'ANNOUNCEMENT')}
+                            </span>
+                            <span class="text-xs text-gray-500">${timestamp}</span>
+                        </div>
+                        <p class="text-gray-700 text-sm break-words">${item.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
+                        <p class="text-xs text-gray-400 mt-2">Posted by: ${userTag}...</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /**
+         * Logic to filter and re-render the activity feed based on a time range.
+         */
+        window.filterActivityFeed = (range) => {
+            currentFilter = range;
+            let cutOffDate = null;
+
+            if (range === 'week') {
+                cutOffDate = getStartOfWeek();
+            } else if (range === 'month') {
+                cutOffDate = getStartOfMonth();
+            }
+
+            let filteredData = activityFeedData;
+
+            if (cutOffDate) {
+                filteredData = activityFeedData.filter(item => {
+                    if (!(item.timestamp instanceof Date)) {
+                        // Ensure timestamp is a Date object, convert if needed (mock data ensures this usually)
+                        item.timestamp = new Date(item.timestamp);
+                    }
+                    if (!item.timestamp) return false;
+                    
+                    // Filter: only include items that happened ON or AFTER the cutoff date
+                    return item.timestamp >= cutOffDate;
+                }).sort((a, b) => b.timestamp - a.timestamp); // Keep sorted by newest first
+            } else {
+                 filteredData.sort((a, b) => b.timestamp - a.timestamp);
+            }
+
+            renderActivityFeed(filteredData);
+            updateFilterButtons(range);
+        };
+        
+        /**
+         * Updates the visual styling of the filter buttons.
+         */
+        function updateFilterButtons(activeRange) {
+            document.querySelectorAll('.filter-button').forEach(button => {
+                button.classList.remove('bg-indigo-600', 'text-white', 'shadow-md');
+                button.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            });
+
+            const activeId = `filter-${activeRange}`;
+            const activeButton = document.getElementById(activeId);
+            if (activeButton) {
+                activeButton.classList.add('bg-indigo-600', 'text-white', 'shadow-md');
+                activeButton.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            }
+        }
+
+
+        /**
+         * Shows the objective's activity history in the modal.
+         */
+        window.showObjectiveDetails = (objectiveId, objectiveName) => {
+            // 1. Filter relevant feed items by objectiveId
+            const relevantUpdates = activityFeedData.filter(item => item.objectiveId === objectiveId)
+                                                    .sort((a, b) => b.timestamp - a.timestamp); // Sort by newest first
+
+            // 2. Update the modal title dynamically
+            const detailView = document.getElementById('modal-detail-view');
+            const titleElement = detailView.querySelector('h3');
+            titleElement.textContent = `Activity History: ${objectiveName}`;
+
+            // 3. Render the filtered items into the modal content area
+            renderActivityFeed(relevantUpdates, 'modal-detail-content');
+
+            // 4. Show the Detail View and hide the Form View
+            document.getElementById('modal-form-view').classList.add('hidden');
+            document.getElementById('modal-detail-view').classList.remove('hidden');
+            document.getElementById('app-modal').classList.remove('hidden');
+        };
+
+        /**
+         * Simulates an API call to add a new announcement/task.
+         */
+        window.postAnnouncement = () => {
+            const input = document.getElementById('announcement-input');
+            const content = input.value.trim();
+
+            if (!content) {
+                return;
+            }
+
+            const isTask = content.toLowerCase().startsWith('task:');
+            const type = isTask ? 'task' : 'announcement';
+            
+            // --- MOCK API WRITE ---
+            activityFeedData.unshift({
+                userId: currentUserId,
+                objectiveId: null, // General posts do not belong to a specific objective
+                content: content,
+                type: type,
+                timestamp: new Date()
+            });
+
+            console.log(`[Mock API] Posted new ${type}`);
+            input.value = ''; // Clear input on success
+            
+            // Re-filter and re-render the feed to show the new update
+            window.filterActivityFeed(currentFilter);
+        };
+        
+        /**
+         * Initialize the entire application with mock data.
+         */
+        function initLocalApp() {
+            // Initialize goals by deep cloning the initial structure to allow modification
+            currentGoals = JSON.parse(JSON.stringify(initialGoals));
+
+            // ADD INITIAL ACTIVITY DATA FOR TESTING DETAIL VIEW AND FORM FLOW
+            activityFeedData.push({
+                userId: 'MockUser-Alpha',
+                objectiveId: 'd3', // Launch Optometry (Initial status: OFF TRACK)
+                content: `**"Launch Optometry"** is blocked by licensing. Need legal review.`,
+                type: 'status_update',
+                timestamp: new Date(Date.now() - 3600000 * 24 * 1) // 1 day ago
+            });
+            activityFeedData.push({
+                userId: 'MockUser-Bravo',
+                objectiveId: 'd5', // Launch pharmacy/dispensary service (Initial status: OFF TRACK)
+                content: `**"Launch pharmacy/dispensary service"** has funding issues. Awaiting CFO approval.`,
+                type: 'status_update',
+                timestamp: new Date(Date.now() - 3600000 * 2) // 2 hours ago
+            });
+            activityFeedData.push({
+                userId: currentUserId,
+                objectiveId: null, // General post
+                content: `Team sync meeting scheduled for tomorrow at 10 AM.`,
+                type: 'announcement',
+                timestamp: new Date(Date.now() - 3600000 * 0.5) // 30 mins ago
+            });
+            activityFeedData.push({
+                userId: 'MockUser-Charlie',
+                objectiveId: 's4', // Customer engagement
+                content: `**"Customer engagement"** went OFF TRACK due to low survey response rates.`,
+                type: 'status_update',
+                timestamp: new Date(Date.now() - 3600000 * 24 * 30) // ~30 days ago (Good for testing "This Month" filter)
+            });
+            activityFeedData.push({
+                userId: 'MockUser-Delta',
+                objectiveId: 't1', // Thematic Goal
+                content: `**"Break reliance..."** achieved its Q1 milestone.`,
+                type: 'announcement',
+                timestamp: new Date(Date.now() - 3600000 * 24 * 90) // ~90 days ago (Should be filtered out by 'This Month' and 'This Week')
+            });
+            
+            // Display mock user info
+            document.getElementById('auth-status').textContent = `Status: Logged in (Mock API)`;
+            document.getElementById('user-id-display').textContent = `Your ID (Mock): ${currentUserId}`;
+
+            // Initial render of the boards
+            renderProgressBoard(currentGoals);
+            
+            // Initial render of feed, filtered to 'All Time'
+            window.filterActivityFeed('all');
+        }
+        
+        // Start the local application
+        initLocalApp();
+    </script>
+
+</body>
+</html>

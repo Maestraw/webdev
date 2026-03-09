@@ -1,0 +1,27 @@
+Gmail api is a restful api 
+>allows to read and send emails.
+
+Terms used in gmail api 
+Message
+Has the sender,receipients,subject and the body.
+>Once message is created it cannot be editted or changed.
+Represented by the message resource.
+
+Thread 
+>A collection of related messages forming a conversation.
+
+Label.
+A mechanism for organizing messages and threads.
+>System labels
+    -INBOX
+    -TRASH
+    -SPAM
+
+>user labels
+    -Represented by the label resource.
+
+>Draft
+    -Unsent message
+    -A message contained within draft cannot be modified but can be replaced
+    -uses the draft resource
+

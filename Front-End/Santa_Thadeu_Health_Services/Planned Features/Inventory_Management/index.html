@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinic Stock - Multi-Branch Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        .nav-link {
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .active-link {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+            background-color: #eff6ff;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .status-pill {
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-expired { background-color: #fee2e2; color: #b91c1c; }
+        .status-warning { background-color: #fff7ed; color: #c2410c; }
+        .status-low { background-color: #fef2f2; color: #ef4444; }
+        .status-ok { background-color: #f0fdf4; color: #22c55e; }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .branch-tag {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white border-b border-slate-200 z-30 shrink-0">
+        <div class="max-w-[1600px] mx-auto px-4 lg:px-6">
+            <div class="h-16 flex items-center justify-between border-b border-slate-100">
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-indigo-600 p-2 rounded-lg text-white">
+                            <i class="fas fa-hospital text-xl"></i>
+                        </div>
+                        <h1 class="font-bold text-xl tracking-tight text-slate-800">Clinic<span class="text-indigo-600">Pro</span></h1>
+                    </div>
+                    
+                    <!-- Branch Selector -->
+                    <div class="relative group">
+                        <select id="branchSelector" onchange="switchBranch(this.value)" class="appearance-none bg-slate-100 border-none rounded-full px-4 py-1.5 pr-8 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                            <option value="All">All Branches (Global)</option>
+                            <option value="Sentosa">Sentosa Clinic</option>
+                            <option value="Westside">Westside Branch</option>
+                            <option value="East-End">East-End Center</option>
+                            <option value="South-Gate">South-Gate Medical</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <div class="hidden md:flex items-center gap-4 flex-1 max-w-lg mx-8">
+                    <div class="relative w-full">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="globalSearch" oninput="renderTable()" placeholder="Search stock across branch..." class="w-full pl-10 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="relative p-2 text-slate-500">
+                        <i class="fas fa-bell"></i>
+                        <span id="alert-dot" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                    </div>
+                    <div class="h-8 w-[1px] bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3 pl-2">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-xs font-semibold text-slate-800">Network Admin</p>
+                            <p id="activeBranchLabel" class="text-[10px] text-indigo-500 uppercase font-bold tracking-tighter">Global View</p>
+                        </div>
+                        <div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">NA</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="h-12 flex items-center justify-between">
+                <nav class="flex h-full items-center overflow-x-auto no-scrollbar">
+                    <a href="#" onclick="switchDept('All')" id="nav-all" class="nav-link active-link h-full flex items-center gap-2 px-4 text-sm font-medium whitespace-nowrap">
+                        <i class="fas fa-th-large text-xs"></i> All Units
+                    </a>
+                    <div class="h-6 w-[1px] bg-slate-200 mx-2"></div>
+                    <a href="#" onclick="switchDept('Medical')" class="nav-link h-full flex items-center gap-2 px-4 text-sm font-medium text-slate-600 dept-nav whitespace-nowrap" data-dept="Medical">Medical</a>
+                    <a href="#" onclick="switchDept('Dental')" class="nav-link h-full flex items-center gap-2 px-4 text-sm font-medium text-slate-600 dept-nav whitespace-nowrap" data-dept="Dental">Dental</a>
+                    <a href="#" onclick="switchDept('Psychology')" class="nav-link h-full flex items-center gap-2 px-4 text-sm font-medium text-slate-600 dept-nav whitespace-nowrap" data-dept="Psychology">Psychology</a>
+                    <a href="#" onclick="switchDept('Optometry')" class="nav-link h-full flex items-center gap-2 px-4 text-sm font-medium text-slate-600 dept-nav whitespace-nowrap" data-dept="Optometry">Optometry</a>
+                </nav>
+                <button onclick="openModal('itemModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors whitespace-nowrap">
+                    <i class="fas fa-plus"></i> New Stock Type
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-[1600px] mx-auto">
+            
+            <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800" id="view-title">Global Inventory</h2>
+                    <p class="text-slate-500 text-sm" id="view-subtitle">Consolidated view across all clinic branches.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="exportData()" class="bg-white text-slate-700 text-xs font-semibold px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 flex items-center gap-2 shadow-sm">
+                        <i class="fas fa-download"></i> Export Reports
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <section id="stats-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"></section>
+
+            <!-- Alerts -->
+            <div id="critical-alerts" class="space-y-3 mb-8 hidden"></div>
+
+            <!-- Inventory Table -->
+            <div class="glass-card rounded-2xl overflow-hidden shadow-sm">
+                <div class="px-6 py-4 border-b border-slate-100 bg-white/50 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800">Master Stock List</h3>
+                    <span id="rowCount" class="text-[10px] font-bold bg-slate-200 px-2 py-0.5 rounded text-slate-600 uppercase">0 Items</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider">
+                            <tr>
+                                <th class="px-6 py-4 font-bold">Branch & Item</th>
+                                <th class="px-6 py-4 font-bold">Unit</th>
+                                <th class="px-6 py-4 font-bold text-center">Batches</th>
+                                <th class="px-6 py-4 font-bold text-center">Remaining</th>
+                                <th class="px-6 py-4 font-bold">Condition</th>
+                                <th class="px-6 py-4 font-bold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-sm bg-white" id="inventoryBody">
+                            <!-- Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Manage Batches -->
+    <div id="batchModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800" id="batchModalTitle">Manage Batches</h3>
+                    <p class="text-[10px] text-indigo-500 font-bold uppercase" id="batchModalSubtitle">Branch | Item</p>
+                </div>
+                <button onclick="closeModal('batchModal')" class="text-slate-400 text-xl hover:text-slate-600 transition-colors">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1 bg-slate-50/50">
+                <div class="mb-6 p-5 bg-indigo-50 rounded-2xl border border-indigo-100">
+                    <h4 class="text-[10px] font-bold text-indigo-700 uppercase mb-3 flex items-center gap-2">
+                        <i class="fas fa-plus-circle"></i> Inbound Batch
+                    </h4>
+                    <form onsubmit="addNewBatch(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <input type="text" id="newBatchSku" placeholder="Batch Number" required class="px-3 py-2 text-sm rounded-lg border border-indigo-200 outline-none focus:ring-2 focus:ring-indigo-400">
+                        <input type="number" id="newBatchQty" placeholder="Initial Stock" required min="1" class="px-3 py-2 text-sm rounded-lg border border-indigo-200 outline-none focus:ring-2 focus:ring-indigo-400">
+                        <input type="date" id="newBatchExpiry" required class="px-3 py-2 text-sm rounded-lg border border-indigo-200 outline-none focus:ring-2 focus:ring-indigo-400">
+                        <button type="submit" class="sm:col-span-3 bg-indigo-600 text-white py-2.5 rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all shadow-md active:scale-95">
+                            Commit New Batch to Stock
+                        </button>
+                    </form>
+                </div>
+
+                <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-3">Live Batches</h4>
+                <div class="space-y-3" id="batchList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Use Quantity -->
+    <div id="useModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl w-full max-w-xs shadow-2xl p-8 text-center">
+            <h3 class="font-bold text-slate-800 mb-1">Record Usage</h3>
+            <p class="text-[10px] text-indigo-500 uppercase font-bold mb-6" id="useBatchName">Batch #</p>
+            <div class="flex items-center justify-center gap-6 mb-8">
+                <button onclick="adjustUseInput(-1)" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200">-</button>
+                <input type="number" id="useQtyInput" value="1" min="1" class="w-20 text-center text-3xl font-bold border-b-2 border-indigo-500 outline-none bg-transparent">
+                <button onclick="adjustUseInput(1)" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200">+</button>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeModal('useModal')" class="flex-1 py-3 text-xs font-bold text-slate-400">Cancel</button>
+                <button onclick="confirmUsage()" class="flex-[2] py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-lg">Confirm Deduct</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add New Item Type -->
+    <div id="itemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-slate-100 bg-slate-50">
+                <h3 class="text-xl font-bold text-slate-800">Add Stock Category</h3>
+            </div>
+            <form id="inventoryForm" class="p-6 space-y-4" onsubmit="handleNewItemSubmit(event)">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-wider">Assigned Branch</label>
+                        <select id="itemBranch" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
+                            <option value="Sentosa">Sentosa Clinic</option>
+                            <option value="Westside">Westside Branch</option>
+                            <option value="East-End">East-End Center</option>
+                            <option value="South-Gate">South-Gate Medical</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-wider">Stock Name</label>
+                        <input type="text" id="itemName" required placeholder="e.g. Surgical Gloves" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-wider">Unit</label>
+                        <select id="itemDept" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
+                            <option value="Medical">Medical</option>
+                            <option value="Dental">Dental</option>
+                            <option value="Psychology">Psychology</option>
+                            <option value="Optometry">Optometry</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-wider">Alert Threshold</label>
+                        <input type="number" id="itemMin" required min="1" placeholder="50" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
+                    </div>
+                </div>
+                <div class="pt-6 flex gap-3">
+                    <button type="button" onclick="closeModal('itemModal')" class="flex-1 py-3 text-sm font-bold text-slate-500">Cancel</button>
+                    <button type="submit" class="flex-[2] py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all">Create Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-6 py-3 rounded-xl shadow-2xl transition-all translate-y-20 opacity-0 pointer-events-none z-[100]">Action Successful</div>
+
+    <script>
+        // --- State Management ---
+        let currentBranch = 'All';
+        let currentDept = 'All';
+        let activeItemId = null;
+        let activeBatchIndex = null;
+
+        const branchStyles = {
+            'Sentosa': 'bg-blue-100 text-blue-700',
+            'Westside': 'bg-purple-100 text-purple-700',
+            'East-End': 'bg-orange-100 text-orange-700',
+            'South-Gate': 'bg-emerald-100 text-emerald-700'
+        };
+
+        let inventory = JSON.parse(localStorage.getItem('clinic_branch_stock_v1')) || [
+            { 
+                id: 1, name: "Amoxicillin 500mg", department: "Medical", branch: "Sentosa", min: 50,
+                batches: [{ sku: "DT-202A", initial: 100, consumed: 20, expiry: "2025-12-31" }]
+            },
+            { 
+                id: 2, name: "Dental Suture Kit", department: "Dental", branch: "Westside", min: 10,
+                batches: [{ sku: "WS-KIT-1", initial: 50, consumed: 45, expiry: "2024-11-15" }]
+            },
+            { 
+                id: 3, name: "Latex Gloves (M)", department: "Medical", branch: "South-Gate", min: 100,
+                batches: [{ sku: "SG-G001", initial: 500, consumed: 0, expiry: "2026-01-01" }]
+            }
+        ];
+
+        // --- Core Helpers ---
+        function getExpiryStatus(expiryDate) {
+            const exp = new Date(expiryDate);
+            const now = new Date();
+            const diff = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+            if (diff <= 0) return 'expired';
+            if (diff <= 90) return 'warning';
+            return 'safe';
+        }
+
+        function calculateItemTotals(item) {
+            return item.batches.reduce((acc, b) => {
+                acc.initial += b.initial;
+                acc.consumed += b.consumed;
+                acc.remaining += (b.initial - b.consumed);
+                return acc;
+            }, { initial: 0, consumed: 0, remaining: 0 });
+        }
+
+        function filterData() {
+            let data = inventory;
+            if (currentBranch !== 'All') data = data.filter(i => i.branch === currentBranch);
+            if (currentDept !== 'All') data = data.filter(i => i.department === currentDept);
+            return data;
+        }
+
+        // --- UI Rendering ---
+        function render() {
+            const data = filterData();
+            renderStats(data);
+            renderTable(data);
+            checkAlerts();
+            localStorage.setItem('clinic_branch_stock_v1', JSON.stringify(inventory));
+        }
+
+        function renderStats(data) {
+            let totalItems = data.length;
+            let unitsLeft = 0;
+            let expiredBatches = 0;
+            let lowItems = 0;
+
+            data.forEach(item => {
+                const totals = calculateItemTotals(item);
+                unitsLeft += totals.remaining;
+                if (totals.remaining <= item.min) lowItems++;
+                item.batches.forEach(b => {
+                    if (getExpiryStatus(b.expiry) === 'expired' && (b.initial - b.consumed) > 0) expiredBatches++;
+                });
+            });
+
+            const stats = [
+                { label: 'Managed Items', val: totalItems, icon: 'fa-list-check', color: 'indigo' },
+                { label: 'Current Units', val: unitsLeft, icon: 'fa-boxes-stacked', color: 'blue' },
+                { label: 'Low Threshold', val: lowItems, icon: 'fa-triangle-exclamation', color: 'amber' },
+                { label: 'Expired Items', val: expiredBatches, icon: 'fa-calendar-xmark', color: 'rose' }
+            ];
+
+            document.getElementById('stats-grid').innerHTML = stats.map(s => `
+                <div class="glass-card p-6 rounded-2xl shadow-sm border-b-4 border-${s.color}-500 transition-transform hover:-translate-y-1">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">${s.label}</span>
+                        <div class="w-8 h-8 bg-${s.color}-50 text-${s.color}-600 rounded-lg flex items-center justify-center text-sm">
+                            <i class="fas ${s.icon}"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-extrabold text-slate-800">${s.val}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderTable(data) {
+            const query = document.getElementById('globalSearch').value.toLowerCase();
+            let items = data;
+            
+            if (query) {
+                items = items.filter(i => 
+                    i.name.toLowerCase().includes(query) || 
+                    i.branch.toLowerCase().includes(query) ||
+                    i.batches.some(b => b.sku.toLowerCase().includes(query))
+                );
+            }
+
+            document.getElementById('rowCount').innerText = `${items.length} Items`;
+
+            document.getElementById('inventoryBody').innerHTML = items.map(item => {
+                const totals = calculateItemTotals(item);
+                const isLow = totals.remaining <= item.min;
+                const hasExpired = item.batches.some(b => getExpiryStatus(b.expiry) === 'expired' && (b.initial - b.consumed) > 0);
+                
+                let badgeClass = 'status-ok';
+                let statusText = 'IN STOCK';
+                if (hasExpired) { badgeClass = 'status-expired'; statusText = 'EXPIRED BATCH'; }
+                else if (isLow) { badgeClass = 'status-low'; statusText = 'REORDER SOON'; }
+
+                return `
+                    <tr class="hover:bg-slate-50 group transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <span class="branch-tag ${branchStyles[item.branch]}">${item.branch}</span>
+                                <div class="font-bold text-slate-800">${item.name}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-xs font-semibold text-slate-500">${item.department}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="px-2 py-1 bg-slate-100 rounded-md text-[10px] font-bold text-slate-500">${item.batches.length} BATCHES</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="font-bold ${isLow ? 'text-red-500' : 'text-slate-800'} text-base">${totals.remaining}</div>
+                            <div class="text-[8px] text-slate-400 font-bold uppercase">Min: ${item.min}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="status-pill ${badgeClass}">${statusText}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="openBatchModal(${item.id})" class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-md">
+                                    Manage Stock
+                                </button>
+                                <button onclick="deleteItemType(${item.id})" class="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-red-500 transition-colors">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // --- Branch & Dept Logic ---
+        function switchBranch(branch) {
+            currentBranch = branch;
+            const label = document.getElementById('activeBranchLabel');
+            label.innerText = branch === 'All' ? 'Global View' : `${branch} Clinic`;
+            document.getElementById('view-title').innerText = branch === 'All' ? 'Global Inventory' : `${branch} Branch`;
+            document.getElementById('view-subtitle').innerText = branch === 'All' ? 'Consolidated view across all branches.' : `Managing stock specifically for ${branch} location.`;
+            render();
+        }
+
+        function switchDept(dept) {
+            currentDept = dept;
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active-link'));
+            if (dept === 'All') document.getElementById('nav-all').classList.add('active-link');
+            else document.querySelector(`[data-dept="${dept}"]`).classList.add('active-link');
+            render();
+        }
+
+        // --- Batch Operations ---
+        function openBatchModal(id) {
+            activeItemId = id;
+            const item = inventory.find(i => i.id === id);
+            document.getElementById('batchModalSubtitle').innerText = `${item.branch} Branch | ${item.name}`;
+            renderBatchList();
+            openModal('batchModal');
+        }
+
+        function renderBatchList() {
+            const item = inventory.find(i => i.id === activeItemId);
+            const container = document.getElementById('batchList');
+            
+            container.innerHTML = item.batches.map((batch, index) => {
+                const remaining = batch.initial - batch.consumed;
+                const status = getExpiryStatus(batch.expiry);
+                const isGone = remaining <= 0;
+
+                return `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between shadow-sm ${isGone ? 'opacity-40 grayscale' : ''}">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-xs font-black ${status === 'expired' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'}">
+                                ${index + 1}
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-slate-800">Batch #${batch.sku}</div>
+                                <div class="text-[9px] font-bold ${status === 'expired' ? 'text-red-500' : 'text-slate-400'} uppercase">
+                                    ${status === 'expired' ? '!!! EXPIRED !!!' : `Expires: ${batch.expiry}`}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-sm font-black text-slate-700">${remaining} / ${batch.initial}</div>
+                            <div class="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">Units Left</div>
+                        </div>
+                        <div class="flex gap-2">
+                            ${!isGone ? `
+                                <button onclick="openUsageInput(${index})" class="w-9 h-9 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center shadow-sm">
+                                    <i class="fas fa-minus text-xs"></i>
+                                </button>
+                            ` : '<span class="text-[10px] text-slate-400 font-bold px-3">DEPLETED</span>'}
+                            <button onclick="removeBatch(${index})" class="w-9 h-9 text-slate-300 hover:text-red-500 transition-colors">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addNewBatch(e) {
+            e.preventDefault();
+            const sku = document.getElementById('newBatchSku').value;
+            const qty = parseInt(document.getElementById('newBatchQty').value);
+            const exp = document.getElementById('newBatchExpiry').value;
+            const item = inventory.find(i => i.id === activeItemId);
+
+            item.batches.unshift({ sku, initial: qty, consumed: 0, expiry: exp });
+            e.target.reset();
+            renderBatchList();
+            render();
+            showToast(`Added Batch ${sku}`);
+        }
+
+        // --- Usage Logic ---
+        function openUsageInput(idx) {
+            activeBatchIndex = idx;
+            const item = inventory.find(i => i.id === activeItemId);
+            const batch = item.batches[idx];
+            document.getElementById('useBatchName').innerText = `Batch #${batch.sku}`;
+            document.getElementById('useQtyInput').value = 1;
+            openModal('useModal');
+        }
+
+        function adjustUseInput(v) {
+            const inp = document.getElementById('useQtyInput');
+            inp.value = Math.max(1, parseInt(inp.value) + v);
+        }
+
+        function confirmUsage() {
+            const qty = parseInt(document.getElementById('useQtyInput').value);
+            const item = inventory.find(i => i.id === activeItemId);
+            const batch = item.batches[activeBatchIndex];
+            const left = batch.initial - batch.consumed;
+
+            if (qty > left) {
+                showToast("Error: Not enough in this batch!");
+                return;
+            }
+
+            batch.consumed += qty;
+            closeModal('useModal');
+            renderBatchList();
+            render();
+            showToast(`Deducted ${qty} units`);
+        }
+
+        // --- System Logic ---
+        function handleNewItemSubmit(e) {
+            e.preventDefault();
+            const newItem = {
+                id: Date.now(),
+                name: document.getElementById('itemName').value,
+                department: document.getElementById('itemDept').value,
+                branch: document.getElementById('itemBranch').value,
+                min: parseInt(document.getElementById('itemMin').value),
+                batches: []
+            };
+            inventory.unshift(newItem);
+            closeModal('itemModal');
+            render();
+            showToast(`Created ${newItem.name} for ${newItem.branch}`);
+        }
+
+        function deleteItemType(id) {
+            if (confirm("Permanently delete this item and all its history?")) {
+                inventory = inventory.filter(i => i.id !== id);
+                render();
+            }
+        }
+
+        function checkAlerts() {
+            const container = document.getElementById('critical-alerts');
+            const dot = document.getElementById('alert-dot');
+            let alerts = [];
+
+            inventory.forEach(item => {
+                const totals = calculateItemTotals(item);
+                if (totals.remaining <= item.min) alerts.push({ bg: 'amber', text: `[${item.branch}] ${item.name} stock level critical.` });
+                item.batches.forEach(b => {
+                    if (getExpiryStatus(b.expiry) === 'expired' && (b.initial - b.consumed) > 0) 
+                        alerts.push({ bg: 'red', text: `[${item.branch}] Batch #${b.sku} of ${item.name} expired.` });
+                });
+            });
+
+            if (alerts.length) {
+                container.classList.remove('hidden');
+                dot.classList.remove('hidden');
+                container.innerHTML = alerts.slice(0, 3).map(a => `
+                    <div class="bg-${a.bg}-50 border border-${a.bg}-200 rounded-xl p-3 flex items-center gap-3">
+                        <div class="w-6 h-6 bg-${a.bg}-500 text-white rounded-full flex items-center justify-center text-[10px] animate-bounce shrink-0">
+                            <i class="fas fa-exclamation"></i>
+                        </div>
+                        <p class="text-${a.bg}-800 font-bold text-[11px]">${a.text}</p>
+                    </div>
+                `).join('');
+            } else {
+                container.classList.add('hidden');
+                dot.classList.add('hidden');
+            }
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 2500);
+        }
+
+        function removeBatch(idx) {
+            if(confirm("Delete this batch record?")) {
+                inventory.find(i => i.id === activeItemId).batches.splice(idx, 1);
+                renderBatchList();
+                render();
+            }
+        }
+
+        function exportData() {
+            const csv = ["Branch,Item,Dept,Batch,Expiry,Initial,Consumed,Left"];
+            inventory.forEach(i => i.batches.forEach(b => {
+                csv.push(`${i.branch},${i.name},${i.department},${b.sku},${b.expiry},${b.initial},${b.consumed},${b.initial-b.consumed}`);
+            }));
+            const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inventory_report_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        window.onload = render;
+    </script>
+</body>
+</html>

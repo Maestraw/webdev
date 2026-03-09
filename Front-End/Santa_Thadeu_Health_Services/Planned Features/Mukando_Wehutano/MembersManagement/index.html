@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mukando Wehutano Member Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fc; }
+        .card { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); }
+        .balance-indicator-paid { background-color: #d1fae5; color: #065f46; } /* Green */
+        .balance-indicator-consumed { background-color: #fee2e2; color: #991b1b; } /* Red */
+        .btn-primary { background-color: #10b981; color: white; transition: transform 0.1s; }
+        .btn-primary:hover { background-color: #059669; transform: scale(1.02); }
+        .btn-secondary { background-color: #6366f1; color: white; transition: transform 0.1s; }
+        .btn-secondary:hover { background-color: #4f46e5; transform: scale(1.02); }
+        .btn-danger { background-color: #ef4444; color: white; transition: transform 0.1s; }
+        .btn-danger:hover { background-color: #dc2626; transform: scale(1.02); }
+    </style>
+</head>
+<body>
+
+    <div id="app" class="min-h-screen p-4 sm:p-8">
+        <!-- Header -->
+        <header class="bg-white p-6 rounded-xl card mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+                <svg class="w-8 h-8 mr-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.002 12.002 0 0012 21.018a12.002 12.002 0 008.618-18.07zm-2.004 14.82c1.777-1.28 3.39-2.903 4.417-4.755L20 12l-1.382-2.436c-.958-1.685-2.274-3.18-3.834-4.326m-6.241-2.189c-1.396.79-2.617 1.838-3.568 3.018l-1.077 1.346L4 12l1.077 1.346c.951 1.18 2.172 2.228 3.568 3.018m-2.279-4.577c.48.514 1.18.966 2.016 1.25M9.13 12.793a6.002 6.002 0 0011.88 0M12 12.793V6.992M10.87 12.793c-.48.514-1.18.966-2.016 1.25M14 12.793c.48.514 1.18.966 2.016 1.25"></path></svg>
+                Mukando Wehutano Management
+            </h1>
+            <p class="text-gray-500 mt-1">Local Data Member and Subscription Tracking</p>
+            <div id="auth-info" class="text-sm text-gray-500 mt-2">Storage: Local Browser Storage (Data persists in this browser only)</div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Left Column: Member List -->
+            <div class="lg:col-span-2">
+                <div class="bg-white p-6 rounded-xl card">
+                    <h2 class="text-2xl font-semibold text-gray-700 mb-4">Member Groups (<span id="group-count">0</span>)</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member ID</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Primary Member (0)</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payments Paid ($)</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Services Consumed ($)</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                                    <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="member-groups-list" class="bg-white divide-y divide-gray-200">
+                                <!-- Group rows will be inserted here by JS -->
+                                <tr id="loading-row"><td colspan="6" class="p-4 text-center text-gray-500">Loading member data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Detail View / Modal -->
+                <div id="detail-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50">
+                    <div class="relative top-4 sm:top-20 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/5 xl:w-1/2 shadow-lg rounded-md bg-white">
+                        <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                            <h3 class="text-xl font-semibold text-gray-800" id="detail-title">Group Details</h3>
+                            <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600 transition">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+
+                        <div id="detail-content" class="mt-4">
+                            <!-- Content is populated by JS when a group is selected -->
+                        </div>
+
+                        <div class="mt-6 flex justify-end space-x-2 border-t pt-4">
+                            <button onclick="closeDetailModal()" class="px-4 py-2 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Actions (Forms) -->
+            <div class="lg:col-span-1 space-y-6">
+
+                <!-- Add New Member Group Form (Now includes beneficiaries) -->
+                <div class="bg-white p-6 rounded-xl card">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                        New Member Group & Beneficiaries
+                    </h2>
+                    <form id="add-member-group-form">
+                        <div class="mb-4">
+                            <label for="new-member-number" class="block text-sm font-medium text-gray-700">Member Number (e.g., MUK123)</label>
+                            <input type="text" id="new-member-number" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500 uppercase">
+                        </div>
+                        <div class="mb-4">
+                            <label for="primary-member-name" class="block text-sm font-medium text-gray-700">Primary Member Name (Suffix 0)</label>
+                            <input type="text" id="primary-member-name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div class="mb-4">
+                            <label for="new-beneficiaries" class="block text-sm font-medium text-gray-700">Beneficiaries (One name per line, optional)</label>
+                            <textarea id="new-beneficiaries" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., John Doe&#10;Jane Doe"></textarea>
+                        </div>
+                        <button type="submit" class="w-full btn-primary px-4 py-2 rounded-lg font-semibold">
+                            Add Group & Members
+                        </button>
+                    </form>
+                    <p id="new-group-message" class="mt-3 text-sm hidden"></p>
+                </div>
+
+                <!-- Record Payment Form (Subscription Menu Option) -->
+                <div class="bg-white p-6 rounded-xl card">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8a4.5 4.5 0 011.5 3c0 1.5-1.5 2.5-1.5 3m0-8v2.25m0 4.5V21"></path></svg>
+                        Record Subscription ($20/Month)
+                    </h2>
+                    <form id="record-payment-form">
+                        <div class="mb-4">
+                            <label for="payment-member-number" class="block text-sm font-medium text-gray-700">Member Group Number</label>
+                            <input type="text" id="payment-member-number" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500 uppercase" placeholder="e.g., MUK123">
+                        </div>
+                        <div class="mb-4">
+                            <label for="payment-month" class="block text-sm font-medium text-gray-700">Payment Month/Year</label>
+                            <input type="month" id="payment-month" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <button type="submit" class="w-full btn-secondary px-4 py-2 rounded-lg font-semibold">
+                            Record Payment ($20 USD)
+                        </button>
+                    </form>
+                    <p id="payment-message" class="mt-3 text-sm hidden"></p>
+                </div>
+
+                <!-- Record Consumption Form -->
+                <div class="bg-white p-6 rounded-xl card">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        Record Service Consumption
+                    </h2>
+                    <form id="record-consumption-form">
+                        <div class="mb-4">
+                            <label for="consumption-member-id" class="block text-sm font-medium text-gray-700">Member/Beneficiary ID</label>
+                            <input type="text" id="consumption-member-id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500 uppercase" placeholder="e.g., MUK123-1">
+                        </div>
+                        <div class="mb-4">
+                            <label for="consumption-type" class="block text-sm font-medium text-gray-700">Service Type</label>
+                            <select id="consumption-type" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="Medical">Medical (Includes Injections, Lab Tests)</option>
+                                <option value="Dental">Dental</option>
+                                <option value="Psychology">Psychology</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label for="consumption-cost" class="block text-sm font-medium text-gray-700">Cost (USD Value)</label>
+                            <input type="number" step="0.01" min="0.01" id="consumption-cost" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., 55.00">
+                        </div>
+                        <div class="mb-4">
+                            <label for="consumption-details" class="block text-sm font-medium text-gray-700">Details</label>
+                            <textarea id="consumption-details" required rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Lab Test: Full blood panel"></textarea>
+                        </div>
+                        <button type="submit" class="w-full btn-primary px-4 py-2 rounded-lg font-semibold bg-red-600 hover:bg-red-700">
+                            Record Consumption
+                        </button>
+                    </form>
+                    <p id="consumption-message" class="mt-3 text-sm hidden"></p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- Local Storage Configuration ---
+        const STORAGE_KEY = 'mukandoGroups';
+        const SUBSCRIPTION_AMOUNT = 20;
+        let memberGroups = [];
+
+        // --- Utility Functions ---
+
+        /** Shows a message in the UI for a short duration. */
+        function showMessage(elementId, message, isError = false) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.textContent = message;
+            el.className = `mt-3 text-sm ${isError ? 'text-red-600' : 'text-green-600'} block`;
+            setTimeout(() => {
+                el.classList.add('hidden');
+            }, 5000);
+        }
+
+        // --- Local Storage Management ---
+
+        /** Loads data from localStorage. */
+        function loadGroupsFromStorage() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error("Error parsing localStorage data:", e);
+                return [];
+            }
+        }
+
+        /** Saves the current memberGroups array to localStorage and triggers a UI re-render. */
+        function saveGroupsToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(memberGroups));
+            renderMemberGroups(); // Re-render the list immediately
+        }
+
+        /** Initial loading function. */
+        function loadAndRenderGroups() {
+            memberGroups = loadGroupsFromStorage();
+            const loadingRow = document.getElementById('loading-row');
+            if(loadingRow) {
+                loadingRow.remove();
+            }
+            renderMemberGroups();
+        }
+
+        // --- Data Manipulation Logic (LocalStorage CRUD) ---
+
+        /** Adds a new primary member group with optional beneficiaries. */
+        function addMemberGroup(memberNumber, primaryMemberName, beneficiariesText) {
+            // Check for duplicate
+            if (memberGroups.some(g => g.memberNumber.toUpperCase() === memberNumber.toUpperCase())) {
+                showMessage('new-group-message', `Error: Member Group ${memberNumber} already exists.`, true);
+                return;
+            }
+
+            const primaryMemberId = `${memberNumber}-0`;
+            const members = [{
+                id: primaryMemberId,
+                name: primaryMemberName,
+                suffix: 0,
+                status: 'Active',
+                creationDate: new Date().toISOString()
+            }];
+
+            // Add beneficiaries
+            const beneficiaryNames = beneficiariesText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+            beneficiaryNames.forEach((name, index) => {
+                const nextSuffix = index + 1;
+                members.push({
+                    id: `${memberNumber}-${nextSuffix}`,
+                    name: name,
+                    suffix: nextSuffix,
+                    status: 'Active',
+                    creationDate: new Date().toISOString()
+                });
+            });
+
+            const newGroup = {
+                memberNumber: memberNumber,
+                primaryMemberId: primaryMemberId,
+                members: members,
+                payments: [],
+                consumption: [],
+            };
+
+            memberGroups.push(newGroup);
+            saveGroupsToStorage();
+            showMessage('new-group-message', `Member Group ${memberNumber} created successfully with ${members.length} member(s).`);
+            document.getElementById('add-member-group-form').reset();
+        }
+
+        /** Adds a new beneficiary to an existing group. */
+        function addBeneficiary(memberNumber, beneficiaryName) {
+            const groupIndex = memberGroups.findIndex(g => g.memberNumber.toUpperCase() === memberNumber.toUpperCase());
+
+            if (groupIndex === -1) {
+                showMessage('detail-message', `Error: Member Group ${memberNumber} not found.`, true);
+                return;
+            }
+
+            const group = memberGroups[groupIndex];
+            const currentMembers = group.members || [];
+
+            // Find the next available suffix
+            const suffixes = currentMembers.map(m => m.suffix).filter(Number.isInteger);
+            const maxSuffix = suffixes.length > 0 ? Math.max(...suffixes) : -1;
+            const nextSuffix = maxSuffix + 1;
+
+            const newMemberId = `${memberNumber}-${nextSuffix}`;
+
+            const newBeneficiary = {
+                id: newMemberId,
+                name: beneficiaryName,
+                suffix: nextSuffix,
+                status: 'Active',
+                creationDate: new Date().toISOString()
+            };
+
+            group.members.push(newBeneficiary);
+            saveGroupsToStorage();
+
+            showMessage('detail-message', `Beneficiary ${beneficiaryName} (${newMemberId}) added successfully.`);
+            // Re-render the detail modal to show the new member
+            openDetailModal(memberNumber);
+        }
+
+        /** Records a $20 subscription payment for a given month. */
+        function recordPayment(memberNumber, monthYear) {
+            const groupIndex = memberGroups.findIndex(g => g.memberNumber.toUpperCase() === memberNumber.toUpperCase());
+
+            if (groupIndex === -1) {
+                showMessage('payment-message', `Error: Member Group ${memberNumber} not found.`, true);
+                return;
+            }
+
+            // Check if payment already exists for this month
+            if (memberGroups[groupIndex].payments.some(p => p.month === monthYear)) {
+                showMessage('payment-message', `Error: Payment for ${monthYear} already recorded for ${memberNumber}.`, true);
+                return;
+            }
+
+
+            memberGroups[groupIndex].payments.push({
+                date: new Date().toISOString(),
+                amount: SUBSCRIPTION_AMOUNT,
+                month: monthYear, // Format YYYY-MM
+                recordedBy: 'LocalUser'
+            });
+
+            saveGroupsToStorage();
+            showMessage('payment-message', `Payment of $${SUBSCRIPTION_AMOUNT} for ${monthYear} recorded for ${memberNumber}.`);
+            document.getElementById('record-payment-form').reset();
+        }
+
+        /** Records service consumption for a specific member/beneficiary. */
+        function recordConsumption(memberId, type, costUsd, details) {
+            const [memberNumber] = memberId.split('-');
+            const groupIndex = memberGroups.findIndex(g => g.memberNumber.toUpperCase() === memberNumber.toUpperCase());
+
+            if (groupIndex === -1) {
+                showMessage('consumption-message', `Error: Member Group ${memberNumber} not found.`, true);
+                return;
+            }
+
+            const group = memberGroups[groupIndex];
+            if (!group.members.some(m => m.id.toUpperCase() === memberId.toUpperCase())) {
+                showMessage('consumption-message', `Error: Member/Beneficiary ID ${memberId} not found in group ${memberNumber}.`, true);
+                return;
+            }
+
+            group.consumption.push({
+                memberId: memberId,
+                type: type,
+                details: details,
+                costUsd: parseFloat(costUsd),
+                date: new Date().toISOString(),
+                recordedBy: 'LocalUser'
+            });
+
+            saveGroupsToStorage();
+            showMessage('consumption-message', `Consumption of $${costUsd} recorded for ${memberId}.`);
+            document.getElementById('record-consumption-form').reset();
+        }
+
+        /** CRUD: Deletes an entire member group. */
+        window.deleteMemberGroup = function(memberNumber) {
+            if (!window.confirm(`Are you sure you want to permanently delete Group ${memberNumber} and ALL associated data (payments, consumption, members)?`)) {
+                return;
+            }
+
+            const initialLength = memberGroups.length;
+            memberGroups = memberGroups.filter(g => g.memberNumber !== memberNumber);
+
+            if (memberGroups.length < initialLength) {
+                saveGroupsToStorage();
+                closeDetailModal();
+                showMessage('new-group-message', `Group ${memberNumber} and all associated data deleted successfully.`, false);
+            } else {
+                showMessage('detail-message', `Error: Group ${memberNumber} not found.`, true);
+            }
+        }
+
+        /** CRUD: Deletes a specific payment from a group. */
+        window.deletePayment = function(memberNumber, monthYear) {
+            const groupIndex = memberGroups.findIndex(g => g.memberNumber === memberNumber);
+            if (groupIndex === -1) return;
+
+            if (!window.confirm(`Are you sure you want to delete the $${SUBSCRIPTION_AMOUNT} subscription payment for ${monthYear}?`)) {
+                return;
+            }
+
+            const initialLength = memberGroups[groupIndex].payments.length;
+            memberGroups[groupIndex].payments = memberGroups[groupIndex].payments.filter(p => p.month !== monthYear);
+
+            if (memberGroups[groupIndex].payments.length < initialLength) {
+                saveGroupsToStorage();
+                showMessage('detail-message', `Payment for ${monthYear} deleted successfully.`, false);
+                openDetailModal(memberNumber); // Re-render modal
+            } else {
+                showMessage('detail-message', `Error: Payment for ${monthYear} not found.`, true);
+            }
+        }
+
+        /** CRUD: Deletes a beneficiary/member (not the primary member - suffix 0). */
+        window.deleteMember = function(memberNumber, memberId) {
+            if (memberId.endsWith('-0')) {
+                // Using an internal message function instead of alert
+                showMessage('detail-message', `Cannot delete the Primary Member (ID: ${memberId}).`, true);
+                return;
+            }
+
+            if (!window.confirm(`Are you sure you want to delete member ${memberId}? This will also delete any consumption records tied to this ID.`)) {
+                return;
+            }
+
+            const groupIndex = memberGroups.findIndex(g => g.memberNumber === memberNumber);
+            if (groupIndex === -1) return;
+
+            const initialLength = memberGroups[groupIndex].members.length;
+            memberGroups[groupIndex].members = memberGroups[groupIndex].members.filter(m => m.id !== memberId);
+            // Also remove consumption records for this deleted member
+            memberGroups[groupIndex].consumption = memberGroups[groupIndex].consumption.filter(c => c.memberId !== memberId);
+
+            if (memberGroups[groupIndex].members.length < initialLength) {
+                saveGroupsToStorage();
+                showMessage('detail-message', `Member ${memberId} deleted successfully.`, false);
+                openDetailModal(memberNumber); // Re-render modal
+            } else {
+                showMessage('detail-message', `Error: Member ${memberId} not found.`, true);
+            }
+        }
+
+        /** CRUD: Updates a member's name. */
+        window.updateMemberName = function(memberNumber, memberId, currentName) {
+            const group = memberGroups.find(g => g.memberNumber === memberNumber);
+            if (!group) return;
+
+            const member = group.members.find(m => m.id === memberId);
+            if (!member) return;
+
+            const newName = prompt(`Enter new name for ${currentName} (${memberId}):`);
+            if (newName && newName.trim().length > 0) {
+                member.name = newName.trim();
+                saveGroupsToStorage();
+                showMessage('detail-message', `Member name updated to ${member.name}.`, false);
+                openDetailModal(memberNumber); // Re-render modal
+            }
+        }
+
+
+        // --- UI Rendering ---
+
+        /** Calculates totals for a single member group. */
+        function calculateTotals(group) {
+            const totalPaid = (group.payments || []).reduce((sum, p) => sum + p.amount, 0);
+            const totalConsumed = (group.consumption || []).reduce((sum, c) => sum + c.costUsd, 0);
+            const balance = totalPaid - totalConsumed;
+            const primaryMember = (group.members || []).find(m => m.suffix === 0)?.name || 'N/A';
+            return { totalPaid: totalPaid.toFixed(2), totalConsumed: totalConsumed.toFixed(2), balance: balance.toFixed(2), primaryMember };
+        }
+
+        /** Renders the list of member groups in the main table. */
+        function renderMemberGroups() {
+            const listEl = document.getElementById('member-groups-list');
+            const countEl = document.getElementById('group-count');
+            listEl.innerHTML = '';
+            countEl.textContent = memberGroups.length;
+
+            if (memberGroups.length === 0) {
+                listEl.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No member groups found. Add a new group above.</td></tr>';
+                return;
+            }
+
+            memberGroups.forEach(group => {
+                const { totalPaid, totalConsumed, balance, primaryMember } = calculateTotals(group);
+                const balanceClass = parseFloat(balance) >= 0 ? 'balance-indicator-paid' : 'balance-indicator-consumed';
+
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-100 transition';
+                row.innerHTML = `
+                    <td class="px-3 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">${group.memberNumber}</td>
+                    <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">${primaryMember}</td>
+                    <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">$${totalPaid}</td>
+                    <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">$${totalConsumed}</td>
+                    <td class="px-3 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${balanceClass}">
+                            $${balance}
+                        </span>
+                    </td>
+                    <td class="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onclick="openDetailModal('${group.memberNumber}')" class="text-indigo-600 hover:text-indigo-900 font-semibold transition">View Details</button>
+                    </td>
+                `;
+                listEl.appendChild(row);
+            });
+        }
+
+        // --- Detail Modal Logic ---
+
+        window.openDetailModal = function(memberNumber) {
+            const group = memberGroups.find(g => g.memberNumber === memberNumber);
+            if (!group) return;
+
+            const modal = document.getElementById('detail-modal');
+            const titleEl = document.getElementById('detail-title');
+            const contentEl = document.getElementById('detail-content');
+
+            titleEl.textContent = `Group Details: ${memberNumber}`;
+            contentEl.innerHTML = renderDetailContent(group);
+            modal.classList.remove('hidden');
+            window.switchTab('members'); // Ensure the members tab is open by default
+
+            // Attach form handler inside the modal
+            document.getElementById('add-beneficiary-form').onsubmit = (e) => {
+                e.preventDefault();
+                const name = document.getElementById('new-beneficiary-name').value;
+                if (name) {
+                    addBeneficiary(memberNumber, name);
+                    document.getElementById('new-beneficiary-name').value = '';
+                }
+            };
+        }
+
+        window.closeDetailModal = function() {
+            document.getElementById('detail-modal').classList.add('hidden');
+            document.getElementById('detail-content').innerHTML = '';
+        }
+
+        function renderDetailContent(group) {
+            const { totalPaid, totalConsumed, balance } = calculateTotals(group);
+            const balanceClass = parseFloat(balance) >= 0 ? 'text-green-600' : 'text-red-600';
+
+            const memberListHtml = (group.members || []).map(m => `
+                <li class="p-2 border-b last:border-b-0 flex justify-between items-center hover:bg-white transition rounded-md">
+                    <span class="font-medium">${m.name}</span>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-sm text-gray-500">${m.id}</span>
+                        <!-- Update Button -->
+                        <button onclick="updateMemberName('${group.memberNumber}', '${m.id}', '${m.name}')" class="text-indigo-500 hover:text-indigo-700 text-xs font-semibold">Edit</button>
+                        <!-- Delete Button (Only for beneficiaries, Suffix 0 is primary) -->
+                        ${m.suffix > 0 ? `<button onclick="deleteMember('${group.memberNumber}', '${m.id}')" class="text-red-500 hover:text-red-700 text-xs font-semibold">Delete</button>` : `<span class="text-gray-400 text-xs">Primary</span>`}
+                    </div>
+                </li>
+            `).join('');
+
+            const paymentListHtml = (group.payments || []).sort((a, b) => b.month.localeCompare(a.month)).map(p => `
+                <li class="p-2 border-b last:border-b-0 flex justify-between items-center text-sm hover:bg-white transition rounded-md">
+                    <div class="space-x-2">
+                        <span>Subscription for: <span class="font-semibold">${p.month}</span></span>
+                        <span class="text-green-600 font-bold">$${p.amount.toFixed(2)}</span>
+                    </div>
+                    <!-- Delete Payment Button -->
+                    <button onclick="deletePayment('${group.memberNumber}', '${p.month}')" class="text-red-500 hover:text-red-700 text-xs font-semibold">Delete</button>
+                </li>
+            `).join('') || '<p class="text-sm text-gray-500 p-2">No payments recorded yet. Use the form on the right to record a subscription.</p>';
+
+            const consumptionListHtml = (group.consumption || []).sort((a, b) => new Date(b.date) - new Date(a.date)).map(c => `
+                <li class="p-2 border-b last:border-b-0 text-sm hover:bg-white transition rounded-md">
+                    <div class="flex justify-between items-start">
+                        <span class="font-medium text-gray-800">${c.type} (${c.memberId})</span>
+                        <span class="text-red-600 font-semibold">-$${c.costUsd.toFixed(2)}</span>
+                    </div>
+                    <p class="text-gray-500 text-xs mt-1">${c.details}</p>
+                    <p class="text-gray-400 text-xs">${new Date(c.date).toLocaleDateString()}</p>
+                </li>
+            `).join('') || '<p class="text-sm text-gray-500 p-2">No consumption recorded yet.</p>';
+
+
+            return `
+                <p id="detail-message" class="mt-3 text-sm hidden"></p>
+
+                <!-- Summary Row -->
+                <div class="grid grid-cols-3 gap-4 mb-6 text-center">
+                    <div class="p-3 bg-blue-100 rounded-lg">
+                        <p class="text-sm text-gray-600">Total Paid</p>
+                        <p class="text-xl font-bold text-blue-800">$${totalPaid}</p>
+                    </div>
+                    <div class="p-3 bg-red-100 rounded-lg">
+                        <p class="text-sm text-gray-600">Total Consumed</p>
+                        <p class="text-xl font-bold text-red-800">$${totalConsumed}</p>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-lg">
+                        <p class="text-sm text-gray-600">Net Balance</p>
+                        <p class="text-xl font-bold ${balanceClass}">$${balance}</p>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="mb-4 border-b border-gray-200">
+                    <ul class="flex flex-wrap -mb-px" id="detail-tabs" role="tablist">
+                        <li class="mr-2" role="presentation">
+                            <button class="inline-block p-4 border-b-2 rounded-t-lg font-medium text-sm text-indigo-600 border-indigo-600" id="members-tab" type="button" role="tab" aria-selected="true" onclick="switchTab('members')">Members (${group.members.length})</button>
+                        </li>
+                        <li class="mr-2" role="presentation">
+                            <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 font-medium text-sm text-gray-500" id="payments-tab" type="button" role="tab" aria-selected="false" onclick="switchTab('payments')">Subscriptions</button>
+                        </li>
+                        <li role="presentation">
+                            <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 font-medium text-sm text-gray-500" id="consumption-tab" type="button" role="tab" aria-selected="false" onclick="switchTab('consumption')">Consumption</button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Tab Content -->
+                <div id="members-content" class="tab-content">
+                    <h4 class="text-lg font-semibold mb-3">Group Members (Edit/Delete)</h4>
+                    <ul class="bg-gray-50 p-2 rounded-lg divide-y divide-gray-200 mb-4">${memberListHtml}</ul>
+
+                    <h4 class="text-lg font-semibold mb-3">Add Additional Beneficiary (Next Suffix: ${group.members.length})</h4>
+                    <form id="add-beneficiary-form" class="flex space-x-2">
+                        <input type="text" id="new-beneficiary-name" required class="flex-grow rounded-md border-gray-300 shadow-sm p-2 border" placeholder="Beneficiary Full Name">
+                        <button type="submit" class="btn-primary px-4 py-2 rounded-lg font-semibold text-sm">Add Beneficiary</button>
+                    </form>
+                </div>
+
+                <div id="payments-content" class="tab-content hidden">
+                    <h4 class="text-lg font-semibold mb-3">Subscription History (Delete Payment)</h4>
+                    <ul class="bg-gray-50 p-2 rounded-lg divide-y divide-gray-200">${paymentListHtml}</ul>
+                </div>
+
+                <div id="consumption-content" class="tab-content hidden">
+                    <h4 class="text-lg font-semibold mb-3">Service Consumption History</h4>
+                    <ul class="bg-gray-50 p-2 rounded-lg divide-y divide-gray-200">${consumptionListHtml}</ul>
+                </div>
+
+                <!-- DELETE Group Button -->
+                <button onclick="deleteMemberGroup('${group.memberNumber}')" class="w-full btn-danger mt-6 px-4 py-2 rounded-lg font-semibold">
+                    Delete Entire Group ${group.memberNumber} (PERMANENT)
+                </button>
+            `;
+        }
+
+        window.switchTab = function(activeTab) {
+            ['members', 'payments', 'consumption'].forEach(tab => {
+                const content = document.getElementById(tab + '-content');
+                const button = document.getElementById(tab + '-tab');
+                if (tab === activeTab) {
+                    content.classList.remove('hidden');
+                    button.classList.remove('text-gray-500', 'border-transparent', 'hover:text-gray-600', 'hover:border-gray-300');
+                    button.classList.add('text-indigo-600', 'border-indigo-600');
+                } else {
+                    content.classList.add('hidden');
+                    button.classList.add('text-gray-500', 'border-transparent', 'hover:text-gray-600', 'hover:border-gray-300');
+                    button.classList.remove('text-indigo-600', 'border-indigo-600');
+                }
+            });
+        }
+
+        // --- Form Submission Handlers ---
+
+        document.getElementById('add-member-group-form').onsubmit = (e) => {
+            e.preventDefault();
+            const memberNumber = document.getElementById('new-member-number').value.trim().toUpperCase();
+            const primaryName = document.getElementById('primary-member-name').value.trim();
+            const beneficiariesText = document.getElementById('new-beneficiaries').value.trim();
+
+            if (memberNumber && primaryName) {
+                addMemberGroup(memberNumber, primaryName, beneficiariesText);
+            }
+        };
+
+        document.getElementById('record-payment-form').onsubmit = (e) => {
+            e.preventDefault();
+            const memberNumber = document.getElementById('payment-member-number').value.trim().toUpperCase();
+            const monthYear = document.getElementById('payment-month').value; // Format YYYY-MM
+
+            if (memberNumber && monthYear) {
+                recordPayment(memberNumber, monthYear);
+            }
+        };
+
+        document.getElementById('record-consumption-form').onsubmit = (e) => {
+            e.preventDefault();
+            const memberId = document.getElementById('consumption-member-id').value.trim().toUpperCase();
+            const type = document.getElementById('consumption-type').value;
+            const costUsd = document.getElementById('consumption-cost').value;
+            const details = document.getElementById('consumption-details').value.trim();
+
+            if (memberId && type && costUsd && details) {
+                recordConsumption(memberId, type, costUsd, details);
+            }
+        };
+
+        // Initialize on window load
+        window.onload = loadAndRenderGroups;
+    </script>
+</body>
+</html>

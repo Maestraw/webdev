@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>thingsaround.co.zw</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0e7ff;
+            color: #1a1a2e;
+            overflow-x: hidden;
+        }
+        
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        .glass-effect-light {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-bg {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen antialiased">
+
+    <!-- Main Content Container -->
+    <div class="relative w-full min-h-screen overflow-hidden">
+        <!-- 3D Background Canvas -->
+        <canvas id="hero-canvas" class="z-0"></canvas>
+        
+        <div class="container mx-auto p-4 md:p-8 relative z-10">
+            <!-- Header Section -->
+            <header class="flex flex-col md:flex-row justify-between items-center py-6 px-4 md:px-8 glass-effect-light rounded-2xl shadow-lg mb-8">
+                <div class="flex items-center space-x-4 mb-4 md:mb-0">
+                    <span class="text-3xl font-extrabold text-[#1a1a2e]">thingsaround.co.zw</span>
+                </div>
+                <nav class="hidden md:flex items-center space-x-6">
+                    <a href="#" class="text-[#1a1a2e] hover:text-[#4c5292] transition-colors duration-300 font-medium">Home</a>
+                    <a href="#" class="text-[#1a1a2e] hover:text-[#4c5292] transition-colors duration-300 font-medium">Browse</a>
+                    <a href="#" class="text-[#1a1a2e] hover:text-[#4c5292] transition-colors duration-300 font-medium">Sell</a>
+                    <a href="#" class="text-[#1a1a2e] hover:text-[#4c5292] transition-colors duration-300 font-medium">Support</a>
+                </nav>
+                <button class="md:hidden p-2 rounded-lg text-[#1a1a2e] hover:bg-[#c3c6f0] focus:outline-none focus:ring-2 focus:ring-[#4c5292]">
+                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+            </header>
+
+            <!-- Hero Section -->
+            <main class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center pt-16 min-h-[calc(100vh-16rem)]">
+                <!-- Text Content from image -->
+                <div class="flex flex-col space-y-6">
+                    <h1 class="text-5xl md:text-7xl font-extrabold leading-tight text-[#1a1a2e]">
+                        BUY & SELL<br>
+                        <span class="text-[#4c5292]">www.thingsaround.co.zw</span>
+                    </h1>
+                    <p class="text-lg text-[#4a4a5c] max-w-lg">
+                        NOT ENOUGH TIME TO GO THROUGH ALL SELLERS?<br>
+                        GET REQUESTS-ACCEPT/CANCEL
+                    </p>
+                    <button class="w-fit bg-gradient-to-r from-[#4c5292] to-[#001f5f] text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform duration-300 transform hover:scale-105 mt-4">
+                        Start Trading
+                    </button>
+                </div>
+            </main>
+
+            <!-- Product Section -->
+            <section class="pt-16 pb-16">
+                <div class="w-full max-w-6xl mx-auto text-center">
+                    <h2 class="text-4xl md:text-5xl font-extrabold mb-10 text-[#1a1a2e]">
+                        DISCOVER SELLER'S PRODUCT\SERVICE PRICE,<br>AVAILABILITY & LOCATION EASILY...
+                    </h2>
+                </div>
+                
+                <div class="w-full max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mt-12">
+                    <!-- Product Card 1 -->
+                    <div class="glass-effect-light rounded-lg p-6 shadow-md border border-[#c3c6f0] transition-transform duration-300 hover:scale-105 cursor-pointer">
+                        <img src="https://placehold.co/400x300/e0e7ff/4c5292?text=Product+1" class="w-full h-48 object-cover rounded-md mb-4" alt="Product 1">
+                        <h3 class="text-xl font-bold text-[#1a1a2e]">Futuristic Bike</h3>
+                        <p class="text-[#4a4a5c] mt-1">Sleek design, high-speed mobility.</p>
+                        <span class="text-lg font-bold text-[#4c5292] mt-2 block">$1,200</span>
+                    </div>
+
+                    <!-- Product Card 2 -->
+                    <div class="glass-effect-light rounded-lg p-6 shadow-md border border-[#c3c6f0] transition-transform duration-300 hover:scale-105 cursor-pointer">
+                        <img src="https://placehold.co/400x300/e0e7ff/4c5292?text=Product+2" class="w-full h-48 object-cover rounded-md mb-4" alt="Product 2">
+                        <h3 class="text-xl font-bold text-[#1a1a2e]">Quantum Tablet</h3>
+                        <p class="text-[#4a4a5c] mt-1">Seamless computing, beyond imagination.</p>
+                        <span class="text-lg font-bold text-[#4c5292] mt-2 block">$850</span>
+                    </div>
+
+                    <!-- Product Card 3 -->
+                    <div class="glass-effect-light rounded-lg p-6 shadow-md border border-[#c3c6f0] transition-transform duration-300 hover:scale-105 cursor-pointer">
+                        <img src="https://placehold.co/400x300/e0e7ff/4c5292?text=Product+3" class="w-full h-48 object-cover rounded-md mb-4" alt="Product 3">
+                        <h3 class="text-xl font-bold text-[#1a1a2e]">Smart Watch</h3>
+                        <p class="text-[#4a4a5c] mt-1">Track your life, stay connected.</p>
+                        <span class="text-lg font-bold text-[#4c5292] mt-2 block">$299</span>
+                    </div>
+                    
+                    <!-- Product Card 4 -->
+                    <div class="glass-effect-light rounded-lg p-6 shadow-md border border-[#c3c6f0] transition-transform duration-300 hover:scale-105 cursor-pointer">
+                        <img src="https://placehold.co/400x300/e0e7ff/4c5292?text=Product+4" class="w-full h-48 object-cover rounded-md mb-4" alt="Product 4">
+                        <h3 class="text-xl font-bold text-[#1a1a2e]">Personal Drone</h3>
+                        <p class="text-[#4a4a5c] mt-1">Capture every moment from above.</p>
+                        <span class="text-lg font-bold text-[#4c5292] mt-2 block">$650</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Featured Product Modal -->
+    <div id="featured-product-modal" class="hidden fixed inset-0 flex items-center justify-center p-4 z-50">
+        <div class="absolute inset-0 modal-bg"></div>
+        <div class="relative max-w-lg w-full bg-white rounded-2xl shadow-2xl p-8 transform scale-90 transition-transform duration-500 ease-in-out" id="modal-content">
+            <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <div class="flex flex-col items-center">
+                <span class="text-sm uppercase tracking-wider text-[#4c5292] font-semibold mb-2">Featured Product</span>
+                <img src="https://placehold.co/600x400/001f5f/e0e7ff?text=Special+Offer" class="w-full h-auto rounded-lg mb-4" alt="Featured Product">
+                <h3 class="text-3xl font-extrabold text-[#1a1a2e] mb-2 text-center">Futuristic Commuter</h3>
+                <p class="text-base text-[#4a4a5c] mb-4 text-center">Experience the future of personal travel with this advanced electric scooter.</p>
+                <span class="text-2xl font-bold text-[#001f5f] mb-6">$1,500</span>
+                <button class="w-full bg-gradient-to-r from-[#4c5292] to-[#001f5f] text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform duration-300 transform hover:scale-105">
+                    Buy Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // THREE.js Scene Setup
+            const canvas = document.getElementById('hero-canvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            camera.position.set(0, 0, 10);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(0, 5, 5);
+            scene.add(directionalLight);
+
+            // Objects for the marketplace scene
+            const objects = [];
+
+            // A stylized floor
+            const floorGeometry = new THREE.PlaneGeometry(100, 100);
+            const floorMaterial = new THREE.MeshBasicMaterial({ color: 0xcccccc, transparent: true, opacity: 0.05, side: THREE.DoubleSide });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = -5;
+            scene.add(floor);
+
+            // Floating kiosks/stands
+            const kioskGeometry = new THREE.BoxGeometry(2, 2, 2);
+            const kioskMaterial = new THREE.MeshPhongMaterial({ color: 0x0077b6, transparent: true, opacity: 0.7, shininess: 100 });
+
+            for (let i = 0; i < 20; i++) {
+                const kiosk = new THREE.Mesh(kioskGeometry, kioskMaterial);
+                kiosk.position.x = (Math.random() - 0.5) * 40;
+                kiosk.position.y = (Math.random() - 0.5) * 5;
+                kiosk.position.z = (Math.random() - 0.5) * 40;
+                kiosk.rotation.x = Math.random() * Math.PI;
+                kiosk.rotation.y = Math.random() * Math.PI;
+                objects.push(kiosk);
+                scene.add(kiosk);
+            }
+
+            // Floating products/data points
+            const productGeometry = new THREE.IcosahedronGeometry(0.5, 0);
+            const productMaterial = new THREE.MeshBasicMaterial({ color: 0x03e7f4, transparent: true, opacity: 0.8 });
+
+            for (let i = 0; i < 50; i++) {
+                const product = new THREE.Mesh(productGeometry, productMaterial);
+                product.position.x = (Math.random() - 0.5) * 40;
+                product.position.y = (Math.random() - 0.5) * 10;
+                product.position.z = (Math.random() - 0.5) * 40;
+                objects.push(product);
+                scene.add(product);
+            }
+
+            // Animation Loop
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // Animate objects
+                objects.forEach(obj => {
+                    obj.rotation.x += 0.005;
+                    obj.rotation.y += 0.005;
+                });
+                
+                // Animate camera to move through the scene
+                camera.position.z -= 0.01;
+                if (camera.position.z < -20) {
+                    camera.position.z = 10;
+                }
+
+                renderer.render(scene, camera);
+            }
+
+            // Handle Window Resize
+            window.addEventListener('resize', () => {
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            });
+
+            animate();
+
+            // Product Modal Functionality
+            const modal = document.getElementById('featured-product-modal');
+            const modalContent = document.getElementById('modal-content');
+            const closeBtn = document.getElementById('close-modal-btn');
+            
+            function showModal() {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modalContent.classList.remove('scale-90');
+                }, 10);
+            }
+
+            function hideModal() {
+                modalContent.classList.add('scale-90');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 500);
+            }
+
+            // Show modal every 15 seconds
+            setInterval(showModal, 15000);
+
+            // Close modal when close button is clicked
+            closeBtn.addEventListener('click', hideModal);
+        };
+    </script>
+</body>
+</html>

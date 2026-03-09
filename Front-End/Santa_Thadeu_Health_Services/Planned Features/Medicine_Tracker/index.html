@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santa Thadeu - Multi-Branch Inventory & History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .table-container { height: calc(100vh - 340px); overflow-y: auto; }
+        .row-expired { background-color: #fef2f2; }
+        .status-pill { padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; }
+        .modal-overlay { background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); }
+        .nav-active { border-bottom: 3px solid #2563eb; color: #1e40af; }
+        .history-line { position: relative; padding-left: 24px; }
+        .history-line::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
+        .history-dot { position: absolute; left: 0; top: 6px; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 1px #e2e8f0; }
+    </style>
+</head>
+<body class="p-2 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Branch & Dept Navigation -->
+        <div class="bg-white rounded-t-2xl shadow-sm border border-slate-200 px-6 pt-4">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-600 p-2 rounded-lg text-white">
+                        <i class="fas fa-hospital-alt text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-800 leading-tight">Santa Thadeu Inventory</h1>
+                        <p class="text-xs text-slate-500 font-medium">Enterprise Resource Planning</p>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2">
+                    <select id="branchSelect" onchange="switchBranch()" class="bg-slate-50 border border-slate-200 text-sm font-bold rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Queensdale">Queensdale Branch</option>
+                        <option value="Sentosa">Sentosa Branch</option>
+                        <option value="Outreach">Outreach Unit</option>
+                        <option value="Head Office">Head Office Central</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Department Tabs -->
+            <div class="flex overflow-x-auto gap-8 border-t border-slate-100" id="deptTabs">
+                <button onclick="switchDept('medical')" id="tab-medical" class="dept-tab nav-active py-3 text-sm font-bold transition">Medical</button>
+                <button onclick="switchDept('dental')" id="tab-dental" class="dept-tab py-3 text-sm font-bold text-slate-400 hover:text-slate-600 transition">Dental</button>
+                <button onclick="switchDept('optometry')" id="tab-optometry" class="dept-tab py-3 text-sm font-bold text-slate-400 hover:text-slate-600 transition">Optometry</button>
+                <button onclick="switchDept('psychology')" id="tab-psychology" class="dept-tab py-3 text-sm font-bold text-slate-400 hover:text-slate-600 transition">Psychology</button>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="bg-white border-x border-slate-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100">
+            <div class="flex flex-wrap gap-2">
+                <button onclick="openAddModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition flex items-center gap-2 shadow-lg shadow-blue-100">
+                    <i class="fas fa-plus"></i> New Item
+                </button>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" onkeyup="filterData()" placeholder="Search in department..." class="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none w-48 md:w-64">
+                </div>
+            </div>
+            
+            <div class="flex gap-2">
+                <button onclick="exportToCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl transition flex items-center gap-2">
+                    <i class="fas fa-file-export"></i> CSV
+                </button>
+            </div>
+        </div>
+        
+        <!-- Summary Stats Strip -->
+        <div class="bg-white border-x border-slate-200 px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600"><i class="fas fa-pills"></i></div>
+                <div><p class="text-[10px] font-bold text-slate-400 uppercase">Total Items</p><p id="statTotal" class="font-bold">0</p></div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600"><i class="fas fa-exclamation-triangle"></i></div>
+                <div><p class="text-[10px] font-bold text-slate-400 uppercase">Low Stock</p><p id="statLow" class="font-bold">0</p></div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600"><i class="fas fa-clock"></i></div>
+                <div><p class="text-[10px] font-bold text-slate-400 uppercase">Expired</p><p id="statExpired" class="font-bold">0</p></div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-600"><i class="fas fa-history"></i></div>
+                <div><p class="text-[10px] font-bold text-slate-400 uppercase">Recent Updates</p><p id="statUpdates" class="font-bold">0</p></div>
+            </div>
+        </div>
+
+        <!-- Inventory Table -->
+        <div class="bg-white rounded-b-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="table-container">
+                <table class="w-full text-left border-collapse">
+                    <thead class="sticky top-0 bg-slate-50 border-b border-slate-200 z-10">
+                        <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="px-6 py-4">Item Details</th>
+                            <th class="px-6 py-4">Format</th>
+                            <th class="px-6 py-4 text-center">Start</th>
+                            <th class="px-6 py-4 text-center">Received</th>
+                            <th class="px-6 py-4 text-center text-blue-600">Dispensed</th>
+                            <th class="px-6 py-4 text-center font-bold">In Stock</th>
+                            <th class="px-6 py-4 text-center">Expiry</th>
+                            <th class="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryBody" class="divide-y divide-slate-100 text-sm">
+                        <!-- Data injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="inputModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay hidden">
+        <div class="bg-white rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col md:flex-row overflow-hidden max-h-[90vh]">
+            <!-- Left Side: Form -->
+            <div class="flex-1 p-6 border-r border-slate-100">
+                <div class="mb-6">
+                    <h3 id="modalMedicineName" class="text-xl font-bold text-slate-800">Update Stock</h3>
+                    <p id="modalSubtext" class="text-xs text-slate-500 font-medium uppercase tracking-wide"></p>
+                </div>
+                
+                <div class="space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                            <label class="block text-[10px] font-bold text-emerald-600 uppercase mb-2">New Stock Received (+)</label>
+                            <input type="number" id="inputReceived" placeholder="0" class="w-full bg-white border border-emerald-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div class="bg-rose-50 p-4 rounded-xl border border-rose-100">
+                            <label class="block text-[10px] font-bold text-rose-600 uppercase mb-2">New Amount Dispensed (-)</label>
+                            <input type="number" id="inputDispensed" placeholder="0" class="w-full bg-white border border-rose-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-rose-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Transaction Note (Reason/Staff)</label>
+                        <textarea id="inputNotes" rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex gap-3">
+                    <button onclick="closeModal()" class="flex-1 py-3 text-sm font-bold text-slate-400 hover:text-slate-600 transition">Cancel</button>
+                    <button onclick="saveStockUpdate()" class="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-100 transition">Commit Transaction</button>
+                </div>
+            </div>
+
+            <!-- Right Side: History Timeline -->
+            <div class="w-full md:w-80 bg-slate-50 flex flex-col">
+                <div class="p-6 border-b border-slate-200">
+                    <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fas fa-history text-slate-400"></i> Stock History
+                    </h4>
+                </div>
+                <div id="historyTimeline" class="p-6 overflow-y-auto flex-1 space-y-6 text-xs">
+                    <!-- History entries -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Item Modal -->
+    <div id="addModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay hidden">
+        <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-slate-100 bg-blue-50">
+                <h3 class="text-lg font-bold text-blue-800">Add New Item</h3>
+                <p id="addModalSubtext" class="text-xs text-blue-600 font-medium"></p>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Item Name</label>
+                    <input type="text" id="addName" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Container Type</label>
+                    <input type="text" id="addContainer" placeholder="e.g. Box, Bottle" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Dose/Strength</label>
+                    <input type="text" id="addDose" placeholder="e.g. 500mg" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Current Stock Level</label>
+                    <input type="number" id="addStart" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Expiry Date</label>
+                    <input type="date" id="addExpiry" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
+            </div>
+            <div class="p-6 bg-slate-50 flex gap-3">
+                <button onclick="closeAddModal()" class="flex-1 py-3 text-sm font-bold text-slate-400 hover:text-slate-600 transition">Cancel</button>
+                <button onclick="addNewMedicine()" class="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-100 transition">Create Record</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global App State
+        let currentBranch = "Queensdale";
+        let currentDept = "medical";
+        let currentEditId = null;
+
+        // Inventory Data structure (Modified to track history)
+        let inventoryData = [
+            { 
+                id: 1, branch: "Queensdale", dept: "medical", name: "Ceftriaxone", 
+                start: 180, received: 5, dispensed: 13, container: "Boxed", dose: "---", 
+                expiry: "2026-12-01", 
+                history: [
+                    { date: "2025-05-10", type: "initial", amount: 180, note: "System Audit" },
+                    { date: "2025-05-15", type: "dispensed", amount: 13, note: "Ward usage" },
+                    { date: "2025-05-20", type: "received", amount: 5, note: "Central re-supply" }
+                ]
+            },
+            { 
+                id: 2, branch: "Queensdale", dept: "medical", name: "Depomedrol", 
+                start: 100, received: 0, dispensed: 19, container: "Small box", dose: "80mg", 
+                expiry: "2025-11-01",
+                history: [
+                    { date: "2025-05-01", type: "initial", amount: 100, note: "Stock take" },
+                    { date: "2025-05-12", type: "dispensed", amount: 19, note: "Patient dispensing" }
+                ]
+            }
+        ];
+
+        function switchBranch() {
+            currentBranch = document.getElementById('branchSelect').value;
+            renderTable();
+        }
+
+        function switchDept(dept) {
+            currentDept = dept;
+            document.querySelectorAll('.dept-tab').forEach(tab => {
+                tab.classList.remove('nav-active', 'text-blue-800');
+                tab.classList.add('text-slate-400');
+            });
+            document.getElementById(`tab-${dept}`).classList.add('nav-active', 'text-blue-800');
+            renderTable();
+        }
+
+        function renderTable() {
+            const body = document.getElementById('inventoryBody');
+            body.innerHTML = '';
+            
+            const filteredData = inventoryData.filter(i => i.branch === currentBranch && i.dept === currentDept);
+            
+            let stats = { total: 0, low: 0, expired: 0, updates: 0 };
+            const today = new Date();
+
+            filteredData.forEach(item => {
+                const ending = item.start + item.received - item.dispensed;
+                const isExpired = new Date(item.expiry) < today;
+                const isLow = ending < 10;
+
+                stats.total++;
+                if (isLow) stats.low++;
+                if (isExpired) stats.expired++;
+                stats.updates += item.history.length;
+
+                const row = document.createElement('tr');
+                if (isExpired) row.className = 'row-expired';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-semibold text-slate-800">${item.name}</div>
+                        <div class="text-[10px] text-slate-400 uppercase font-bold">${item.branch} / ${item.dept}</div>
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 text-xs">${item.container} • ${item.dose}</td>
+                    <td class="px-6 py-4 text-center font-medium text-slate-400">${item.start}</td>
+                    <td class="px-6 py-4 text-center font-medium text-emerald-600">+${item.received}</td>
+                    <td class="px-6 py-4 text-center font-medium text-blue-600">-${item.dispensed}</td>
+                    <td class="px-6 py-4 text-center font-bold ${isLow ? 'text-rose-600' : 'text-slate-800'} text-base">${ending}</td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="status-pill ${isExpired ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
+                            ${item.expiry || 'N/A'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="openInputModal(${item.id})" class="bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-600 p-2 rounded-lg transition">
+                            <i class="fas fa-history"></i>
+                        </button>
+                    </td>
+                `;
+                body.appendChild(row);
+            });
+
+            document.getElementById('statTotal').innerText = stats.total;
+            document.getElementById('statLow').innerText = stats.low;
+            document.getElementById('statExpired').innerText = stats.expired;
+            document.getElementById('statUpdates').innerText = stats.updates;
+        }
+
+        function openInputModal(id) {
+            currentEditId = id;
+            const item = inventoryData.find(i => i.id === id);
+            
+            document.getElementById('modalMedicineName').innerText = item.name;
+            document.getElementById('modalSubtext').innerText = `${item.branch} — ${item.dept}`;
+            document.getElementById('inputReceived').value = '';
+            document.getElementById('inputDispensed').value = '';
+            document.getElementById('inputNotes').value = '';
+            
+            renderHistory(item.history);
+            document.getElementById('inputModal').classList.remove('hidden');
+        }
+
+        function renderHistory(history) {
+            const container = document.getElementById('historyTimeline');
+            container.innerHTML = '';
+            
+            // Show newest history first
+            [...history].reverse().forEach(entry => {
+                const dotColor = entry.type === 'received' ? 'bg-emerald-500' : 
+                                 entry.type === 'dispensed' ? 'bg-blue-500' : 'bg-slate-400';
+                
+                const div = document.createElement('div');
+                div.className = 'history-line';
+                div.innerHTML = `
+                    <div class="history-dot ${dotColor}"></div>
+                    <div class="mb-1 flex justify-between items-center">
+                        <span class="font-bold text-slate-800 uppercase">${entry.type}</span>
+                        <span class="text-slate-400">${entry.date}</span>
+                    </div>
+                    <div class="text-slate-600 font-medium">Amount: ${entry.type === 'initial' ? '' : (entry.type === 'received' ? '+' : '-')}${entry.amount}</div>
+                    <div class="text-slate-400 mt-1 italic">"${entry.note || 'No comment'}"</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function saveStockUpdate() {
+            const index = inventoryData.findIndex(i => i.id === currentEditId);
+            if (index === -1) return;
+
+            const rec = parseInt(document.getElementById('inputReceived').value) || 0;
+            const dis = parseInt(document.getElementById('inputDispensed').value) || 0;
+            const note = document.getElementById('inputNotes').value;
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            if (rec > 0) {
+                inventoryData[index].received += rec;
+                inventoryData[index].history.push({ date: todayStr, type: "received", amount: rec, note: note });
+            }
+            if (dis > 0) {
+                inventoryData[index].dispensed += dis;
+                inventoryData[index].history.push({ date: todayStr, type: "dispensed", amount: dis, note: note });
+            }
+
+            renderTable();
+            closeModal();
+        }
+
+        function closeModal() { document.getElementById('inputModal').classList.add('hidden'); }
+
+        function openAddModal() {
+            document.getElementById('addModalSubtext').innerText = `Adding to ${currentBranch} > ${currentDept}`;
+            document.getElementById('addModal').classList.remove('hidden');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.add('hidden');
+            ['addName', 'addContainer', 'addDose', 'addStart', 'addExpiry'].forEach(id => document.getElementById(id).value = '');
+        }
+
+        function addNewMedicine() {
+            const name = document.getElementById('addName').value;
+            const startVal = parseInt(document.getElementById('addStart').value) || 0;
+            if (!name) return;
+
+            inventoryData.push({
+                id: Date.now(),
+                branch: currentBranch,
+                dept: currentDept,
+                name: name,
+                container: document.getElementById('addContainer').value || '---',
+                dose: document.getElementById('addDose').value || '---',
+                start: startVal,
+                received: 0,
+                dispensed: 0,
+                expiry: document.getElementById('addExpiry').value,
+                history: [{ date: new Date().toISOString().split('T')[0], type: "initial", amount: startVal, note: "Record Created" }]
+            });
+
+            renderTable();
+            closeAddModal();
+        }
+
+        function filterData() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const body = document.getElementById('inventoryBody');
+            body.querySelectorAll('tr').forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(term) ? '' : 'none';
+            });
+        }
+
+        function exportToCSV() {
+            let csv = "Branch,Department,Item,Container,Dose,Start,Received,Dispensed,In Stock,Expiry,HistorySummary\n";
+            inventoryData.forEach(i => {
+                const stock = i.start + i.received - i.dispensed;
+                const histCount = i.history.length;
+                csv += `"${i.branch}","${i.dept}","${i.name}","${i.container}","${i.dose}",${i.start},${i.received},${i.dispensed},${stock},"${i.expiry}","${histCount} entries"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SantaThadeu_Inventory_Export.csv`;
+            a.click();
+        }
+
+        window.onload = () => renderTable();
+    </script>
+</body>
+</html>

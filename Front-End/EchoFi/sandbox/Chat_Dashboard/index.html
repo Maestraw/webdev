@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EchoFi | Pro Messenger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .chat-container::-webkit-scrollbar { width: 5px; }
+        .chat-container::-webkit-scrollbar-thumb { background: #bccad6; border-radius: 10px; }
+        .dropdown-menu::before { content: ''; position: absolute; top: -20px; left: 0; right: 0; height: 20px; }
+    </style>
+</head>
+<body class="bg-[#f0f2f5] h-screen flex flex-col overflow-hidden font-sans text-[#111b21]">
+
+    <nav class="bg-[#f0f2f5] border-b border-gray-300 px-6 py-2 flex justify-between items-center z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-[#00a884] rounded-full flex items-center justify-center text-white font-bold shadow-sm">E</div>
+            <h1 class="font-bold text-[#41525d]">EchoFi</h1>
+        </div>
+
+        <div class="relative group py-2">
+            <button class="flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-full hover:bg-gray-100 transition shadow-sm">
+                <span id="user-email" class="text-sm font-medium text-gray-600">Syncing...</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="dropdown-menu absolute right-0 mt-1 w-48 bg-white border rounded-lg shadow-xl hidden group-hover:block overflow-hidden z-[60]">
+                <button onclick="logout()" class="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 border-b">Switch Account</button>
+                <button onclick="logout()" class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex flex-1 overflow-hidden">
+        <aside class="w-96 border-r border-gray-300 bg-white flex flex-col">
+            <div class="p-3 bg-white space-y-3">
+                <div class="flex items-center justify-between px-1">
+                    <h2 class="text-xl font-bold">Chats</h2>
+                    <button onclick="toggleModal(true)" class="text-[#54656f] p-2 hover:bg-gray-100 rounded-full">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 4v16m8-8H4"/></svg>
+                    </button>
+                </div>
+                <div class="relative">
+                    <input type="text" id="search-input" oninput="filterMessages()" placeholder="Search conversations..." class="w-full bg-[#f0f2f5] rounded-lg py-2 pl-10 pr-4 text-sm outline-none">
+                    <svg class="w-4 h-4 absolute left-3 top-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+            </div>
+            <div id="inbox-list" class="flex-1 overflow-y-auto divide-y divide-gray-100"></div>
+        </aside>
+
+        <section class="flex-1 flex flex-col bg-[#efeae2] relative" style="background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');">
+            <div id="thread-header" class="px-6 py-3 bg-[#f0f2f5] border-b border-gray-300 h-16 flex items-center font-bold text-[#41525d] shadow-sm">
+                Select a contact
+            </div>
+            <div id="thread-content" class="flex-1 overflow-y-auto p-8 space-y-2 chat-container"></div>
+            <div class="p-3 bg-[#f0f2f5] flex items-center gap-3">
+                <input id="reply-input" type="text" placeholder="Type a message" class="flex-1 border-none rounded-lg px-4 py-3 text-sm focus:outline-none shadow-sm">
+                <button onclick="sendReply()" class="bg-[#00a884] text-white p-3 rounded-full hover:bg-[#008f6f] transition shadow-md">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <div id="newChatModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-md p-6">
+            <h2 class="text-xl font-bold mb-4">New Message</h2>
+            <div class="space-y-3">
+                <input id="new-to" type="email" placeholder="Recipient Email" class="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-[#00a884]">
+                <input id="new-subject" type="text" placeholder="Subject" class="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-[#00a884]">
+                <textarea id="new-body" rows="4" placeholder="Message..." class="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-[#00a884]"></textarea>
+                <div class="flex gap-2">
+                    <button onclick="toggleModal(false)" class="flex-1 border p-3 rounded-lg">Cancel</button>
+                    <button onclick="startNewChat()" class="flex-1 bg-[#00a884] text-white font-bold p-3 rounded-lg">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        let allMessages = [];
+        let currentThreadId = null;
+        let lastMsg = null;
+        let currentUserEmail = "";
+
+        async function init() {
+            try {
+                const res = await fetch(`${API_BASE}/user`);
+                const data = await res.json();
+                currentUserEmail = data.email;
+                document.getElementById('user-email').innerText = data.email || 'Guest';
+                fetchMessages();
+            } catch (e) { document.getElementById('user-email').innerText = 'Please Login'; }
+        }
+
+        async function logout() {
+            await fetch(`${API_BASE}/logout`, { method: 'POST' });
+            location.reload();
+        }
+
+        async function fetchMessages() {
+            const res = await fetch(`${API_BASE}/messages`);
+            const data = await res.json();
+            allMessages = data.messages;
+            renderInbox(allMessages);
+        }
+
+        function renderInbox(messages) {
+            const list = document.getElementById('inbox-list');
+            const filtered = messages.filter(msg => {
+                const emailMatch = msg.from.match(/<([^>]+)>/);
+                const senderEmail = emailMatch ? emailMatch[1] : msg.from;
+                return senderEmail.toLowerCase() !== currentUserEmail.toLowerCase();
+            });
+
+            list.innerHTML = filtered.map(msg => {
+                const name = msg.from.split('<')[0].replace(/"/g, '').trim() || 'Unknown';
+                const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return `
+                    <div onclick="viewThread('${msg.threadId}')" class="p-4 bg-white hover:bg-[#f5f6f6] cursor-pointer flex items-center gap-3 border-b transition">
+                        <div class="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-gray-600">${name[0].toUpperCase()}</div>
+                        <div class="flex-1 overflow-hidden">
+                            <div class="flex justify-between items-baseline">
+                                <h3 class="font-bold text-sm truncate ${msg.isUnread ? 'text-black' : 'text-gray-700'}">${name}</h3>
+                                <span class="text-[10px] text-gray-400">${time}</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-0.5">
+                                <p class="text-xs ${msg.isUnread ? 'text-[#111b21] font-bold' : 'text-gray-500'} truncate flex-1 pr-2">${msg.snippet}</p>
+                                ${msg.isUnread ? `<div class="bg-[#25d366] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">1</div>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function filterMessages() {
+            const q = document.getElementById('search-input').value.toLowerCase();
+            renderInbox(allMessages.filter(m => m.from.toLowerCase().includes(q) || m.subject.toLowerCase().includes(q) || m.snippet.toLowerCase().includes(q)));
+        }
+
+        async function viewThread(id) {
+            currentThreadId = id;
+            const res = await fetch(`${API_BASE}/threads/${id}`);
+            const data = await res.json();
+            const content = document.getElementById('thread-content');
+            lastMsg = data.messages[data.messages.length - 1];
+            document.getElementById('thread-header').innerText = lastMsg.fromName;
+
+            content.innerHTML = data.messages.map(msg => `
+                <div class="flex ${msg.isMe ? 'justify-end' : 'justify-start'} w-full group">
+                    <div class="relative max-w-[80%] p-2 px-3 rounded-lg shadow-sm text-[14.5px] ${msg.isMe ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'}">
+                        <p class="whitespace-pre-wrap leading-relaxed">${msg.body}</p>
+                        <div class="flex justify-end mt-1">
+                            <span class="text-[9px] text-gray-400 uppercase">${msg.time}</span>
+                        </div>
+                        <button onclick="forwardToWhatsApp('${msg.body.replace(/'/g, "\\'")}')" class="opacity-0 group-hover:opacity-100 absolute -right-8 top-1 text-gray-400 hover:text-[#00a884]">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.012 1.985C5.385 1.985 0 7.37 0 13.997c0 2.113.548 4.102 1.512 5.835L.034 24l4.31-.851c1.615.88 3.46 1.385 5.418 1.385 6.627 0 12.012-5.385 12.012-12.012 0-6.627-5.385-12.012-12.012-12.012zm5.722 15.657s-.1.258-.51.621c-.41.362-1.22.656-1.742.684-.522.028-1.042.176-3.418-.763-2.376-.94-3.903-3.344-4.022-3.502-.12-.158-.97-1.288-.97-2.457 0-1.169.61-1.745.827-1.987.217-.242.474-.303.63-.303h.45c.14 0 .324.004.468.344.144.34.493 1.206.536 1.29.043.084.072.182.015.297-.058.115-.087.185-.174.286-.087.1-.183.224-.262.302-.087.087-.178.182-.077.356.1.173.447.738.96 1.194.658.587 1.214.77 1.388.857.174.087.275.072.376-.044.1-.115.433-.504.549-.677.116-.173.23-.144.39-.087.158.058 1.012.477 1.185.564.174.087.289.13.332.202.043.072.043.418-.057.676z"/></svg>
+                        </button>
+                    </div>
+                </div>`).join('');
+            content.scrollTop = content.scrollHeight;
+        }
+
+        async function sendReply() {
+            const body = document.getElementById('reply-input').value;
+            if (!body || !lastMsg) return;
+            await fetch(`${API_BASE}/send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ to: lastMsg.from, subject: `Re: ${lastMsg.subject}`, body, threadId: currentThreadId, messageId: lastMsg.id })
+            });
+            document.getElementById('reply-input').value = '';
+            viewThread(currentThreadId);
+        }
+
+        function forwardToWhatsApp(text) {
+            const phone = prompt("Enter WhatsApp number (with country code):");
+            if (phone) window.open(`https://wa.me/${phone.replace(/\D/g,'')}?text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        async function startNewChat() {
+            const to = document.getElementById('new-to').value;
+            const subject = document.getElementById('new-subject').value;
+            const body = document.getElementById('new-body').value;
+            const res = await fetch(`${API_BASE}/send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ to, subject, body })
+            });
+            if (res.ok) { toggleModal(false); fetchMessages(); }
+        }
+
+        function toggleModal(show) { document.getElementById('newChatModal').classList.toggle('hidden', !show); }
+
+        init();
+    </script>
+</body>
+</html>

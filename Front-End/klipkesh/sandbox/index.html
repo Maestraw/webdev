@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>klipkesh | TikTok Airtime Rewards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- NAVIGATION -->
+    <nav class="glass border-b border-slate-200 sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="bg-indigo-600 text-white p-2 rounded-lg">
+                    <i class="fab fa-tiktok"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight text-indigo-900">klipkesh</span>
+            </div>
+            <div class="flex space-x-2 text-sm font-semibold">
+                <button onclick="switchTab('creator')" id="tab-creator" class="px-4 py-2 rounded-full bg-indigo-100 text-indigo-700">Creator</button>
+                <button onclick="switchTab('advertiser')" id="tab-advertiser" class="px-4 py-2 rounded-full hover:bg-slate-100">Advertiser</button>
+                <button onclick="switchTab('admin')" id="tab-admin" class="px-4 py-2 rounded-full hover:bg-slate-100">Admin</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto p-4 pt-8">
+
+        <!-- CREATOR VIEW -->
+        <section id="view-creator" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider">Available Airtime</p>
+                    <h2 class="text-3xl font-bold text-indigo-600 mt-1">$4.50</h2>
+                    <button onclick="simulateAirtimePayout()" class="mt-4 w-full bg-green-500 text-white py-2 rounded-xl font-bold hover:bg-green-600 transition">Withdraw Airtime</button>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider">Active Jobs</p>
+                    <h2 class="text-3xl font-bold mt-1">2</h2>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider">Total Earned</p>
+                    <h2 class="text-3xl font-bold mt-1 text-slate-400">$12.00</h2>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-bold mt-8">Available Jobs</h3>
+            <div class="grid gap-4">
+                <!-- JOB CARD -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600">
+                            <i class="fas fa-hamburger text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">HotBox Chicken Promo</h4>
+                            <p class="text-sm text-slate-500">Target: 500 Views • Reward: <span class="text-green-600 font-bold">$2.00 Airtime</span></p>
+                        </div>
+                    </div>
+                    <button class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold w-full md:w-auto">Accept Job</button>
+                </div>
+                <!-- SUBMISSION FORM -->
+                <div class="bg-slate-50 p-5 rounded-2xl border-2 border-dashed border-slate-300">
+                    <h4 class="font-bold mb-3 italic">Submit Your Posting (Job: TelOne Fiber)</h4>
+                    <div class="space-y-3">
+                        <input type="text" placeholder="Paste TikTok Link (https://tiktok.com/@u/video/...)" class="w-full p-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button onclick="mockSubmitVideo()" id="submit-btn" class="bg-slate-800 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center space-x-2 w-full">
+                            <span>Submit for Verification</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ADVERTISER VIEW -->
+        <section id="view-advertiser" class="hidden space-y-6">
+            <div class="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 max-w-2xl mx-auto">
+                <h3 class="text-2xl font-bold mb-6">Launch New Campaign</h3>
+                <div class="space-y-4 text-sm">
+                    <div>
+                        <label class="block font-bold mb-1 text-slate-600">What are you promoting?</label>
+                        <input type="text" placeholder="e.g. My New Barber Shop" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-bold mb-1 text-slate-600">Total Budget (USD)</label>
+                            <input type="number" placeholder="20" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1 text-slate-600">Creator Count</label>
+                            <input type="number" placeholder="10" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1 text-slate-600">Instructions for Creators</label>
+                        <textarea rows="3" placeholder="Visit my shop, show the interior, use #klipkeshBarber" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200"></textarea>
+                    </div>
+                    <button class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-indigo-200 hover:scale-[1.01] transition">Pay & Launch ($20.00)</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ADMIN VIEW -->
+        <section id="view-admin" class="hidden space-y-6">
+            <h3 class="text-2xl font-bold">Admin Verification Queue</h3>
+            <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 border-b border-slate-200 font-bold">
+                        <tr>
+                            <th class="p-4">Creator</th>
+                            <th class="p-4">Link</th>
+                            <th class="p-4">Views (claimed)</th>
+                            <th class="p-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-queue">
+                        <tr class="border-b border-slate-100">
+                            <td class="p-4 font-bold">@TinasheZW</td>
+                            <td class="p-4 text-indigo-600 underline">tiktok.com/vid123</td>
+                            <td class="p-4 font-mono">1,204</td>
+                            <td class="p-4 flex space-x-2">
+                                <button onclick="adminVerify(this, true)" class="bg-green-100 text-green-700 px-3 py-1 rounded-lg font-bold">Verify & Pay</button>
+                                <button onclick="adminVerify(this, false)" class="bg-red-100 text-red-700 px-3 py-1 rounded-lg font-bold">Reject</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 glass border border-slate-200 px-6 py-4 rounded-2xl shadow-2xl transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
+        <div class="flex items-center space-x-3">
+            <div id="toast-icon" class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center">
+                <i class="fas fa-check"></i>
+            </div>
+            <p id="toast-message" class="font-bold"></p>
+        </div>
+    </div>
+
+    <script>
+        // MOCK STATE
+        let activeTab = 'creator';
+
+        function switchTab(tab) {
+            // Hide all views
+            document.getElementById('view-creator').classList.add('hidden');
+            document.getElementById('view-advertiser').classList.add('hidden');
+            document.getElementById('view-admin').classList.add('hidden');
+            
+            // Reset Tab Buttons
+            document.getElementById('tab-creator').classList.remove('bg-indigo-100', 'text-indigo-700');
+            document.getElementById('tab-advertiser').classList.remove('bg-indigo-100', 'text-indigo-700');
+            document.getElementById('tab-admin').classList.remove('bg-indigo-100', 'text-indigo-700');
+
+            // Show current view
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).classList.add('bg-indigo-100', 'text-indigo-700');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-message');
+            const iconEl = document.getElementById('toast-icon');
+
+            msgEl.innerText = message;
+            
+            if(type === 'error') {
+                iconEl.className = "w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center";
+                iconEl.innerHTML = '<i class="fas fa-times"></i>';
+            } else {
+                iconEl.className = "w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center";
+                iconEl.innerHTML = '<i class="fas fa-check"></i>';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // SIMULATE SUBMISSION
+        async function mockSubmitVideo() {
+            const btn = document.getElementById('submit-btn');
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> <span>Verifying Link...</span>';
+            btn.disabled = true;
+
+            // Fake network latency
+            await new Promise(r => setTimeout(r, 1500));
+
+            showToast("Video submitted for Admin review!");
+            btn.innerHTML = '<span>Submit for Verification</span>';
+            btn.disabled = false;
+        }
+
+        // SIMULATE ADMIN ACTION
+        async function adminVerify(btn, isPay) {
+            const row = btn.closest('tr');
+            const creator = row.cells[0].innerText;
+            
+            if(isPay) {
+                showToast(`Payout triggered for ${creator}...`);
+                await new Promise(r => setTimeout(r, 1000));
+                showToast(`SUCCESS: $2.00 Airtime sent via API!`);
+            } else {
+                showToast("Submission rejected.", "error");
+            }
+            row.remove();
+        }
+
+        // SIMULATE AIRTIME API CALL
+        async function simulateAirtimePayout() {
+            const confirmed = confirm("Send $4.50 Airtime to registered phone number 0771122334?");
+            if(!confirmed) return;
+
+            showToast("Contacting Econet API...");
+            
+            // Simulation of exponential backoff or network check
+            await new Promise(r => setTimeout(r, 2000));
+
+            const isSuccess = Math.random() > 0.1; // 90% success rate
+
+            if(isSuccess) {
+                showToast("Recharge Successful! Check SMS.", "success");
+            } else {
+                showToast("Econet API Timeout. Retrying in 5s...", "error");
+            }
+        }
+    </script>
+</body>
+</html>

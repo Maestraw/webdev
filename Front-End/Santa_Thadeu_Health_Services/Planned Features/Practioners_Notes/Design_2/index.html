@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedTrack | Google Inspired Health System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap');
+        
+        body { 
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        h1, h2, h3, .google-sans {
+            font-family: 'Google Sans', sans-serif;
+        }
+
+        .google-card {
+            background: white;
+            border-radius: 16px;
+            transition: box-shadow 0.2s;
+        }
+
+        .google-card:hover {
+            box-shadow: 0 1px 3px 0 rgba(60,64,67,.30), 0 4px 8px 3px rgba(60,64,67,.15);
+        }
+
+        .google-input {
+            background-color: #f1f3f4;
+            border: 1px solid transparent;
+            transition: background-color 0.2s, border 0.2s, box-shadow 0.2s;
+        }
+
+        .google-input:focus {
+            background-color: white;
+            border-color: #1a73e8;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,.30), 0 1px 3px 1px rgba(60,64,67,.15);
+        }
+
+        .fab {
+            box-shadow: 0 1px 3px 0 rgba(60,64,67,.30), 0 4px 8px 3px rgba(60,64,67,.15);
+            transition: box-shadow 0.2s, transform 0.1s;
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        /* Specialty Tonal Palettes */
+        .dept-medical { background-color: #e8f0fe; color: #1967d2; }
+        .dept-dental { background-color: #e4f7fb; color: #007b83; }
+        .dept-psych { background-color: #f3e8fd; color: #8430ce; }
+        .dept-optic { background-color: #fef7e0; color: #ea8600; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 8px; border: 2px solid #f8f9fa; }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white px-4 h-16 flex items-center justify-between border-b border-gray-200 shrink-0">
+        <div class="flex items-center gap-4">
+            <button class="p-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+            <div class="flex items-center gap-2 select-none">
+                <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/>
+                </svg>
+                <span class="text-[22px] text-[#5f6368] font-medium tracking-tight google-sans">MedTrack</span>
+            </div>
+        </div>
+
+        <div class="flex-1 max-w-2xl px-8 hidden md:block">
+            <div class="relative">
+                <input type="text" id="patientSearch" placeholder="Search patients" class="w-full h-11 pl-12 pr-4 google-input rounded-lg text-base outline-none">
+                <svg class="w-5 h-5 text-gray-500 absolute left-4 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <div class="hidden sm:flex flex-col items-end mr-2">
+                <span class="text-xs font-medium text-gray-500">Dr. Sarah Jenkins</span>
+                <span class="text-[10px] text-green-600 font-bold uppercase tracking-wider">Online</span>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold google-sans border-2 border-white shadow-sm">SJ</div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        <!-- Side Navigation/Patient List -->
+        <aside class="w-72 bg-white flex flex-col shrink-0 border-r border-gray-200">
+            <div class="px-3 py-4">
+                <button onclick="openRecordModal()" class="fab flex items-center gap-3 px-6 py-4 bg-white hover:bg-gray-50 text-gray-700 rounded-2xl mb-6 transition-all">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+                    <span class="font-medium text-sm google-sans">New Encounter</span>
+                </button>
+                
+                <h3 class="px-4 text-[11px] font-bold text-gray-500 uppercase tracking-[0.1em] mb-2">Patients</h3>
+                <div id="patientList" class="space-y-1 overflow-y-auto custom-scrollbar pr-2">
+                    <!-- Patient rows injected here -->
+                    <div id="sidebarSkeleton" class="px-4 space-y-4">
+                        <div class="h-10 bg-gray-100 rounded-lg animate-pulse"></div>
+                        <div class="h-10 bg-gray-100 rounded-lg animate-pulse"></div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Workspace Area -->
+        <section class="flex-1 overflow-hidden flex flex-col relative">
+            
+            <!-- Empty State -->
+            <div id="noSelectionState" class="flex-1 flex flex-col items-center justify-center">
+                <div class="w-64 h-64 opacity-40 grayscale mb-6">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="text-blue-600">
+                        <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl text-gray-600 google-sans mb-2">No patient selected</h2>
+                <p class="text-gray-500">Select a record from the left to view unified history.</p>
+            </div>
+
+            <!-- Active View -->
+            <div id="activePatientState" class="hidden flex-1 flex flex-col overflow-hidden">
+                <!-- Patient Header -->
+                <div class="bg-white p-8 border-b border-gray-200 shrink-0">
+                    <div class="max-w-4xl mx-auto flex items-center gap-6">
+                        <div id="patientAvatar" class="w-20 h-20 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-3xl font-bold google-sans">
+                            JS
+                        </div>
+                        <div class="flex-1">
+                            <h2 id="activePatientName" class="text-3xl font-medium text-gray-800 google-sans">John Smith</h2>
+                            <div class="flex flex-wrap gap-4 mt-2">
+                                <span id="activePatientMeta" class="text-sm text-gray-500">ID: #4492 • Male • 34 yrs</span>
+                                <div class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+                                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Active Care
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unified Timeline -->
+                <div class="flex-1 overflow-y-auto bg-[#f8f9fa] custom-scrollbar p-8">
+                    <div class="max-w-4xl mx-auto">
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="text-lg font-medium text-gray-700 google-sans">Integrated Health Timeline</h3>
+                            <div class="flex gap-1">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center dept-medical" title="Medical">M</div>
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center dept-dental" title="Dental">D</div>
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center dept-psych" title="Psychology">P</div>
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center dept-optic" title="Optometry">O</div>
+                            </div>
+                        </div>
+
+                        <div id="historyTimeline" class="space-y-6">
+                            <!-- Google style cards -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Google Style Modal -->
+    <div id="recordModal" class="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="px-8 pt-8 pb-4">
+                <h3 class="text-2xl font-medium text-gray-800 google-sans">New Clinical Record</h3>
+                <p class="text-sm text-gray-500 mt-1">Add details from the latest patient encounter.</p>
+            </div>
+            
+            <form id="encounterForm" class="p-8 pt-4 space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-600 ml-1 uppercase">Department</label>
+                        <select id="recordDept" class="w-full h-12 px-4 google-input rounded-xl text-sm outline-none appearance-none">
+                            <option value="Medical">General Medical</option>
+                            <option value="Dental">Dentistry</option>
+                            <option value="Psychology">Psychology</option>
+                            <option value="Optometry">Optometry</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-600 ml-1 uppercase">Type</label>
+                        <select id="recordType" class="w-full h-12 px-4 google-input rounded-xl text-sm outline-none appearance-none">
+                            <option value="Consultation">Consultation</option>
+                            <option value="Urgent Care">Urgent Care</option>
+                            <option value="Follow-up">Follow-up</option>
+                            <option value="Treatment">Procedure</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-600 ml-1 uppercase">Notes & Findings</label>
+                    <textarea id="recordNotes" rows="3" class="w-full p-4 google-input rounded-xl text-sm outline-none resize-none" placeholder="Enter clinical observations..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-600 ml-1 uppercase">Status</label>
+                        <select id="recordStatus" class="w-full h-12 px-4 google-input rounded-xl text-sm outline-none appearance-none">
+                            <option value="Stable">Stable</option>
+                            <option value="Critical">Needs Review</option>
+                            <option value="Resolved">Resolved</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-600 ml-1 uppercase">Specialist</label>
+                        <input type="text" id="recordDoc" class="w-full h-12 px-4 google-input rounded-xl text-sm outline-none" placeholder="Practitioner Name">
+                    </div>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeRecordModal()" class="px-6 py-2.5 text-blue-600 font-medium hover:bg-blue-50 rounded-full transition-colors google-sans">Cancel</button>
+                    <button type="submit" class="px-8 py-2.5 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-full shadow-lg shadow-blue-200 transition-all google-sans">Save Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const PatientAPI = {
+            latency: 400,
+            async getPatients() {
+                await new Promise(r => setTimeout(r, this.latency));
+                return [
+                    { id: '101', name: 'James Wilson', dob: '1982-05-12', gender: 'Male', status: 'Active' },
+                    { id: '102', name: 'Elena Rodriguez', dob: '1995-11-20', gender: 'Female', status: 'Stable' },
+                    { id: '103', name: 'Marcus Chen', dob: '1970-03-05', gender: 'Male', status: 'Urgent' },
+                    { id: '104', name: 'Sarah O\'Connor', dob: '1991-08-30', gender: 'Female', status: 'Active' }
+                ];
+            },
+            async getHistory(patientId) {
+                await new Promise(r => setTimeout(r, this.latency));
+                const mockHistory = {
+                    '101': [
+                        { id: 'h1', date: 'Nov 10, 2023', dept: 'Dental', type: 'Treatment', notes: 'Routine scaling. Patient mentions sensitivity in lower molar. No signs of infection.', status: 'Stable', doc: 'Dr. Aris' },
+                        { id: 'h2', date: 'Oct 15, 2023', dept: 'Medical', type: 'Consultation', notes: 'Migraine management. Reviewed triggers. Maintaining current dosage of Magnesium.', status: 'Stable', doc: 'Dr. Jenkins' },
+                        { id: 'h3', date: 'Aug 22, 2023', dept: 'Optometry', type: 'Consultation', notes: 'Routine eye exam. New prescription for computer work issued. Intraocular pressure normal.', status: 'Stable', doc: 'Dr. Vue' }
+                    ],
+                    '102': [
+                        { id: 'h4', date: 'Nov 05, 2023', dept: 'Psychology', type: 'Consultation', notes: 'First session. Discussed anxiety management techniques and sleep routine changes.', status: 'Stable', doc: 'Dr. Freud' }
+                    ]
+                };
+                return mockHistory[patientId] || [];
+            }
+        };
+
+        const State = {
+            patients: [],
+            selectedPatient: null,
+            history: [],
+            async init() {
+                try {
+                    this.patients = await PatientAPI.getPatients();
+                    const skeleton = document.getElementById('sidebarSkeleton');
+                    if (skeleton) skeleton.remove();
+                    UI.renderPatientList(this.patients);
+                } catch (error) { console.error(error); }
+            },
+            async selectPatient(id) {
+                this.selectedPatient = this.patients.find(p => p.id === id);
+                this.history = await PatientAPI.getHistory(id);
+                UI.renderActivePatient();
+            },
+            addEncounter(data) {
+                const newEncounter = {
+                    id: Date.now().toString(),
+                    date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+                    ...data
+                };
+                this.history.unshift(newEncounter);
+                UI.renderHistory();
+            }
+        };
+
+        const UI = {
+            renderPatientList(list) {
+                const container = document.getElementById('patientList');
+                if (!container) return;
+                container.innerHTML = list.map(p => `
+                    <button onclick="State.selectPatient('${p.id}')" 
+                            class="w-full flex items-center gap-4 px-4 py-3 rounded-full text-left hover:bg-gray-100 transition-colors group ${State.selectedPatient?.id === p.id ? 'bg-blue-50 text-blue-700' : 'text-gray-600'}">
+                        <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-medium google-sans ${State.selectedPatient?.id === p.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}">
+                            ${p.name[0]}
+                        </div>
+                        <div class="flex-1 truncate">
+                            <div class="text-sm font-medium truncate">${p.name}</div>
+                            <div class="text-[10px] uppercase tracking-wider ${State.selectedPatient?.id === p.id ? 'text-blue-400' : 'text-gray-400'}">ID: ${p.id}</div>
+                        </div>
+                        ${p.status === 'Urgent' ? '<div class="w-2 h-2 rounded-full bg-red-500"></div>' : ''}
+                    </button>
+                `).join('');
+            },
+            renderActivePatient() {
+                const p = State.selectedPatient;
+                document.getElementById('noSelectionState').classList.add('hidden');
+                document.getElementById('activePatientState').classList.remove('hidden');
+                document.getElementById('activePatientName').textContent = p.name;
+                document.getElementById('activePatientMeta').textContent = `ID: #${p.id} • ${p.gender} • ${this.calculateAge(p.dob)} yrs`;
+                document.getElementById('patientAvatar').textContent = p.name.split(' ').map(n => n[0]).join('');
+                this.renderPatientList(State.patients);
+                this.renderHistory();
+            },
+            renderHistory() {
+                const container = document.getElementById('historyTimeline');
+                if (!container) return;
+                if (State.history.length === 0) {
+                    container.innerHTML = '<div class="google-card p-12 text-center text-gray-500 google-sans">No records for this profile.</div>';
+                    return;
+                }
+                container.innerHTML = State.history.map(item => `
+                    <div class="google-card border border-gray-100 p-6 flex gap-6">
+                        <div class="shrink-0">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center ${this.getDeptTonal(item.dept)}">
+                                ${this.getIcon(item.dept)}
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h4 class="text-lg font-medium text-gray-800 google-sans">${item.type}</h4>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        <span class="text-xs font-bold uppercase tracking-wider ${this.getDeptColor(item.dept)}">${item.dept}</span>
+                                        <span class="text-gray-300">•</span>
+                                        <span class="text-xs text-gray-500">${item.date}</span>
+                                    </div>
+                                </div>
+                                <div class="px-3 py-1 rounded-full text-[10px] font-bold uppercase border ${this.getStatusStyle(item.status)}">
+                                    ${item.status}
+                                </div>
+                            </div>
+                            <p class="text-[15px] text-gray-600 leading-relaxed mb-4">${item.notes}</p>
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500">${item.doc[0]}</div>
+                                    <span class="text-xs text-gray-500">${item.doc}</span>
+                                </div>
+                                <button class="text-xs text-blue-600 font-medium hover:underline">View Full Details</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            },
+            getDeptTonal(dept) {
+                if (dept === 'Dental') return 'dept-dental';
+                if (dept === 'Psychology') return 'dept-psych';
+                if (dept === 'Optometry') return 'dept-optic';
+                return 'dept-medical';
+            },
+            getDeptColor(dept) {
+                if (dept === 'Dental') return 'text-teal-700';
+                if (dept === 'Psychology') return 'text-purple-700';
+                if (dept === 'Optometry') return 'text-orange-700';
+                return 'text-blue-700';
+            },
+            getIcon(dept) {
+                const base = 'w-6 h-6';
+                if (dept === 'Dental') return `<svg class="${base}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14c2.21 0 4-1.79 4-4V5c0-2.21-1.79-4-4-4S8 2.79 8 5v5c0 2.21 1.79 4 4 4z"/><path d="M12 14c-1.657 0-3-1.343-3-3s1.343-3 3-3 3 1.343 3 3-1.343 3-3 3z"/></svg>`;
+                if (dept === 'Psychology') return `<svg class="${base}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>`;
+                if (dept === 'Optometry') return `<svg class="${base}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>`;
+                return `<svg class="${base}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`;
+            },
+            getStatusStyle(s) {
+                if (s === 'Stable') return 'bg-green-50 text-green-700 border-green-200';
+                if (s === 'Needs Review') return 'bg-red-50 text-red-700 border-red-200';
+                return 'bg-gray-50 text-gray-600 border-gray-200';
+            },
+            calculateAge(dob) {
+                const birthDate = new Date(dob);
+                return Math.abs(new Date(Date.now() - birthDate.getTime()).getUTCFullYear() - 1970);
+            }
+        };
+
+        function openRecordModal() { document.getElementById('recordModal').classList.remove('hidden'); }
+        function closeRecordModal() { document.getElementById('recordModal').classList.add('hidden'); }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            State.init();
+            document.getElementById('encounterForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                State.addEncounter({
+                    dept: document.getElementById('recordDept').value,
+                    type: document.getElementById('recordType').value,
+                    notes: document.getElementById('recordNotes').value,
+                    status: document.getElementById('recordStatus').value,
+                    doc: document.getElementById('recordDoc').value || 'System Provider'
+                });
+                e.target.reset();
+                closeRecordModal();
+            });
+            document.getElementById('patientSearch').addEventListener('input', (e) => {
+                const q = e.target.value.toLowerCase();
+                UI.renderPatientList(State.patients.filter(p => p.name.toLowerCase().includes(q)));
+            });
+        });
+    </script>
+</body>
+</html>

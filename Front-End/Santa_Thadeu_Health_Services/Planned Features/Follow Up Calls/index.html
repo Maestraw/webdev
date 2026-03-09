@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To Call List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f1f5f9; /* Softer, low-glare background */
+            color: #1e293b;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        .row-item {
+            transition: all 0.1s ease;
+            cursor: pointer;
+        }
+
+        .row-item:hover {
+            background-color: #f8fafc;
+        }
+
+        .blade-enter {
+            transform: translateX(100%);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .blade-show {
+            transform: translateX(0);
+        }
+
+        /* Transition for switching content within the blade */
+        .blade-content-transition {
+            animation: contentSwap 0.3s ease-out;
+        }
+
+        @keyframes contentSwap {
+            0% { opacity: 0.4; transform: translateY(4px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: contrast(0.5);
+            cursor: pointer;
+        }
+
+        /* Improved legibility for small caps */
+        .tracking-widest-pro {
+            letter-spacing: 0.15em;
+        }
+
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- Minimal Header -->
+    <header class="px-10 py-5 flex items-center justify-between border-b border-slate-200 bg-white">
+        <h1 class="text-xl font-800 tracking-tight text-slate-900">Scheduled Calls</h1>
+        <div class="flex items-center gap-4">
+            <button onclick="openAddLeadModal()" class="bg-slate-900 text-white px-5 py-2 rounded-xl text-[12px] font-800 hover:bg-slate-800 transition-all flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                New Lead
+            </button>
+            <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200"></div>
+        </div>
+    </header>
+
+    <div class="flex-1 flex flex-col overflow-hidden relative">
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col items-center overflow-hidden pt-8 pb-12 px-6">
+            
+            <!-- Centered Header Actions -->
+            <div class="w-full max-w-4xl flex items-center justify-between mb-8">
+                <!-- Inline Segmented Navigation (Updated for Past Groups) -->
+                <div class="flex bg-slate-200/70 p-1.5 rounded-2xl w-fit border border-slate-200 shadow-sm">
+                    <button onclick="setFilter('backlog')" id="btn-backlog" class="px-6 py-2 rounded-xl text-[12px] font-800 transition-all text-slate-600 hover:text-slate-900">3d Backlog</button>
+                    <button onclick="setFilter('yesterday')" id="btn-yesterday" class="px-6 py-2 rounded-xl text-[12px] font-800 transition-all text-slate-600 hover:text-slate-900">Yesterday</button>
+                    <button onclick="setFilter('today')" id="btn-today" class="px-6 py-2 rounded-xl text-[12px] font-800 transition-all bg-white shadow-md text-slate-900">Today</button>
+                    <div class="w-[1px] bg-slate-300 mx-2 self-stretch"></div>
+                    <button onclick="setFilter('completed')" id="btn-completed" class="px-6 py-2 rounded-xl text-[12px] font-800 transition-all text-slate-600 hover:text-slate-900">Archive</button>
+                </div>
+
+                <!-- Aligned Search Bar -->
+                <div class="relative">
+                    <input type="text" id="globalSearch" oninput="handleSearch()" placeholder="Search leads..." 
+                        class="w-64 bg-white border border-slate-200 shadow-sm rounded-2xl py-2.5 pl-4 pr-4 text-[12px] font-700 focus:ring-2 focus:ring-slate-300 outline-none transition-all placeholder:text-slate-400">
+                </div>
+            </div>
+
+            <!-- Leads Table -->
+            <div class="w-full max-w-4xl flex flex-col h-full overflow-hidden bg-white border border-slate-200 rounded-[2rem] shadow-xl shadow-slate-200/50">
+                <div class="px-8 py-4 bg-slate-50 border-b border-slate-200 grid grid-cols-12 gap-4 text-[10px] font-800 text-slate-500 uppercase tracking-widest-pro">
+                    <div class="col-span-8">Lead Contact</div>
+                    <div class="col-span-2 text-center">Status</div>
+                    <div class="col-span-2 text-right">Details</div>
+                </div>
+
+                <div id="leadsList" class="flex-1 overflow-y-auto custom-scrollbar">
+                    <!-- Rows injected here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Contextual Action Blade -->
+        <aside id="actionBlade" class="fixed right-0 top-0 h-full w-[380px] bg-white shadow-2xl z-30 blade-enter border-l border-slate-200 flex flex-col">
+            <!-- Animated Container wrapper -->
+            <div id="bladeContentWrapper" class="flex flex-col h-full">
+                <div class="p-8 border-b border-slate-100 flex justify-between items-center">
+                    <div>
+                        <h2 id="bladeLeadName" class="text-lg font-800 text-slate-900">Customer Name</h2>
+                        <p id="bladeLeadPhone" class="text-xs text-slate-500 font-600 mt-1">555-0192</p>
+                    </div>
+                    <button onclick="closeBlade()" class="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+
+                <div class="p-8 space-y-8 flex-1 overflow-y-auto custom-scrollbar">
+                    <div>
+                        <p class="text-[10px] font-800 text-slate-400 uppercase tracking-widest-pro mb-3">Context</p>
+                        <p id="bladeLeadReason" class="text-[13px] font-600 text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100"></p>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] font-800 text-slate-400 uppercase tracking-widest-pro mb-4">Update Outcome</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="quickUpdate('no-answer', 'Voicemail')" class="px-4 py-3 border border-slate-200 rounded-xl text-[11px] font-800 hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-700">Voicemail</button>
+                            <button onclick="quickUpdate('no-answer', 'No Answer')" class="px-4 py-3 border border-slate-200 rounded-xl text-[11px] font-800 hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-700">No Answer</button>
+                            <button onclick="quickUpdate('completed', 'Success')" class="px-4 py-3 bg-emerald-600 text-white rounded-xl text-[11px] font-800 hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all">Success</button>
+                            <button onclick="toggleTimePicker()" class="px-4 py-3 border border-slate-200 rounded-xl text-[11px] font-800 hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-700">Call Later</button>
+                        </div>
+                        
+                        <div id="timePickerContainer" class="hidden mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center gap-3">
+                            <input type="time" id="callLaterTime" class="flex-1 bg-white border border-slate-200 rounded-lg text-xs font-700 p-2 outline-none focus:ring-2 focus:ring-slate-300">
+                            <button onclick="confirmCallLater()" class="bg-slate-900 text-white px-5 py-2 rounded-lg text-[10px] font-800 uppercase tracking-wider">Save</button>
+                        </div>
+                    </div>
+
+                    <div class="pt-8 border-t border-slate-100">
+                        <p class="text-[10px] font-800 text-slate-400 uppercase tracking-widest-pro mb-4">Internal Notes</p>
+                        <div class="relative">
+                            <input type="text" id="customFeedback" placeholder="Add a note..." 
+                                onkeypress="if(event.key === 'Enter') submitCustomFeedback()"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-[12px] font-600 focus:bg-white focus:ring-2 focus:ring-slate-300 outline-none transition-all">
+                        </div>
+                        <div id="bladeHistory" class="mt-6 space-y-4">
+                            <!-- History items -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Add Lead Modal -->
+        <div id="addLeadModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden">
+            <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-8 border border-slate-200 animate-in fade-in zoom-in duration-200">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-800 text-slate-900">Add New Lead</h3>
+                    <button onclick="closeAddLeadModal()" class="text-slate-400 hover:text-slate-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[10px] font-800 text-slate-400 uppercase tracking-widest-pro mb-1.5 block">Full Name</label>
+                        <input type="text" id="newLeadName" placeholder="e.g. Marcus Aurelius" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-[12px] font-600 outline-none focus:ring-2 focus:ring-slate-300">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-800 text-slate-400 uppercase tracking-widest-pro mb-1.5 block">Phone Number</label>
+                        <input type="text" id="newLeadPhone" placeholder="555-0000" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-[12px] font-600 outline-none focus:ring-2 focus:ring-slate-300">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-800 text-slate-400 uppercase tracking-widest-pro mb-1.5 block">Context / Reason</label>
+                        <textarea id="newLeadReason" rows="2" placeholder="Why are we calling?" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-[12px] font-600 outline-none focus:ring-2 focus:ring-slate-300 resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-800 text-slate-400 uppercase tracking-widest-pro mb-1.5 block">Assign To Group</label>
+                        <select id="newLeadGroup" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-[12px] font-600 outline-none focus:ring-2 focus:ring-slate-300 appearance-none">
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="backlog">3d Backlog</option>
+                        </select>
+                    </div>
+                    <button onclick="saveNewLead()" class="w-full bg-slate-900 text-white py-4 rounded-2xl text-[12px] font-800 hover:bg-slate-800 transition-all mt-4">Create Lead</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const customers = [];
+        const names = ["James", "Sarah", "Michael", "Emma", "John", "David", "Linda", "Robert", "Chris", "Jessica"];
+        const surnames = ["Smith", "Jones", "Miller", "Taylor", "Wilson", "Jenkins", "Brown", "White", "Harris", "Clark"];
+        const reasons = ["Payment failed - card expired", "Trial expiring in 48 hours", "Demo follow-up request", "Annual renewal due Q1", "Upgrade inquiry for Pro tier", "Support ticket Escalation"];
+
+        function generateData() {
+            for (let i = 0; i < 200; i++) {
+                const statusRoll = Math.random();
+                const status = statusRoll > 0.8 ? 'completed' : (statusRoll > 0.5 ? 'no-answer' : 'pending');
+                const groupRoll = Math.random();
+                
+                // Shifted logic: Look in the past (today, yesterday, backlog)
+                let group = 'today';
+                if(groupRoll > 0.70) group = 'backlog'; // 3 days ago
+                else if(groupRoll > 0.40) group = 'yesterday'; // 1 day ago
+
+                customers.push({
+                    id: Date.now() + i,
+                    name: `${names[Math.floor(Math.random() * names.length)]} ${surnames[Math.floor(Math.random() * surnames.length)]}`,
+                    phone: `555-01${String(i).padStart(2, '0')}`,
+                    status: status,
+                    group: group,
+                    reason: reasons[Math.floor(Math.random() * reasons.length)],
+                    feedback: []
+                });
+            }
+        }
+
+        let currentFilter = 'today';
+        let searchQuery = '';
+        let selectedLeadId = null;
+
+        function renderRows() {
+            const list = document.getElementById('leadsList');
+            list.innerHTML = '';
+
+            const filtered = customers.filter(c => {
+                const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.phone.includes(searchQuery);
+                const matchesFilter = currentFilter === 'completed' ? c.status === 'completed' : (c.group === currentFilter && c.status !== 'completed');
+                return matchesSearch && matchesFilter;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="p-24 text-center">
+                    <p class="text-slate-400 font-800 text-xs uppercase tracking-[0.2em]">No Leads in ${currentFilter}</p>
+                </div>`;
+                return;
+            }
+
+            filtered.forEach(c => {
+                const row = document.createElement('div');
+                row.className = `row-item grid grid-cols-12 gap-4 px-8 py-5 border-b border-slate-100 items-center ${c.id === selectedLeadId ? 'bg-slate-50' : ''}`;
+                row.onclick = () => openBlade(c);
+
+                const statusStyles = {
+                    'pending': 'bg-rose-100 text-rose-800',
+                    'no-answer': 'bg-amber-100 text-amber-800',
+                    'completed': 'bg-emerald-100 text-emerald-800'
+                };
+
+                row.innerHTML = `
+                    <div class="col-span-8">
+                        <div class="flex items-center gap-2">
+                            <p class="text-[13px] font-800 text-slate-900 leading-none tracking-tight">${c.name}</p>
+                            ${c.group === 'backlog' ? '<span class="text-[8px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded-md font-800 tracking-wider">OVERDUE</span>' : ''}
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1.5 font-700">${c.phone}</p>
+                    </div>
+                    <div class="col-span-2 flex justify-center">
+                        <span class="px-3 py-1 rounded-lg text-[9px] font-800 uppercase tracking-wider ${statusStyles[c.status]}">
+                            ${c.status.replace('-', ' ')}
+                        </span>
+                    </div>
+                    <div class="col-span-2 text-right">
+                        ${c.feedback.length > 0 ? `<span class="text-[10px] font-800 text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">NOTE</span>` : `<span class="text-slate-200 text-sm font-800">•••</span>`}
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function openBlade(lead) {
+            const blade = document.getElementById('actionBlade');
+            const wrapper = document.getElementById('bladeContentWrapper');
+            
+            // Trigger animation if already open
+            if (blade.classList.contains('blade-show') && selectedLeadId !== lead.id) {
+                wrapper.classList.remove('blade-content-transition');
+                void wrapper.offsetWidth; // Trigger reflow
+                wrapper.classList.add('blade-content-transition');
+            }
+
+            selectedLeadId = lead.id;
+            document.getElementById('bladeLeadName').innerText = lead.name;
+            document.getElementById('bladeLeadPhone').innerText = lead.phone;
+            document.getElementById('bladeLeadReason').innerText = lead.reason;
+            document.getElementById('timePickerContainer').classList.add('hidden');
+            
+            renderHistory(lead);
+            blade.classList.add('blade-show');
+            renderRows(); 
+        }
+
+        function closeBlade() {
+            selectedLeadId = null;
+            document.getElementById('actionBlade').classList.remove('blade-show');
+            renderRows();
+        }
+
+        function openAddLeadModal() {
+            document.getElementById('addLeadModal').classList.remove('hidden');
+        }
+
+        function closeAddLeadModal() {
+            document.getElementById('addLeadModal').classList.add('hidden');
+            // Clear inputs
+            document.getElementById('newLeadName').value = '';
+            document.getElementById('newLeadPhone').value = '';
+            document.getElementById('newLeadReason').value = '';
+        }
+
+        function saveNewLead() {
+            const name = document.getElementById('newLeadName').value;
+            const phone = document.getElementById('newLeadPhone').value;
+            const reason = document.getElementById('newLeadReason').value;
+            const group = document.getElementById('newLeadGroup').value;
+
+            if (!name || !phone) return;
+
+            const newLead = {
+                id: Date.now(),
+                name: name,
+                phone: phone,
+                status: 'pending',
+                group: group,
+                reason: reason || 'Manual lead entry',
+                feedback: []
+            };
+
+            customers.unshift(newLead);
+            setFilter(group);
+            closeAddLeadModal();
+            renderRows();
+        }
+
+        function toggleTimePicker() {
+            const container = document.getElementById('timePickerContainer');
+            container.classList.toggle('hidden');
+        }
+
+        function confirmCallLater() {
+            const time = document.getElementById('callLaterTime').value;
+            if(!time) return;
+            quickUpdate('pending', `Scheduled Callback: ${time}`);
+        }
+
+        function submitCustomFeedback() {
+            const input = document.getElementById('customFeedback');
+            if(input.value.trim()) {
+                addFeedback(input.value.trim());
+                input.value = '';
+            }
+        }
+
+        function renderHistory(lead) {
+            const container = document.getElementById('bladeHistory');
+            let html = '';
+            lead.feedback.slice().reverse().forEach(note => {
+                html += `
+                    <div class="bg-slate-50/80 border border-slate-100 p-3 rounded-xl">
+                        <p class="text-[11px] font-700 text-slate-800 leading-snug">${note.text}</p>
+                        <p class="text-[9px] text-slate-400 mt-1.5 uppercase font-800 tracking-wider">${note.time}</p>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function quickUpdate(status, feedbackText) {
+            const lead = customers.find(c => c.id === selectedLeadId);
+            if (!lead) return;
+            lead.status = status;
+            addFeedback(feedbackText);
+            setTimeout(closeBlade, 250);
+        }
+
+        function addFeedback(text) {
+            const lead = customers.find(c => c.id === selectedLeadId);
+            if (!lead) return;
+            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            lead.feedback.push({ text: text, time: now });
+            renderHistory(lead);
+            renderRows();
+        }
+
+        function handleSearch() {
+            searchQuery = document.getElementById('globalSearch').value;
+            renderRows();
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            const filters = ['backlog', 'yesterday', 'today', 'completed'];
+            filters.forEach(f => {
+                const btn = document.getElementById(`btn-${f}`);
+                if (!btn) return;
+                if (filter === f) {
+                    btn.className = "px-6 py-2 rounded-xl text-[12px] font-800 transition-all bg-white shadow-md text-slate-900";
+                } else {
+                    btn.className = "px-6 py-2 rounded-xl text-[12px] font-800 transition-all text-slate-600 hover:text-slate-900";
+                }
+            });
+            renderRows();
+        }
+
+        generateData();
+        renderRows();
+    </script>
+</body>
+</html>
